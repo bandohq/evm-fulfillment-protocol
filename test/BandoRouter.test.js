@@ -2,6 +2,7 @@ const { ethers, upgrades } = require('hardhat');
 const { expect, assert } = require('chai');
 const BN = require('bn.js')
 const uuid = require('uuid');
+const { setupRegistry } = require('./utils/registryUtils');
 
 const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A"
 const REVERT_ERROR_PREFIX = "Returned error: VM Exception while processing transaction:";
@@ -25,7 +26,8 @@ const DUMMY_VALID_FULFILLMENTREQUEST = {
 }
 
 let routerContract;
-let regexValidator;
+let escrow;
+let erc20_escrow
 let v2;
 let registry;
 let manager;
@@ -38,37 +40,81 @@ describe("BandoRouterV1", function () {
     /**
      * deploy registry
      */
-    const ServiceRegistry = await ethers.getContractFactory('FulfillableRegistry');
-    const serviceRegistry = await upgrades.deployProxy(ServiceRegistry, []);
-    await serviceRegistry.waitForDeployment();
-    const registryAddress = await serviceRegistry.getAddress();
-    registry = await ServiceRegistry.attach(registryAddress);
+    registry = await setupRegistry(await owner.getAddress());
+    const registryAddress = await registry.getAddress();
     /**
      * deploy router
      */
     const BandoRouterV1 = await ethers.getContractFactory('BandoRouterV1');
-    routerContract = await upgrades.deployProxy(BandoRouterV1, [registryAddress]);
+    routerContract = await upgrades.deployProxy(BandoRouterV1, []);
     await routerContract.waitForDeployment();
     v1 = BandoRouterV1.attach(await routerContract.getAddress());
     /**
      * deploy manager
      */
     const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
-    const m = await upgrades.deployProxy(Manager, [registryAddress]);
+    const m = await upgrades.deployProxy(Manager, []);
     await m.waitForDeployment();
     manager = await Manager.attach(await m.getAddress());
     /**
-     * set test service
+     * deploy escrows
+     */
+    const Escrow = await ethers.getContractFactory('BandoFulfillableV1');
+    const e = await upgrades.deployProxy(Escrow, []);
+    await e.waitForDeployment();
+    escrow = await Escrow.attach(await e.getAddress());
+    const ERC20Escrow = await ethers.getContractFactory('BandoERC20FulfillableV1');
+    const erc20 = await upgrades.deployProxy(ERC20Escrow, []);
+    await erc20.waitForDeployment();
+    erc20_escrow = await ERC20Escrow.attach(await erc20.getAddress());
+
+    /**
+     * configure protocol state vars.
      */
     const feeAmount = ethers.parseUnits('0.1', 'ether');
-    manager.setService(
+    await escrow.setManager(await manager.getAddress());
+    await escrow.setFulfillableRegistry(registryAddress);
+    await escrow.setRouter(await routerContract.getAddress());
+    await erc20_escrow.setManager(await manager.getAddress());
+    await erc20_escrow.setFulfillableRegistry(registryAddress);
+    await erc20_escrow.setRouter(await routerContract.getAddress());
+    await registry.setManager(await manager.getAddress());
+    await manager.setServiceRegistry(registryAddress);
+    await manager.setEscrow(await escrow.getAddress());
+    await manager.setERC20Escrow(await erc20_escrow.getAddress());
+    await v1.setFulfillableRegistry(registryAddress);
+    await v1.setTokenRegistry(DUMMY_ADDRESS);
+    await v1.setEscrow(await escrow.getAddress());
+    await v1.setERC20Escrow(await erc20_escrow.getAddress());
+    /**
+     * set dummy service
+     */
+    const serviceResponse = await manager.setService(
       1,
-      await beneficiary.getAddress(),
       feeAmount,
       await fulfiller.getAddress(),
-      await routerContract.getAddress()
+      await beneficiary.getAddress(),
     );
-    manager.setServiceRef(1, validRef);
+    const response = await manager.setServiceRef(1, validRef);
+  });
+
+  describe("Configuration Specs", async () => {
+    it("should set the serviceRegistry correctly", async () => {
+      const registryAddress = await registry.getAddress();
+      assert.equal(await v1._fulfillableRegistry(), registryAddress);
+    });
+
+    it("should set the tokenRegistry correctly", async () => {
+      assert.equal(await v1._tokenRegistry(), DUMMY_ADDRESS);
+    });
+
+    it("should set the escrow correctly", async () => {
+      assert.equal(await v1._escrow(), await escrow.getAddress());
+    });
+
+    it("should set the erc20Escrow correctly", async () => {
+      assert.equal(await v1._erc20Escrow(), await erc20_escrow.getAddress());
+    });
   });
 
   describe("Upgradeability", async () => {
@@ -156,7 +202,7 @@ describe("BandoRouterV1", function () {
     it("should fail for when amount is zero.", async () => {
         await expect(
           v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, {value: 0})
-        ).to.be.revertedWith('Amount must be greater than zero');
+        ).to.be.revertedWithCustomError(v2, 'InsufficientAmount');
     });
 
     it("should fail with insufficient funds error", async () => {
@@ -177,7 +223,7 @@ describe("BandoRouterV1", function () {
       invalidRequest.serviceRef = invalidRef;
       await expect(
         v2.requestService(1, invalidRequest, { value: ethers.parseUnits("1", "ether") })
-      ).to.be.revertedWith('ref not in registry');
+      ).to.be.revertedWithCustomError(v2, 'InvalidRef');
     });
 
     it("should route to service escrow", async () => {

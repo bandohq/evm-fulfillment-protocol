@@ -1,27 +1,31 @@
 // SPDX-License-Identifier: MIT
-// Inspired in:
-// OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
 
 pragma solidity >=0.8.20 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "./IBandoFulfillable.sol";
+import "./periphery/registry/FulfillableRegistry.sol";
 
-/**
- * @title BandoFulfillableV1
- * @dev Base escrow contract, holds funds designated for a beneficiary until they
- * withdraw them or a refund is emitted.
- *
- * Intended usage: This contract (and derived escrow contracts) should be a
- * standalone contract, that only interacts with the contract that instantiated
- * it. That way, it is guaranteed that all Ether will be handled according to
- * the `Escrow` rules, and there is no need to check for payable functions or
- * transfers in the inheritance tree. The contract that uses the escrow as its
- * payment method should be its owner, and provide public methods redirecting
- * to the escrow's deposit and withdraw.
- */
-contract BandoFulfillableV1 is IBandoFulfillable {
+/// Inspired in:
+/// OpenZeppelin Contracts v4.4.1 (utils/escrow/Escrow.sol)
+/// @title BandoFulfillableV1
+/// @dev Base escrow contract, holds funds designated for a beneficiary until they
+/// withdraw them or a refund is emitted.
+///
+/// Intended usage: 
+/// This contract (and derived escrow contracts) should only be
+/// interacted through the router or manager contracts. 
+/// The contract that uses the escrow as its payment method 
+/// should provide public methods redirecting to the escrow's deposit and withdraw.
+contract BandoFulfillableV1 is
+    IBandoFulfillable,
+    UUPSUpgradeable,
+    OwnableUpgradeable,
+    ReentrancyGuardUpgradeable {
     using Address for address payable;
     using Math for uint256;
 
@@ -50,80 +54,112 @@ contract BandoFulfillableV1 is IBandoFulfillable {
     // Total deposits registered
     uint256 private _fulfillmentRecordCount;
 
-    // The beneficiary address of the contract which will receive released funds.
-    address payable private _beneficiary;
-
-    // The fulfiller address
-    address private _fulfiller;
-
     // The protocol manager address
-    address private _manager;
+    address public _manager;
 
-    // The protocol router address
-    address private _router;
+    /// @dev The protocol router address
+    address public _router;
 
-    mapping(address => uint256) private _deposits;
-    mapping(address => uint256) private _authorized_refunds;
+    /// @dev The address of the fulfillable registry. Used to fetch service details.
+    address public _fulfillableRegistry;
 
-    //The Service Identifier to its corresponding Fulfillable product
-    uint256 private _serviceIdentifier;
+    /// @dev The registry contract instance.
+    FulfillableRegistry private _registryContract;
 
-    //The Fee Amount to its corresponding Fulfillable product in wei.
-    uint256 private _feeAmount;
+    /// @dev The releaseable pool to be withdrawn by the beneficiaries in wei.
+    /// serviceID => releaseablePoolAmount
+    mapping (uint256 => uint256) public _releaseablePool;
 
-    // The amount that is available to be released by the beneficiary.
-    uint256 _releaseablePool;
+    /// Mapping to store native coin refunds and deposit amounts
+    /// @dev serviceID => userAddress => depositedAmount
+    mapping(
+        uint256 => mapping(address => uint256)
+    ) public _deposits;
+
+    /// @dev serviceID => userAddress => refundableAmount
+    mapping(
+        uint256 => mapping(address => uint256)
+    ) public _authorized_refunds;
+
+    // UUPS upgrade authorization
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     /*****************************/
     /* FULFILLABLE ESCROW LOGIC  */
     /*****************************/
 
-    constructor(
-        address payable beneficiary_,
-        uint256 serviceIdentifier_,
-        uint256 feeAmount_,
-        address router_,
-        address fulfiller_
-    ) {
-        require(address(beneficiary_) != address(0), "Beneficiary is the zero address");
-        require(serviceIdentifier_ > 0, "Service ID is required");
-        require(feeAmount_ >= 0, "Fee Amount is required");
-        _beneficiary = beneficiary_;
-        _serviceIdentifier = serviceIdentifier_;
-        _feeAmount = feeAmount_;
-        _fulfiller = fulfiller_;
-        _manager = msg.sender;
-        _router = router_;
+    function initialize() public virtual initializer {
+        __Ownable_init(msg.sender);
+        __UUPSUpgradeable_init();
+        __ReentrancyGuard_init();
         _fulfillmentIdCount = 1;
     }
 
     /**
-     * @return The beneficiary of the escrow.
+     * @dev Sets the protocol manager address.
+     * @param manager_ The address of the protocol manager.
      */
-    function beneficiary() public view virtual returns (address payable) {
-        return _beneficiary;
+    function setManager(address manager_) public onlyOwner {
+        require(manager_ != address(0), "Manager cannot be the zero address");
+        _manager = manager_;
     }
 
     /**
-     * @return The service ID of the escrow.
+     * @dev Sets the protocol router address.
+     * @param router_ The address of the protocol router.
      */
-    function serviceID() public view virtual returns (uint256) {
-        return _serviceIdentifier;
+    function setRouter(address router_) public onlyOwner {
+        require(router_ != address(0), "Router cannot be the zero address");
+        _router = router_;
     }
 
     /**
-     * @return Total deposits from a payer
+     * @dev Sets the fulfillable registry address.
+     * @param fulfillableRegistry_ The address of the fulfillable registry.
      */
-    function depositsOf(address payer) public view returns (uint256) {
-        return _deposits[payer];
+    function setFulfillableRegistry(address fulfillableRegistry_) public onlyOwner {
+        require(fulfillableRegistry_ != address(0), "Fulfillable registry cannot be the zero address");
+        _fulfillableRegistry = fulfillableRegistry_;
+        _registryContract = FulfillableRegistry(fulfillableRegistry_);
+    }
+    /**
+     * @dev Retrieves the total deposits for a given payer and service ID.
+     * @param payer The address of the payer.
+     * @param serviceID The ID of the service.
+     * @return amount The total amount of deposits for the given payer and service ID.
+     */
+    function getDepositsFor(address payer, uint256 serviceID) public view returns (uint256 amount) {
+        amount = _deposits[serviceID][payer];
     }
 
     /**
-     * @dev fulfiller of the escrow.
-     * @return the fulfiller address
+     * @dev Sets the total deposits for a given payer and service ID.
+     * @param payer The address of the payer.
+     * @param serviceID The ID of the service.
+     * @param amount The amount of deposits to set.
      */
-    function fulfiller() public view virtual returns (address) {
-        return _fulfiller;
+    function setDepositsFor(address payer, uint256 serviceID, uint256 amount) internal {
+        _deposits[serviceID][payer] = amount;
+    }
+
+    /**
+     * @dev Retrieves the total refunds authorized for a given payer and service ID.
+     * @param payer The address of the payer.
+     * @param serviceID The ID of the service.
+     * @return amount The total amount of refunds authorized for the given payer and service ID.
+     */
+    function getRefundsFor(address payer, uint256 serviceID) public view returns (uint256 amount) {
+        amount = _authorized_refunds[serviceID][payer];
+    }
+
+    /**
+     * @dev Sets the total refunds authorized for a given payer and service ID.
+     * @param payer The address of the payer.
+     * @param serviceID The ID of the service.
+     * @param amount The amount of refunds to set.
+     */
+    function setRefundsFor(address payer, uint256 serviceID, uint256 amount) internal {
+        _authorized_refunds[serviceID][payer] = amount;
     }
 
     /**
@@ -146,24 +182,36 @@ contract BandoFulfillableV1 is IBandoFulfillable {
     /**
      * @dev Stores the sent amount as credit to be claimed.
      * @param fulfillmentRequest The fulfillment record to be stored.
-     * 
+     *
      */
-    function deposit(FulFillmentRequest memory fulfillmentRequest) public payable virtual {
+    function deposit(
+        uint256 serviceID,
+        FulFillmentRequest memory fulfillmentRequest
+    ) public payable virtual nonReentrant {
         require(_router == msg.sender, "Caller is not the router");
+        Service memory service = _registryContract.getService(serviceID);
         uint256 amount = msg.value;
-        (bool success, uint256 result) = amount.tryAdd(_deposits[fulfillmentRequest.payer]);
+        uint256 depositsAmount = getDepositsFor(
+            fulfillmentRequest.payer,
+            serviceID
+        );
+        (bool success, uint256 result) = amount.tryAdd(depositsAmount);
         require(success, "Overflow while adding deposits");
-        _deposits[fulfillmentRequest.payer] = result;
+        setDepositsFor(
+            fulfillmentRequest.payer,
+            serviceID,
+            result
+        );
         // create a FulfillmentRecord
         FulFillmentRecord memory fulfillmentRecord = FulFillmentRecord({
             id: _fulfillmentIdCount,
             serviceRef: fulfillmentRequest.serviceRef,
             externalID: "",
-            fulfiller: _fulfiller,
+            fulfiller: service.fulfiller,
             entryTime: block.timestamp,
             payer: fulfillmentRequest.payer,
             weiAmount: fulfillmentRequest.weiAmount,
-            feeAmount: _feeAmount,
+            feeAmount: service.feeAmount,
             fiatAmount: fulfillmentRequest.fiatAmount,
             receiptURI: "",
             status: FulFillmentResultState.PENDING
@@ -171,7 +219,9 @@ contract BandoFulfillableV1 is IBandoFulfillable {
         _fulfillmentIdCount += 1;
         _fulfillmentRecordCount += 1;
         _fulfillmentRecords[fulfillmentRecord.id] = fulfillmentRecord;
-        _fulfillmentRecordsForSubject[fulfillmentRecord.payer].push(fulfillmentRecord.id);
+        _fulfillmentRecordsForSubject[fulfillmentRecord.payer].push(
+            fulfillmentRecord.id
+        );
         emit DepositReceived(fulfillmentRecord);
     }
 
@@ -185,60 +235,73 @@ contract BandoFulfillableV1 is IBandoFulfillable {
      *
      * @param refundee The address whose funds will be withdrawn and transferred to.
      */
-    function withdrawRefund(address payable refundee) public virtual returns (bool) {
+    function withdrawRefund(
+        uint256 serviceID,
+        address payable refundee
+    ) public virtual nonReentrant returns (bool) {
         require(_manager == msg.sender, "Caller is not the manager");
-        require(_authorized_refunds[refundee] > 0, "Address is not allowed any refunds");
-        uint256 refund_amount = _authorized_refunds[refundee];
-        _authorized_refunds[refundee] = 0;
-        _withdrawRefund(refundee, refund_amount);
+        uint256 authorized_refunds = getRefundsFor(
+            refundee,
+            serviceID
+        );
+        require(authorized_refunds > 0, "Address is not allowed any refunds");
+        setRefundsFor(refundee, serviceID, 0);
+        _withdrawRefund(refundee, authorized_refunds);
         return true;
     }
 
     /**
-     * @dev Set the beneficiary fee.
-     * @param amount The destination address of the funds.
+     * @dev internal function to withraw.
+     * Should only be called when previously authorized.
+     *
+     * Will emit a RefundWithdrawn event on success.
+     *
+     * @param refundee The address to send the value to.
      */
-    function setFee(uint256 amount) public virtual {
-        require(_manager == msg.sender, "Caller is not the manager");
-        _feeAmount = amount;
-        emit FeeUpdated(_serviceIdentifier, amount);
-    }
-
-    /**
-    * @dev internal function to withraw.
-    * Should only be called when previously authorized.
-    *
-    * Will emit a RefundWithdrawn event on success.
-    * 
-    * @param refundee The address to send the value to.
-    */
-    function _withdrawRefund(address payable refundee, uint256 amount) internal {
-        refundee.sendValue(amount); 
+    function _withdrawRefund(
+        address payable refundee,
+        uint256 amount
+    ) internal {
+        refundee.sendValue(amount);
         emit RefundWithdrawn(refundee, amount);
     }
 
     /**
      * @dev Allows for refunds to take place.
-     * 
+     *
      * @param refundee the record to be
      * @param weiAmount the amount to be authorized.
      */
-    function _authorizeRefund(address refundee, uint256 weiAmount) internal {
-        (bool asuccess, uint256 addResult) = _authorized_refunds[refundee].tryAdd(weiAmount);
+    function _authorizeRefund(
+        uint256 serviceID,
+        address refundee,
+        uint256 weiAmount
+    ) internal {
+        uint256 authorized_refunds = getRefundsFor(
+            refundee,
+            serviceID
+        );
+        uint256 deposits = getDepositsFor(
+            refundee,
+            serviceID
+        );
+        (bool asuccess, uint256 addResult) = authorized_refunds.tryAdd(
+            weiAmount
+        );
         require(asuccess, "Overflow while adding authorized refunds");
         uint256 total_refunds = addResult;
         require(
-            _deposits[refundee] >= weiAmount,
+            deposits >= weiAmount,
             "Amount is bigger than the total in escrow"
         );
         require(
-            _deposits[refundee] >= total_refunds,
+            deposits >= total_refunds,
             "Total refunds would be bigger than the total in escrow"
         );
-        (bool ssuccess, uint256 subResult) = _deposits[refundee].trySub(weiAmount);
+        (bool ssuccess, uint256 subResult) = deposits.trySub(weiAmount);
         require(ssuccess, "Overflow while substracting deposits");
-        _deposits[refundee] = subResult;
-        _authorized_refunds[refundee] = total_refunds;
+        setDepositsFor(refundee, serviceID, subResult);
+        setRefundsFor(refundee, serviceID, total_refunds);
         emit RefundAuthorized(refundee, weiAmount);
     }
 
@@ -259,28 +322,48 @@ contract BandoFulfillableV1 is IBandoFulfillable {
      *
      * @param fulfillment the fulfillment result attached to it.
      */
-    function registerFulfillment(FulFillmentResult memory fulfillment) public virtual returns (bool) {
+    function registerFulfillment(
+        uint256 serviceID,
+        FulFillmentResult memory fulfillment
+    ) public virtual nonReentrant returns (bool) {
         require(_manager == msg.sender, "Caller is not the manager");
-        require(_fulfillmentRecords[fulfillment.id].id > 0, "Fulfillment record does not exist");
-        require(_fulfillmentRecords[fulfillment.id].status == FulFillmentResultState.PENDING, "Fulfillment already registered");
-        (bool ffsuccess, uint256 total_amount) = _fulfillmentRecords[fulfillment.id].weiAmount.tryAdd(_feeAmount);
+        require(
+            _fulfillmentRecords[fulfillment.id].id > 0,
+            "Fulfillment record does not exist"
+        );
+        require(
+            _fulfillmentRecords[fulfillment.id].status ==
+                FulFillmentResultState.PENDING,
+            "Fulfillment already registered"
+        );
+        Service memory service = _registryContract.getService(serviceID);
+        address payer = _fulfillmentRecords[fulfillment.id].payer;
+        uint256 deposits = getDepositsFor(payer, serviceID);
+        (bool ffsuccess, uint256 total_amount) = _fulfillmentRecords[
+            fulfillment.id
+        ].weiAmount.tryAdd(service.feeAmount);
         require(ffsuccess, "Overflow while adding fulfillment amount and fee");
-        require(_deposits[_fulfillmentRecords[fulfillment.id].payer] >= total_amount, "There is not enough balance to be released");
-        if(fulfillment.status == FulFillmentResultState.FAILED) {
-            _authorizeRefund(_fulfillmentRecords[fulfillment.id].payer, total_amount);
+        require(
+            deposits >= total_amount,
+            "There is not enough balance to be released"
+        );
+        if (fulfillment.status == FulFillmentResultState.FAILED) {
+            _authorizeRefund(serviceID, payer, total_amount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
-        } else if(fulfillment.status != FulFillmentResultState.SUCCESS) {
-            revert('Unexpected status');
+        } else if (fulfillment.status != FulFillmentResultState.SUCCESS) {
+            revert("Unexpected status");
         } else {
-            (bool rlsuccess, uint256 releaseResult) = _releaseablePool.tryAdd(total_amount);
+            (bool rlsuccess, uint256 releaseResult) = _releaseablePool[serviceID].tryAdd(total_amount);
             require(rlsuccess, "Overflow while adding to releaseable pool");
-            (bool dsuccess, uint256 subResult) = _deposits[_fulfillmentRecords[fulfillment.id].payer].trySub(total_amount);
+            (bool dsuccess, uint256 subResult) = deposits.trySub(total_amount);
             require(dsuccess, "Overflow while substracting from deposits");
-            _releaseablePool = releaseResult;
-            _deposits[_fulfillmentRecords[fulfillment.id].payer] = subResult;
-            _fulfillmentRecords[fulfillment.id].receiptURI = fulfillment.receiptURI;
+            _releaseablePool[serviceID] = releaseResult;
+            setDepositsFor(payer, serviceID, subResult);
+            _fulfillmentRecords[fulfillment.id].receiptURI = fulfillment
+                .receiptURI;
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
-            _fulfillmentRecords[fulfillment.id].externalID = fulfillment.externalID;
+            _fulfillmentRecords[fulfillment.id].externalID = fulfillment
+                .externalID;
         }
         return true;
     }
@@ -289,10 +372,12 @@ contract BandoFulfillableV1 is IBandoFulfillable {
      * @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
      * Only the fulfiller of the service can withdraw the releaseable pool.
      */
-    function beneficiaryWithdraw() public virtual {
+    function beneficiaryWithdraw(uint256 serviceID) public virtual nonReentrant {
         require(_manager == msg.sender, "Caller is not the manager");
-        require(_releaseablePool > 0, "There is no balance to release.");
-        _releaseablePool = 0;
-        beneficiary().sendValue(_releaseablePool);
+        Service memory service = _registryContract.getService(serviceID);
+        require(_releaseablePool[serviceID] > 0, "There is no balance to release.");
+        uint256 amount = _releaseablePool[serviceID];
+        _releaseablePool[serviceID] = 0;
+        service.beneficiary.sendValue(amount);
     }
 }

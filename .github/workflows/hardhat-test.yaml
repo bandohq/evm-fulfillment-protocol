@@ -1,0 +1,22 @@
+name: Run Tests and Coverage
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Install packages
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      - name: Run Test Suite with Coverage
+        run: yarn && yarn hardhat coverage

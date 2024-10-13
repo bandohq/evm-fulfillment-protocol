@@ -11,19 +11,13 @@ import "./FulfillmentTypes.sol";
 * The router will route fulfillments to the fulfillable based on the serviceID.
 */
 interface IBandoERC20Fulfillable {
-    function depositERC20(ERC20FulFillmentRequest memory request) external;
+    function depositERC20(uint256 serviceID, ERC20FulFillmentRequest memory request) external;
 
-    function setERC20Fee(address token, uint256 amount) external;
-
-    function registerFulfillment(FulFillmentResult memory fulfillment) external returns (bool);
-
-    function serviceID() external view returns (uint256);
-
-    function fulfiller() external view returns (address);
+    function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) external returns (bool);
 
     function recordsOf(address payer) external view returns (uint256[] memory);
 
     function record(uint256 id) external view returns (ERC20FulFillmentRecord memory);
 
-    function withdrawERC20Refund(address token, address refundee) external returns (bool);
+    function withdrawERC20Refund(uint256 serviceID, address token, address refundee) external returns (bool);
 }

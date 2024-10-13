@@ -1,5 +1,6 @@
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
-create3-factory/=lib/create3-factory/
+create3-factory/=lib/create3-factory/src/
+create3-proxy/=lib/create3-proxy/src/
 ds-test/=lib/create3-factory/lib/forge-std/lib/ds-test/src/
 erc4626-tests/=lib/openzeppelin-contracts/lib/erc4626-tests/
 eth-gas-reporter/=node_modules/eth-gas-reporter/

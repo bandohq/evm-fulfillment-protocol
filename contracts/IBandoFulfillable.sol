@@ -10,19 +10,22 @@ import "./FulfillmentTypes.sol";
 * The router will route fulfillments to the fulfillable based on the serviceID.
 */
 interface IBandoFulfillable {
-    function deposit(FulFillmentRequest memory request) external payable;
+    function deposit(
+        uint256 serviceID,
+        FulFillmentRequest memory request
+    ) external payable;
 
-    function setFee(uint256 amount) external;
-
-    function registerFulfillment(FulFillmentResult memory fulfillment) external returns (bool);
-
-    function serviceID() external view returns (uint256);
-
-    function fulfiller() external view returns (address);
+    function registerFulfillment(
+        uint256 serviceID,
+        FulFillmentResult memory fulfillment
+    ) external returns (bool);
 
     function recordsOf(address payer) external view returns (uint256[] memory);
 
     function record(uint256 id) external view returns (FulFillmentRecord memory);
 
-    function withdrawRefund(address payable refundee) external returns (bool);
+    function withdrawRefund(
+        uint256 serviceID,
+        address payable refundee
+    ) external returns (bool);
 }

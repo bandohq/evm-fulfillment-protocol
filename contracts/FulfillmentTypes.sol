@@ -65,10 +65,10 @@ struct ERC20FulFillmentRecord {
 */
 struct ERC20FulFillmentRequest {
     address payer; // address of payer
-    address token; // address of the ERC20 token to be used for the payment
-    uint256 tokenAmount; // amount in wei
     uint256 fiatAmount; // fiat amount to be charged for the fufillable
     string serviceRef; // identifier required to route the payment to the user's destination
+    address token; // address of the ERC20 token to be used for the payment
+    uint256 tokenAmount; // amount in wei
 }
 
 /**

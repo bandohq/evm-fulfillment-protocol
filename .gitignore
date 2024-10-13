@@ -110,3 +110,10 @@ dist
 .vscode
 
 .DS_Store
+
+artifacts
+cache
+
+#foundry
+out
+cache**
