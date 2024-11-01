@@ -81,7 +81,7 @@ function getDeployerAddress() {
   local ENVIRONMENT=$2
 
   PRIV_KEY="$(getPrivateKey "$NETWORK" "$ENVIRONMENT")"
-
+  
   # prepare web3 code to be executed
   jsCode="const { Web3 } = require('web3');
     const web3 = new Web3();
@@ -136,26 +136,6 @@ function getRPCUrl() {
 
   # return RPC URL
   echo "${!RPC_KEY}"
-}
-function getDeployerAddress() {
-  # read function arguments into variables
-  local NETWORK=$1
-  local ENVIRONMENT=$2
-
-  PRIV_KEY="$(getPrivateKey "$NETWORK" "$ENVIRONMENT")"
-
-  # prepare web3 code to be executed
-  jsCode="const Web3 = require('web3');
-    const web3 = new Web3();
-    const deployerAddress = (web3.eth.accounts.privateKeyToAccount('$PRIV_KEY')).address
-    const checksumAddress = web3.utils.toChecksumAddress(deployerAddress);
-    console.log(checksumAddress);"
-
-  # execute code using web3
-  DEPLOYER_ADDRESS=$(node -e "$jsCode")
-
-  # return deployer address
-  echo "$DEPLOYER_ADDRESS"
 }
 function getDeployerBalance() {
   # read function arguments into variables
@@ -225,7 +205,7 @@ function getContractAddressFromSalt() {
 
   # get actual deploy salt (as we do in DeployScriptBase:  keccak256(abi.encodePacked(saltPrefix, contractName));)
   # prepare web3 code to be executed
-  jsCode="const Web3 = require('web3');
+  jsCode="const { Web3 } = require('web3');
     const web3 = new Web3();
     const result = web3.utils.soliditySha3({t: 'string', v: '$SALT'},{t: 'string', v: '$CONTRACT_NAME'})
     console.log(result);"
@@ -338,7 +318,7 @@ function doesAddressContainBytecode() {
   fi
 
   # make sure address is in correct checksum format
-  jsCode="const Web3 = require('web3');
+  jsCode="const { Web3 } = require('web3');
     const web3 = new Web3();
     const address = '$ADDRESS';
     const checksumAddress = web3.utils.toChecksumAddress(address);
@@ -346,7 +326,7 @@ function doesAddressContainBytecode() {
   CHECKSUM_ADDRESS=$(node -e "$jsCode")
 
   # get CONTRACT code from ADDRESS using web3
-  jsCode="const Web3 = require('web3');
+  jsCode="const { Web3 } = require('web3');
     const web3 = new Web3('$NODE_URL');
     web3.eth.getCode('$CHECKSUM_ADDRESS', (error, RESULT) => { console.log(RESULT); });"
   contract_code=$(node -e "$jsCode")
