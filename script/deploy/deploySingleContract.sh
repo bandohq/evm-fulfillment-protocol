@@ -6,7 +6,7 @@
 deploySingleContract() {
   # load config & helper functions
   source script/config.sh
-  source script/helperFunctions.sh
+  source script/helpers.sh
 
   # read function arguments into variables
   local CONTRACT="$1"

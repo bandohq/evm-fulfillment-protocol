@@ -3,28 +3,6 @@
 # Original script forked from:
 # https://github.com/lifinance/contracts/blob/main/script/scriptMaster.sh
 
-# TODO
-#   >> minimize search master deploy log (takes a lot of time)
-# - replace debug outputs with new helper method
-
-# - make helper functions robust for networks with -
-#   >>> including the solidity update config scripts
-
-# - create function that checks if contract is deployed (get bytecode, predict address, check bytecode at address)
-# - return master log to store all deployments (and return latest when inquired)
-# - add use case to only remove a facet
-# - check if use case 4 will also check if a contract is added to diamond already
-# - create use case to deploy and add all periphery (or check if target state use case covers it)
-# - merging two branches with deployments in same network (does it cause merge-conflicts?)
-
-# - clean code
-#   - local before variables
-#   - make environment / file suffix global variables
-#   - add function descriptions in helper functions
-
-# - add fancy stuff
-#   -  add low balance warnings and currency symbols for deployer wallet balance
-
 scriptMaster() {
   echo "[info] loading required resources and compiling contracts"
   # load env variables
@@ -32,7 +10,7 @@ scriptMaster() {
 
   # load deploy script & helper functions
   source script/deploy/deploySingleContract.sh
-  source script/helperFunctions.sh
+  source script/helpers.sh
   source script/config.sh
   # still not activated ---v
   #source script/deploy/deployUpgradesToSAFE.sh
