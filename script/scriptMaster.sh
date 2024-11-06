@@ -12,6 +12,7 @@ scriptMaster() {
   source script/deploy/deploySingleContract.sh
   source script/helpers.sh
   source script/config.sh
+  source script/verify.sh
   # still not activated ---v
   #source script/deploy/deployUpgradesToSAFE.sh
   #for script in script/tasks/*.sh; do [ -f "$script" ] && source "$script"; done # sources all script in folder script/tasks/

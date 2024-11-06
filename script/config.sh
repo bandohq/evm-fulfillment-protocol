@@ -27,10 +27,10 @@ DEPLOY_SCRIPT_DIRECTORY="script/deploy/"
 TASKS_SCRIPT_DIRECTORY="script/tasks/"
 
 # the path of the JSON file that contains the deployment log file
-LOG_FILE_PATH="deployment_results/_deployments_log_file.json"
+LOG_FILE_PATH="deployments/_deployments_log_file.json"
 
 # the path of the JSON file that contains the bytecode storage file
-BYTECODE_STORAGE_PATH="deployment_results/_bytecode_storage.json"
+BYTECODE_STORAGE_PATH="deployments/_bytecode_storage.json"
 
 # the path of the JSON file that contains deploy requirements per contract
 DEPLOY_REQUIREMENTS_PATH="script/deploy/resources/deployRequirements.json"

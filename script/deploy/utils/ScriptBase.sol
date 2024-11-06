@@ -10,9 +10,12 @@ contract ScriptBase is Script, DSTest {
     string internal root;
     string internal network;
     string internal fileSuffix;
+    bytes32 internal salt;
 
-    constructor() {
-        deployerPrivateKey = uint256(vm.envBytes32("PRIVATE_KEY"));
+    constructor(string memory contractName) {
+        string memory saltPrefix = vm.envString("DEPLOYSALT");
+        salt = keccak256(abi.encodePacked(saltPrefix, contractName));
+        deployerPrivateKey = uint256(vm.envBytes32("SOL_PRIVATE_KEY"));
         deployerAddress = vm.addr(deployerPrivateKey);
         root = vm.projectRoot();
         network = vm.envString("NETWORK");

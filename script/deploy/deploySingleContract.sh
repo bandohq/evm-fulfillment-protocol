@@ -133,7 +133,7 @@ deploySingleContract() {
     doNotContinueUnlessGasIsBelowThreshold "$NETWORK"
 
     # try to execute call
-    RAW_RETURN_DATA=$(DEPLOYSALT=$DEPLOYSALT NETWORK=$NETWORK FILE_SUFFIX=$FILE_SUFFIX PRIVATE_KEY=$(getPrivateKey "$NETWORK" "$ENVIRONMENT") forge script "$FULL_SCRIPT_PATH" -f $NETWORK -vvvv --json --silent --broadcast --skip-simulation --legacy)
+    RAW_RETURN_DATA=$(DEPLOYSALT=$DEPLOYSALT NETWORK=$NETWORK FILE_SUFFIX=$FILE_SUFFIX SOL_PRIVATE_KEY=$SOL_PRIVATE_KEY forge script "$FULL_SCRIPT_PATH" -f $NETWORK --private-key $PRIVATE_KEY -vvvv --json --silent --broadcast --skip-simulation --legacy)
     RETURN_CODE=$?
     # print return data only if debug mode is activated
     echoDebug "RAW_RETURN_DATA: $RAW_RETURN_DATA"
@@ -164,7 +164,7 @@ deploySingleContract() {
       local COUNT=0
       while [ $COUNT -lt "$MAX_WAITING_TIME_FOR_BLOCKCHAIN_SYNC" ]; do
         # check if bytecode is deployed at address
-        if doesAddressContainBytecode "$NETWORK" "$ADDRESS" >/dev/null; then
+        if [[ $(doesAddressContainBytecode "$NETWORK" "$ADDRESS") != "false" ]]; then
           echo "[info] bytecode deployment at address $ADDRESS verified through block explorer"
           break 2 # exit both loops if the operation was successful
         fi
@@ -211,6 +211,10 @@ deploySingleContract() {
 
   # extract constructor arguments from return data
   CONSTRUCTOR_ARGS=$(echo $RETURN_DATA | jq -r '.constructorArgs.value // "0x"')
+  IS_PROXY=$(echo $RETURN_DATA | jq -r '.isProxy.value')
+  if [[ "$IS_PROXY" == "true" ]]; then
+    IMPLEMENTATION=$(echo $RETURN_DATA | jq -r '.implementation.value')
+  fi
   echo "[info] $CONTRACT deployed to $NETWORK at address $ADDRESS"
 
   # check if log entry exists for this file and if yes, if contract is verified already
@@ -289,11 +293,22 @@ deploySingleContract() {
     echoDebug "log entry does not exist or contract was re-deployed. Log entry will be (over-)written now."
 
     # write to logfile
-    logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT"
+    if [[ "$IS_PROXY" == "true" ]]; then
+      PROXY_CONSTRUCTOR_ARGS=$(echo $RETURN_DATA | jq -r '.proxyConstructorArgs.value')
+      logContractDeploymentInfo "$CONTRACT"Proxy "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$PROXY_CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT"
+      logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$IMPLEMENTATION" $VERIFIED "$SALT"
+    else
+      logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT"
+    fi
   fi
 
   # save contract in network-specific deployment files
-  saveContract "$NETWORK" "$CONTRACT" "$ADDRESS" "$FILE_SUFFIX"
+  if [[ "$IS_PROXY" == "true" ]]; then
+    saveContract "$NETWORK" "$CONTRACT"Proxy "$ADDRESS" "$FILE_SUFFIX"
+    saveContract "$NETWORK" "$CONTRACT" "$IMPLEMENTATION" "$FILE_SUFFIX"
+  else
+    saveContract "$NETWORK" "$CONTRACT" "$ADDRESS" "$FILE_SUFFIX"
+  fi
 
   return 0
 }
