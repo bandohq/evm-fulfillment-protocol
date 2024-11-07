@@ -12,7 +12,7 @@ describe("ERC20TokenRegistry", function () {
     [owner, addr1, addr2] = await ethers.getSigners();
 
     ERC20TokenRegistry = await ethers.getContractFactory("ERC20TokenRegistry");
-    registry = await upgrades.deployProxy(ERC20TokenRegistry, [], { kind: 'uups' });
+    registry = await upgrades.deployProxy(ERC20TokenRegistry, [await owner.getAddress()], { kind: 'uups' });
     await registry.waitForDeployment();
   });
 

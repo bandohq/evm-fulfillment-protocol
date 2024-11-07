@@ -63,7 +63,7 @@ describe("BandoRouterV1", function () {
     registry = await setupRegistry(await owner.getAddress());
     const registryAddress = await registry.getAddress();
     tokenRegistry = await ethers.getContractFactory('ERC20TokenRegistry');
-    const tokenRegistryInstance = await upgrades.deployProxy(tokenRegistry, []);
+    const tokenRegistryInstance = await upgrades.deployProxy(tokenRegistry, [await owner.getAddress()]);
     await tokenRegistryInstance.waitForDeployment();
     tokenRegistry = await tokenRegistry.attach(await tokenRegistryInstance.getAddress());
     /**

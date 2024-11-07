@@ -57,7 +57,7 @@ describe("BandoERC20FulfillableV1", () => {
     registryAddress = await registryInstance.getAddress();
     registry = registryInstance;
     tokenRegistry = await ethers.getContractFactory('ERC20TokenRegistry');
-    const tokenRegistryInstance = await upgrades.deployProxy(tokenRegistry, []);
+    const tokenRegistryInstance = await upgrades.deployProxy(tokenRegistry, [await owner.getAddress()]);
     await tokenRegistryInstance.waitForDeployment();
     tokenRegistry = await tokenRegistry.attach(await tokenRegistryInstance.getAddress());
 
