@@ -54,9 +54,9 @@ contract ERC20TokenRegistry is OwnableUpgradeable, UUPSUpgradeable {
 
     /// @notice Initializes the contract
     /// @dev This function replaces the constructor for upgradeable contracts
-    function initialize() public initializer {
-        __Ownable_init(msg.sender);
+    function initialize(address initialOwner) public initializer {
         __UUPSUpgradeable_init();
+        __Ownable_init(initialOwner);
     }
 
     /// @notice Authorizes an upgrade to a new implementation
