@@ -50,7 +50,7 @@ describe("BandoFulfillableV1", () => {
     [owner, beneficiary, fulfiller, router, managerEOA] = await ethers.getSigners();
 
     // deploy the service registry
-    const registryInstance = await setupRegistry(owner);
+    const registryInstance = await setupRegistry(await owner.getAddress());
     registryAddress = await registryInstance.getAddress();
 
     // deploy manager
