@@ -1,4 +1,6 @@
 {
   "FulfillableRegistryProxy": "0xbDF303C011b9cBE7A9019D729648e2BA85b334a9",
-  "FulfillableRegistry": "0xbb183D3ED7feBF74ce073E60ca311fd247Df7ced"
+  "FulfillableRegistry": "0xbb183D3ED7feBF74ce073E60ca311fd247Df7ced",
+  "BandoRouterProxy": "0xebe730046E55F20bC3E022AD4Fc32D69651BdE5e",
+  "BandoRouter": "0x4d9a66817356f6f44aA878536dF0769C9DcF4BB7"
 }
