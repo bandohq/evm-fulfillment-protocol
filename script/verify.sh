@@ -15,6 +15,8 @@ function verifyContract() {
   local CONTRACT=$2
   local ADDRESS=$3
   local ARGS=$4
+  local CONTRACT_FILE_PATH=$5
+  local CONTRACT_NAME=$6
 
   # get API key for blockchain explorer
   if [[ "$NETWORK" == "bsc-testnet" ]]; then
@@ -41,13 +43,13 @@ function verifyContract() {
       ;;
     esac
   fi
+  # get contract name from log file CONTRACT_NAME propert
 
   # verify contract using forge
   MAX_RETRIES=$MAX_ATTEMPTS_PER_CONTRACT_VERIFICATION
   RETRY_COUNT=0
   COMMAND_STATUS=1
-  CONTRACT_FILE_PATH=$(getContractFilePath "$CONTRACT")
-  FULL_PATH="$CONTRACT_FILE_PATH"":""$CONTRACT"
+  FULL_PATH="$CONTRACT_FILE_PATH"":""$CONTRACT_NAME"
   CHAIN_ID=$(getChainId "$NETWORK")
 
   if [ $? -ne 0 ]; then
@@ -184,21 +186,23 @@ function verifyAllUnverifiedContractsInLogFile() {
           OPTIMIZER_RUNS=$(echo "$ENTRY" | awk -F'"' '/"OPTIMIZER_RUNS":/{print $4}')
           TIMESTAMP=$(echo "$ENTRY" | awk -F'"' '/"TIMESTAMP":/{print $4}')
           CONSTRUCTOR_ARGS=$(echo "$ENTRY" | awk -F'"' '/"CONSTRUCTOR_ARGS":/{print $4}')
+          CONTRACT_FILE_PATH=$(echo "$ENTRY" | awk -F'"' '/"CONTRACT_FILE_PATH":/{print $4}')
+          CONTRACT_NAME=$(echo "$ENTRY" | awk -F'"' '/"CONTRACT_NAME":/{print $4}')
 
           # check if contract is verified
           if [[ "$VERIFIED" != "true" ]]; then
             echo ""
             echo "[info] trying to verify contract $CONTRACT on $NETWORK with address $ADDRESS...."
             if [[ "$DEBUG" == *"true"* ]]; then
-              verifyContract "$NETWORK" "$CONTRACT" "$ADDRESS" "$CONSTRUCTOR_ARGS"
+              verifyContract "$NETWORK" "$CONTRACT" "$ADDRESS" "$CONSTRUCTOR_ARGS" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
             else
-              verifyContract "$NETWORK" "$CONTRACT" "$ADDRESS" "$CONSTRUCTOR_ARGS" 2>/dev/null
+              verifyContract "$NETWORK" "$CONTRACT" "$ADDRESS" "$CONSTRUCTOR_ARGS" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME" 2>/dev/null
             fi
 
             # check result
             if [ $? -eq 0 ]; then
               # update log file
-              logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER_RUNS" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" "true" "$SALT"
+              logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER_RUNS" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" "true" "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
 
               # increase COUNTER
               COUNTER=$((COUNTER + 1))

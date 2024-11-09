@@ -5,7 +5,7 @@ import { ScriptBase } from "./utils/ScriptBase.sol";
 import {console} from "forge-std/console.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {FulfillableRegistry} from 'bando/periphery/registry/FulfillableRegistry.sol';
+import {FulfillableRegistryV1} from 'bando/periphery/registry/FulfillableRegistryV1.sol';
 import {FulfillableRegistryProxy} from 'bando/proxy/FulfillableRegistryProxy.sol';
 
 contract DeployFulfillableRegistry is ScriptBase {
@@ -24,13 +24,13 @@ contract DeployFulfillableRegistry is ScriptBase {
         vm.startBroadcast();
 
         // 1. Deploy implementation using CREATE2
-        bytes memory implementationBytecode = type(FulfillableRegistry).creationCode;
+        bytes memory implementationBytecode = type(FulfillableRegistryV1).creationCode;
         implementation = Create2.deploy(0, salt, implementationBytecode);
         console.log("Implementation deployed at:", implementation);
 
         // 2. Prepare initialization data
         bytes memory initData = abi.encodeCall(
-          FulfillableRegistry.initialize,
+          FulfillableRegistryV1.initialize,
           (deployer)
         );
         console.log("Init data length:", initData.length);
@@ -49,7 +49,7 @@ contract DeployFulfillableRegistry is ScriptBase {
         deployed = Create2.deploy(0, proxySalt, proxyBytecode);
         console.log("Proxy deployed at:", deployed);
         // 4. Verify initialization
-        FulfillableRegistry proxyContract = FulfillableRegistry(deployed);
+        FulfillableRegistryV1 proxyContract = FulfillableRegistryV1(deployed);
         address owner = proxyContract.owner();
         console.log("Owner after initialization:", owner);
         require(owner == deployer, "Initialization failed: wrong owner");

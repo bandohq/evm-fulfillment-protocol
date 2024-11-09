@@ -62,11 +62,11 @@ contract BandoRouterV1 is
 
     /// @notice Initializes the contract
     /// @dev Sets up the contract with initial state, including Ownable, Pausable, UUPSUpgradeable, and ReentrancyGuard
-    function initialize() public virtual initializer {
-        __Ownable_init(msg.sender);
-        __Pausable_init();
+    function initialize(address initialOwner) public virtual initializer {
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
+        __Pausable_init();
+        __Ownable_init(initialOwner);
     }
 
     /// @notice Pauses the contract

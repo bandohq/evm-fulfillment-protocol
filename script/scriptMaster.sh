@@ -80,9 +80,14 @@ scriptMaster() {
   #---------------------------------------------------------------------------------------------------------------------
   # use case 1: Deploy one specific contract to one network
   if [[ "$SELECTION" == "1)"* ]]; then
+    echo "Is this a proxy deployment?"
+    PROXY_SELECTION=$(
+      gum choose \
+        "yes" \
+        "no"
+    )
     echo ""
     echo "[info] selected use case: Deploy one specific contract to one network"
-
     # get user-selected network from list
     local NETWORK=$(cat ./networks | gum filter --placeholder "Network")
 
@@ -101,10 +106,16 @@ scriptMaster() {
     CONTRACT=$(echo $SCRIPT | sed -e 's/Deploy//')
 
     # get current contract version
-    local VERSION=$(getCurrentContractVersion "$CONTRACT")
+    local VERSION=$(getCurrentContractVersion "$CONTRACT" "1")
 
+    if [[ "$PROXY_SELECTION" == "yes" ]]; then
+      echo "[info] PROXY_SELECTION: $PROXY_SELECTION"
+      IS_PROXY="true"
+    else
+      IS_PROXY="false"
+    fi
     # just deploy the contract
-    deploySingleContract "$CONTRACT" "$NETWORK" "$ENVIRONMENT" "" false
+    deploySingleContract "$CONTRACT" "$NETWORK" "$ENVIRONMENT" "$VERSION" false "$IS_PROXY"
 
     # check if last command was executed successfully, otherwise exit script with error message
     checkFailure $? "deploy contract $CONTRACT to network $NETWORK"

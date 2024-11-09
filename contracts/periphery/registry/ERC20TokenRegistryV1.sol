@@ -4,10 +4,7 @@ pragma solidity >=0.8.20 <0.9.0;
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-/// @title ERC20TokenRegistry
-/// @notice A contract for managing a whitelist of ERC20 tokens
-/// @dev This contract is upgradeable and uses the UUPS proxy pattern
-/// @title ERC20TokenRegistry
+/// @title ERC20TokenRegistryV1
 /// @author g6s
 /// @notice This contract manages a whitelist of ERC20 tokens for the Bando Protocol
 /// @dev Implements an upgradeable contract using the UUPS proxy pattern
@@ -37,7 +34,7 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 ///
 /// Key Security Considerations:
 /// - Check for potential issues with gas limits if a large number of tokens are added/removed in a single transaction
-contract ERC20TokenRegistry is OwnableUpgradeable, UUPSUpgradeable {
+contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
     /* 
      * Mapping to store the whitelist status of tokens
      * The key is the token address, and the value is a boolean indicating whitelist status

@@ -14,7 +14,8 @@ deploySingleContract() {
   ENVIRONMENT="$3"
   VERSION="$4"
   EXIT_ON_ERROR="$5"
-
+  CURRENT_VERSION="1"
+  IS_PROXY="$6"
   # load env variables
   source .env
 
@@ -84,8 +85,17 @@ deploySingleContract() {
   fi
 
   # get current contract version
-  local VERSION=$(getCurrentContractVersion "$CONTRACT")
-
+  echo "[info] IS_PROXY: $IS_PROXY"
+  if [[ $IS_PROXY == "true" ]]; then
+    echo "[info] contract is a proxy"
+    local CONTRACT_NAME=$CONTRACT"V"$CURRENT_VERSION
+    local CONTRACT_FILE_PATH=$(getContractFilePath "$CONTRACT_NAME" "$CURRENT_VERSION")
+  else
+    echo "[info] contract is not a proxy"
+    local CONTRACT_NAME=$CONTRACT
+    local CONTRACT_FILE_PATH=$(getContractFilePath "$CONTRACT_NAME" "")
+  fi
+  local VERSION=$(getCurrentContractVersion "$CONTRACT_NAME" "$CURRENT_VERSION")
   # get file suffix based on value in variable ENVIRONMENT
   FILE_SUFFIX=$(getFileSuffix "$ENVIRONMENT")
 
@@ -212,6 +222,7 @@ deploySingleContract() {
   # extract constructor arguments from return data
   CONSTRUCTOR_ARGS=$(echo $RETURN_DATA | jq -r '.constructorArgs.value // "0x"')
   IS_PROXY=$(echo $RETURN_DATA | jq -r '.isProxy.value')
+  echo "[info] IS_PROXY: $IS_PROXY"
   if [[ "$IS_PROXY" == "true" ]]; then
     IMPLEMENTATION=$(echo $RETURN_DATA | jq -r '.implementation.value')
   fi
@@ -277,28 +288,37 @@ deploySingleContract() {
         TIMESTAMP=$(echo "$LOG_ENTRY" | jq -r ".TIMESTAMP")
         CONSTRUCTOR_ARGS=$(echo "$LOG_ENTRY" | jq -r ".CONSTRUCTOR_ARGS")
         TIMESTAMP=$(echo "$LOG_ENTRY" | jq -r ".TIMESTAMP")
+        CONTRACT_FILE_PATH=$(echo "$LOG_ENTRY" | jq -r ".CONTRACT_FILE_PATH")
+        CONTRACT_NAME=$(echo "$LOG_ENTRY" | jq -r ".CONTRACT_NAME")
 
         # update VERIFIED info in log file
-        logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT"
+        logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
       else
         echoDebug "contract was not verified just now. No further action needed."
       fi
     else
       echoDebug "address of existing log entry does not match with current deployed-to address (=re-deployment)"
-
-      # overwrite existing log entry with new deployment info
-      logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT"
+      # write to logfile
+      if [[ "$IS_PROXY" == "true" ]]; then
+        PROXY_FILE_PATH=$(getContractFilePath "$CONTRACT"Proxy "$CURRENT_VERSION")
+        PROXY_CONSTRUCTOR_ARGS=$(echo $RETURN_DATA | jq -r '.proxyConstructorArgs.value')
+        logContractDeploymentInfo "$CONTRACT"Proxy "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$PROXY_CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT" "$PROXY_FILE_PATH" "$CONTRACT"Proxy
+        logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$IMPLEMENTATION" $VERIFIED "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
+      else
+        logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
+      fi    
     fi
   else
     echoDebug "log entry does not exist or contract was re-deployed. Log entry will be (over-)written now."
 
     # write to logfile
     if [[ "$IS_PROXY" == "true" ]]; then
+      PROXY_FILE_PATH=$(getContractFilePath "$CONTRACT"Proxy "$CURRENT_VERSION")
       PROXY_CONSTRUCTOR_ARGS=$(echo $RETURN_DATA | jq -r '.proxyConstructorArgs.value')
-      logContractDeploymentInfo "$CONTRACT"Proxy "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$PROXY_CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT"
-      logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$IMPLEMENTATION" $VERIFIED "$SALT"
+      logContractDeploymentInfo "$CONTRACT"Proxy "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$PROXY_CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT" "$PROXY_FILE_PATH" "$CONTRACT"Proxy
+      logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$IMPLEMENTATION" $VERIFIED "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
     else
-      logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT"
+      logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
     fi
   fi
 

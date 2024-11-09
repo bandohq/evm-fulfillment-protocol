@@ -305,11 +305,9 @@ function checkIfFileExists() {
 function getContractFilePath() {
   # read function arguments into variables
   CONTRACT="$1"
-
   # define directory to be searched
   local dir=$CONTRACT_DIRECTORY
   local FILENAME="$CONTRACT.sol"
-
   # find FILE path
   local file_path=$(find "${dir%/}" -name $FILENAME -print)
 
@@ -327,7 +325,9 @@ function getRPCUrl() {
 
   # get RPC KEY
   RPC_KEY="ETH_NODE_URI_$(tr '[:lower:]' '[:upper:]' <<<"$NETWORK")"
-
+  if [[ "$NETWORK" == "bsc-testnet" ]]; then
+    RPC_KEY="ETH_NODE_URI_BSCTEST"
+  fi
   # return RPC URL
   echo "${!RPC_KEY}"
 }
@@ -393,6 +393,9 @@ function getContractAddressFromSalt() {
 
   # get RPC URL
   local RPC_URL="ETH_NODE_URI_$(tr '[:lower:]' '[:upper:]' <<<"$NETWORK")"
+  if [[ "$NETWORK" == "bsc-testnet" ]]; then
+    RPC_URL="ETH_NODE_URI_BSCTEST"
+  fi
 
   # get deployer address
   local DEPLOYER_ADDRESS=$(getDeployerAddress "$NETWORK" "$ENVIRONMENT")
@@ -428,10 +431,9 @@ function getCurrentGasPrice() {
 function getCurrentContractVersion() {
   # read function arguments into variables
   local CONTRACT="$1"
-
+  local VERSION="$2"
   # get src FILE path for contract
-  local FILEPATH=$(getContractFilePath "$CONTRACT")
-  wait
+  local FILEPATH=$(getContractFilePath "$CONTRACT" "$VERSION")
 
   # Check if FILE exists
   if [ ! -f "$FILEPATH" ]; then
@@ -503,6 +505,9 @@ function doesAddressContainBytecode() {
 
   # get correct node URL for given NETWORK
   NODE_URL_KEY="ETH_NODE_URI_$(tr '[:lower:]' '[:upper:]' <<<$NETWORK)"
+  if [[ "$NETWORK" == "bsc-testnet" ]]; then
+    NODE_URL_KEY="ETH_NODE_URI_BSCTEST"
+  fi
   NODE_URL=${!NODE_URL_KEY}
 
   # check if NODE_URL is available
@@ -628,6 +633,8 @@ function logContractDeploymentInfo {
   local ADDRESS="$8"
   local VERIFIED="$9"
   local SALT="${10}"
+  local CONTRACT_FILE_PATH="${11}"
+  local CONTRACT_NAME="${12}"
 
   if [[ "$ADDRESS" == "null" || -z "$ADDRESS" ]]; then
     error "trying to log an invalid address value (=$ADDRESS) for $CONTRACT on network $NETWORK (environment=$ENVIRONMENT) to master log file. Log will not be updated. Please check and run this script again to secure deploy log data."
@@ -674,7 +681,9 @@ function logContractDeploymentInfo {
       --arg CONSTRUCTOR_ARGS "$CONSTRUCTOR_ARGS" \
       --arg VERIFIED "$VERIFIED" \
       --arg SALT "$SALT" \
-      '.[$CONTRACT][$NETWORK][$ENVIRONMENT][$VERSION] += [{ ADDRESS: $ADDRESS, OPTIMIZER_RUNS: $OPTIMIZER_RUNS, TIMESTAMP: $TIMESTAMP, CONSTRUCTOR_ARGS: $CONSTRUCTOR_ARGS, SALT: $SALT, VERIFIED: $VERIFIED }]' \
+      --arg CONTRACT_FILE_PATH "$CONTRACT_FILE_PATH" \
+      --arg CONTRACT_NAME "$CONTRACT_NAME" \
+      '.[$CONTRACT][$NETWORK][$ENVIRONMENT][$VERSION] += [{ ADDRESS: $ADDRESS, OPTIMIZER_RUNS: $OPTIMIZER_RUNS, TIMESTAMP: $TIMESTAMP, CONSTRUCTOR_ARGS: $CONSTRUCTOR_ARGS, SALT: $SALT, VERIFIED: $VERIFIED, CONTRACT_FILE_PATH: $CONTRACT_FILE_PATH, CONTRACT_NAME: $CONTRACT_NAME }]' \
       "$LOG_FILE_PATH" >tmpfile && mv tmpfile "$LOG_FILE_PATH"
   else
     jq --arg CONTRACT "$CONTRACT" \
@@ -687,7 +696,9 @@ function logContractDeploymentInfo {
       --arg CONSTRUCTOR_ARGS "$CONSTRUCTOR_ARGS" \
       --arg VERIFIED "$VERIFIED" \
       --arg SALT "$SALT" \
-      '.[$CONTRACT][$NETWORK][$ENVIRONMENT][$VERSION][-1] |= { ADDRESS: $ADDRESS, OPTIMIZER_RUNS: $OPTIMIZER_RUNS, TIMESTAMP: $TIMESTAMP, CONSTRUCTOR_ARGS: $CONSTRUCTOR_ARGS, SALT: $SALT, VERIFIED: $VERIFIED }' \
+      --arg CONTRACT_FILE_PATH "$CONTRACT_FILE_PATH" \
+      --arg CONTRACT_NAME "$CONTRACT_NAME" \
+      '.[$CONTRACT][$NETWORK][$ENVIRONMENT][$VERSION][-1] |= { ADDRESS: $ADDRESS, OPTIMIZER_RUNS: $OPTIMIZER_RUNS, TIMESTAMP: $TIMESTAMP, CONSTRUCTOR_ARGS: $CONSTRUCTOR_ARGS, SALT: $SALT, VERIFIED: $VERIFIED, CONTRACT_FILE_PATH: $CONTRACT_FILE_PATH, CONTRACT_NAME: $CONTRACT_NAME }' \
       "$LOG_FILE_PATH" >tmpfile && mv tmpfile "$LOG_FILE_PATH"
   fi
 
