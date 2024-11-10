@@ -62,7 +62,7 @@ describe("BandoRouterV1", function () {
      */
     registry = await setupRegistry(await owner.getAddress());
     const registryAddress = await registry.getAddress();
-    tokenRegistry = await ethers.getContractFactory('ERC20TokenRegistry');
+    tokenRegistry = await ethers.getContractFactory('ERC20TokenRegistryV1');
     const tokenRegistryInstance = await upgrades.deployProxy(tokenRegistry, [await owner.getAddress()]);
     await tokenRegistryInstance.waitForDeployment();
     tokenRegistry = await tokenRegistry.attach(await tokenRegistryInstance.getAddress());
@@ -70,7 +70,7 @@ describe("BandoRouterV1", function () {
      * deploy router
      */
     const BandoRouterV1 = await ethers.getContractFactory('BandoRouterV1');
-    routerContract = await upgrades.deployProxy(BandoRouterV1, []);
+    routerContract = await upgrades.deployProxy(BandoRouterV1, [await owner.getAddress()]);
     await routerContract.waitForDeployment();
     v1 = BandoRouterV1.attach(await routerContract.getAddress());
     /**

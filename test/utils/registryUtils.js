@@ -27,7 +27,7 @@ const dummy_services = [DUMMY_SERVICE, DUMMY_SERVICE_2, DUMMY_SERVICE_3];
 
 module.exports = {
   setupRegistry: async (owner) => {
-    const registryFactory = await ethers.getContractFactory("FulfillableRegistry");
+    const registryFactory = await ethers.getContractFactory("FulfillableRegistryV1");
     const registry = await upgrades.deployProxy(registryFactory, [owner]);
     await registry.waitForDeployment();
     const registryInstance = await registryFactory.attach(await registry.getAddress());
