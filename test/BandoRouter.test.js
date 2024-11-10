@@ -225,6 +225,7 @@ describe("BandoRouterV1", function () {
 
   describe("Route to service", async () => {
     it("should fail when service id is not set in registry", async () => {
+        DUMMY_FULFILLMENTREQUEST.payer = await beneficiary.getAddress();
         const v2Signer1 = v2.connect(beneficiary)
         await expect(
           v2Signer1.requestService(2, DUMMY_FULFILLMENTREQUEST, {value: ethers.parseUnits("1000", "wei")})
@@ -232,6 +233,7 @@ describe("BandoRouterV1", function () {
     });
 
     it("should fail for when amount is zero.", async () => {
+        DUMMY_VALID_FULFILLMENTREQUEST.payer = await owner.getAddress();
         await expect(
           v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, {value: 0})
         ).to.be.revertedWithCustomError(v2, 'InsufficientAmount');
@@ -241,6 +243,7 @@ describe("BandoRouterV1", function () {
         const service = await registry.getService(1);
         const feeAmount = new BN(service.feeAmount.toString());
         const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
+        DUMMY_VALID_FULFILLMENTREQUEST.payer = await owner.getAddress();
         total = weiAmount.add(feeAmount)
         try {
           await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: total.toString() })
@@ -253,6 +256,7 @@ describe("BandoRouterV1", function () {
       const invalidRef = "1234567890";
       const invalidRequest = DUMMY_VALID_FULFILLMENTREQUEST;
       invalidRequest.serviceRef = invalidRef;
+      invalidRequest.payer = await owner.getAddress();
       await expect(
         v2.requestService(1, invalidRequest, { value: ethers.parseUnits("1", "ether") })
       ).to.be.revertedWithCustomError(v2, 'InvalidRef');
@@ -262,17 +266,30 @@ describe("BandoRouterV1", function () {
       const service = await registry.getService(1);
       DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
       DUMMY_VALID_FULFILLMENTREQUEST.serviceRef = validRef;
+      DUMMY_VALID_FULFILLMENTREQUEST.payer = await owner.getAddress();
       const feeAmount = new BN(service.feeAmount.toString());
       const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
       const tx = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount).toString() });
       const receipt = await tx.wait()
       expect(receipt).to.be.an('object').that.have.property('hash');
     });
+
+    it("should fail if payer is different from sender", async () => {
+      const service = await registry.getService(1);
+      DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
+      DUMMY_VALID_FULFILLMENTREQUEST.payer = await fulfiller.getAddress();
+      const feeAmount = new BN(service.feeAmount.toString());
+      const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
+      await expect(
+        v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount).toString() })
+      ).to.have.revertedWithCustomError(v2, 'PayerMismatch');
+    });
   });
 
   describe("ERC20 Route to service", async () => {
     it("should fail when service id is not set in registry", async () => {
         const v2Signer1 = v2.connect(beneficiary);
+        DUMMY_ERC20_FULFILLMENTREQUEST.payer = await beneficiary.getAddress();
         await expect(
           v2Signer1.requestERC20Service(2, DUMMY_ERC20_FULFILLMENTREQUEST)
         ).to.be.revertedWith('FulfillableRegistry: Service does not exist');
@@ -280,9 +297,10 @@ describe("BandoRouterV1", function () {
 
     it("should fail for when amount is zero.", async () => {
       DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = 0;
-        await expect(
-          v2.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST)
-        ).to.be.revertedWithCustomError(v2, 'InsufficientAmount');
+      DUMMY_VALID_ERC20_FULFILLMENTREQUEST.payer = await owner.getAddress();
+      await expect(
+        v2.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST)
+      ).to.be.revertedWithCustomError(v2, 'InsufficientAmount');
     });
 
     it("should fail when payer has not enough token balance", async () => {
@@ -311,6 +329,7 @@ describe("BandoRouterV1", function () {
       const invalidRef = "1234567890";
       const invalidRequest = DUMMY_ERC20_FULFILLMENTREQUEST;
       invalidRequest.serviceRef = invalidRef;
+      invalidRequest.payer = await owner.getAddress();
       await expect(
         v2.requestERC20Service(1, invalidRequest)
       ).to.be.revertedWithCustomError(v2, 'InvalidRef');
