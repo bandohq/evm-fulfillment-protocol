@@ -48,4 +48,8 @@ interface IBandoFulfillable {
         uint256 serviceID,
         address payable refundee
     ) external returns (bool);
+
+    /// @notice Withdraws the beneficiary's available balance to release (fulfilled with success).
+    /// @param serviceID The service identifier
+    function beneficiaryWithdraw(uint256 serviceID) external;
 }

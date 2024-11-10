@@ -346,7 +346,31 @@ describe('BandoFulfillmentManagerV1', () => {
             expect(refunds.toString()).to.be.equal("10000");
             const r = await manager.withdrawERC20Refund(1, await erc20Test.getAddress(), await owner.getAddress());
             await expect(r).not.to.be.reverted;
-            await expect(r).to.emit(erc20_escrow, 'ERC20RefundWithdrawn').withArgs(await erc20Test.getAddress(), await owner.getAddress(), "10000");
+            await expect(r).to.emit(erc20_escrow, 'ERC20RefundWithdrawn')
+                .withArgs(await erc20Test.getAddress(), await owner.getAddress(), "10000");
+        });
+    });
+
+    describe('Beneficiary Withdraws', () => {
+        it('should only allow the beneficiary to withdraw', async () => {
+            await expect(manager.beneficiaryWithdraw(1)).to.be.revertedWith("Only the beneficiary can withdraw");
+        });
+
+        it('should allow the beneficiary to withdraw', async () => {
+            const asBeneficiary = manager.connect(beneficiary);
+            const r = await asBeneficiary.beneficiaryWithdraw(1);
+            await expect(r).not.to.be.reverted;
+        });
+
+        it('should not allow a non-beneficiary to withdraw ERC20', async () => {
+            await expect(manager.beneficiaryWithdrawERC20(1, await erc20Test.getAddress()))
+                .to.be.revertedWith("Only the beneficiary can withdraw");
+        });
+
+        it('should allow the beneficiary to withdraw ERC20', async () => {
+            const asBeneficiary = manager.connect(beneficiary);
+            const r = await asBeneficiary.beneficiaryWithdrawERC20(1, await erc20Test.getAddress());
+            await expect(r).not.to.be.reverted;
         });
     });
 });
