@@ -40,6 +40,11 @@ contract BandoRouterV1 is
     using Math for uint256;
     using SafeERC20 for IERC20;
 
+    /// @notice Throws this when payer != msg.sender.
+    /// @param payer The address that was registered as payer.
+    /// @param sender The address of the msg.sender
+    error PayerMismatch(address payer, address sender);
+
     address public _fulfillableRegistry;
     address public _tokenRegistry;
     address payable public _escrow;
@@ -136,6 +141,9 @@ contract BandoRouterV1 is
         uint256 serviceID, 
         ERC20FulFillmentRequest memory request
     ) public whenNotPaused nonReentrant returns (bool) {
+        if(msg.sender != request.payer) {
+            revert PayerMismatch(request.payer, msg.sender);
+        }
         FulfillmentRequestLib.validateERC20Request(serviceID, request, _fulfillableRegistry, _tokenRegistry);
         uint256 pre_balance = IERC20(request.token).balanceOf(msg.sender);
         require(pre_balance >= request.tokenAmount, "BandoRouterV1: Insufficient balance");
@@ -165,6 +173,9 @@ contract BandoRouterV1 is
         uint256 serviceID,
         FulFillmentRequest memory request
     ) public payable whenNotPaused nonReentrant returns (bool) {
+        if(msg.sender != request.payer) {
+            revert PayerMismatch(request.payer, msg.sender);
+        }
         FulfillmentRequestLib.validateRequest(serviceID, request, _fulfillableRegistry);
         IBandoFulfillable(_escrow).deposit{value: request.weiAmount}(serviceID, request);
         emit ServiceRequested(serviceID, request);
