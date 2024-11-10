@@ -130,7 +130,7 @@ contract BandoRouterV1 is
     function requestERC20Service(
         uint256 serviceID, 
         ERC20FulFillmentRequest memory request
-    ) public payable whenNotPaused nonReentrant returns (bool) {
+    ) public whenNotPaused nonReentrant returns (bool) {
         FulfillmentRequestLib.validateERC20Request(serviceID, request, _fulfillableRegistry, _tokenRegistry);
         uint256 pre_balance = IERC20(request.token).balanceOf(msg.sender);
         require(pre_balance >= request.tokenAmount, "BandoRouterV1: Insufficient balance");
