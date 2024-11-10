@@ -176,4 +176,23 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
         }
         IBandoERC20Fulfillable(_erc20_escrow).registerFulfillment(serviceID, fulfillment);
     }
+
+    /// @dev beneficiaryWithdraw
+    /// @notice This method must only be called by the service beneficiary.
+    /// @param serviceID The service identifier
+    function beneficiaryWithdraw(uint256 serviceID) public virtual nonReentrant {
+        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        require(service.beneficiary == msg.sender, "Only the beneficiary can withdraw");
+        IBandoFulfillable(_escrow).beneficiaryWithdraw(serviceID);
+    }
+
+    /// @dev beneficiaryWithdrawERC20
+    /// @notice This method must only be called by the service beneficiary.
+    /// @param serviceID The service identifier
+    /// @param token The address of the ERC20 token
+    function beneficiaryWithdrawERC20(uint256 serviceID, address token) public virtual nonReentrant {
+        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        require(service.beneficiary == msg.sender, "Only the beneficiary can withdraw");
+        IBandoERC20Fulfillable(_erc20_escrow).beneficiaryWithdraw(serviceID, token);
+    }
 }

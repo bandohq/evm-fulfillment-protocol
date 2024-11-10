@@ -41,4 +41,9 @@ interface IBandoERC20Fulfillable {
     /// @param refundee The address to receive the refund
     /// @return bool Indicating if the withdrawal was successful
     function withdrawERC20Refund(uint256 serviceID, address token, address refundee) external returns (bool);
+
+    /// @notice Withdraws the beneficiary's available balance to release (fulfilled with success).
+    /// @param serviceID The service identifier
+    /// @param token The address of the ERC20 token
+    function beneficiaryWithdraw(uint256 serviceID, address token) external;
 }
