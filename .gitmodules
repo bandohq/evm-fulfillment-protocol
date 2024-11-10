@@ -4,9 +4,6 @@
 [submodule "create3-proxy/lib/openzeppelin-contracts"]
 	path = create3-proxy/lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
-[submodule "lib/create3-proxy"]
-	path = lib/create3-proxy
-	url = https://github.com/bandohq/create3-proxy
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
