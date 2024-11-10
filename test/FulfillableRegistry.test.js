@@ -34,7 +34,8 @@ describe('BandoFulfillableRegistry', () => {
         it('should set up a service', async () => {
             const serviceID = 1;
             const feeAmount = ethers.parseUnits('0.1', 'ether');
-
+            // Verify no services exist in counter
+            expect(await registry._serviceCount()).to.equal(0);
             // Set up the service
             await expect(manager.setService(
               serviceID,
@@ -51,8 +52,8 @@ describe('BandoFulfillableRegistry', () => {
             expect(service.fulfiller).to.equal(DUMMY_ADDRESS);
             expect(service.feeAmount).to.equal(feeAmount);
 
-            // Verify the ServiceAdded event
-            //await expect(result).not.to.emit(registry, 'ServiceAdded')//.withArgs(serviceID, result[0], DUMMY_ADDRESS, DUMMY_ADDRESS);
+            // Verify the service count
+            expect(await registry._serviceCount()).to.equal(1);
 
         });
 

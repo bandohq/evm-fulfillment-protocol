@@ -31,7 +31,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     mapping(address => uint256) public _fulfillerServiceCount;
 
     /// @dev The total number of services
-    uint256 _serviceCount;
+    uint256 public _serviceCount;
 
     /// @dev The manager address
     address public _manager;
@@ -80,6 +80,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
             'FulfillableRegistry: Service already exists'
         );
         _serviceRegistry[serviceId] = service;
+        _serviceCount++;
         emit ServiceAdded(serviceId, service.fulfiller);
         return true;
     }
