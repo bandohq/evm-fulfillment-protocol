@@ -13,7 +13,201 @@ GRAY='\033[0;37m'  # Light gray color
 BLUE='\033[1;34m'  # Light blue color
 
 NC='\033[0m' # No color
+function getChainId() {
+  # read function arguments into variables
+  NETWORK="$1"
 
+  # return chainId
+  case $NETWORK in
+  "mainnet")
+    echo "1"
+    return 0
+    ;;
+  "blast")
+    echo "81457"
+    return 0
+    ;;
+  "bsc")
+    echo "56"
+    return 0
+    ;;
+  "polygon")
+    echo "137"
+    return 0
+    ;;
+  "polygonzkevm")
+    echo "1101"
+    return 0
+    ;;
+  "rootstock")
+    echo "30"
+    return 0
+    ;;
+  "gnosis")
+    echo "100"
+    return 0
+    ;;
+  "fraxtal")
+    echo "252"
+    return 0
+    ;;
+  "fantom")
+    echo "250"
+    return 0
+    ;;
+  "gravity")
+    echo "1625"
+    return 0
+    ;;
+  "okx")
+    echo "66"
+    return 0
+    ;;
+  "avalanche")
+    echo "43114"
+    return 0
+    ;;
+  "arbitrum")
+    echo "42161"
+    return 0
+    ;;
+  "optimism")
+    echo "10"
+    return 0
+    ;;
+  "moonriver")
+    echo "1285"
+    return 0
+    ;;
+  "moonbeam")
+    echo "1284"
+    return 0
+    ;;
+  "celo")
+    echo "42220"
+    return 0
+    ;;
+  "fuse")
+    echo "122"
+    return 0
+    ;;
+  "cronos")
+    echo "25"
+    return 0
+    ;;
+  "velas")
+    echo "106"
+    return 0
+    ;;
+  "harmony")
+    echo "1666600000"
+    return 0
+    ;;
+  "evmos")
+    echo "9001"
+    return 0
+    ;;
+  "aurora")
+    echo "1313161554"
+    return 0
+    ;;
+  "base")
+    echo "8453"
+    return 0
+    ;;
+  "boba")
+    echo "288"
+    return 0
+    ;;
+  "nova")
+    echo "87"
+    return 0
+    ;;
+  "mode")
+    echo "34443"
+    return 0
+    ;;
+  "scroll")
+    echo "534352"
+    return 0
+    ;;
+  "goerli")
+    echo "5"
+    return 0
+    ;;
+  "bsc-testnet")
+    echo "97"
+    return 0
+    ;;
+  "sepolia")
+    echo "11155111"
+    return 0
+    ;;
+  "mumbai")
+    echo "80001"
+    return 0
+    ;;
+  "lineatest")
+    echo "59140"
+    return 0
+    ;;
+  "linea")
+    echo "59144"
+    return 0
+    ;;
+  "opbnb")
+    echo "204"
+    return 0
+    ;;
+  "metis")
+    echo "1088"
+    return 0
+    ;;
+  "localanvil")
+    echo "31337"
+    return 0
+    ;;
+  "zksync")
+    echo "324"
+    return 0
+    ;;
+  "mantle")
+    echo "5000"
+    return 0
+    ;;
+  "sei")
+    echo "1329"
+    return 0
+    ;;
+  "immutablezkevm")
+    echo "13371"
+    return 0
+    ;;
+  "xlayer")
+    echo "196"
+    return 0
+    ;;
+  "taiko")
+    echo "167000"
+    return 0
+    ;;
+  *)
+    return 1
+    ;;
+  esac
+
+}
+function checkFailure() {
+  # read function arguments into variables
+  RESULT=$1
+  ERROR_MESSAGE=$2
+
+  # check RESULT code and display error message if code != 0
+  if [[ $RESULT -ne 0 ]]; then
+    echo "Failed to $ERROR_MESSAGE"
+    exit 1
+  fi
+}
 function echoDebug() {
   # read function arguments into variables
   local MESSAGE="$1"
@@ -81,7 +275,7 @@ function getDeployerAddress() {
   local ENVIRONMENT=$2
 
   PRIV_KEY="$(getPrivateKey "$NETWORK" "$ENVIRONMENT")"
-  
+
   # prepare web3 code to be executed
   jsCode="const { Web3 } = require('web3');
     const web3 = new Web3();
@@ -111,11 +305,9 @@ function checkIfFileExists() {
 function getContractFilePath() {
   # read function arguments into variables
   CONTRACT="$1"
-
   # define directory to be searched
   local dir=$CONTRACT_DIRECTORY
   local FILENAME="$CONTRACT.sol"
-
   # find FILE path
   local file_path=$(find "${dir%/}" -name $FILENAME -print)
 
@@ -133,7 +325,9 @@ function getRPCUrl() {
 
   # get RPC KEY
   RPC_KEY="ETH_NODE_URI_$(tr '[:lower:]' '[:upper:]' <<<"$NETWORK")"
-
+  if [[ "$NETWORK" == "bsc-testnet" ]]; then
+    RPC_KEY="ETH_NODE_URI_BSCTEST"
+  fi
   # return RPC URL
   echo "${!RPC_KEY}"
 }
@@ -199,6 +393,9 @@ function getContractAddressFromSalt() {
 
   # get RPC URL
   local RPC_URL="ETH_NODE_URI_$(tr '[:lower:]' '[:upper:]' <<<"$NETWORK")"
+  if [[ "$NETWORK" == "bsc-testnet" ]]; then
+    RPC_URL="ETH_NODE_URI_BSCTEST"
+  fi
 
   # get deployer address
   local DEPLOYER_ADDRESS=$(getDeployerAddress "$NETWORK" "$ENVIRONMENT")
@@ -234,10 +431,9 @@ function getCurrentGasPrice() {
 function getCurrentContractVersion() {
   # read function arguments into variables
   local CONTRACT="$1"
-
+  local VERSION="$2"
   # get src FILE path for contract
-  local FILEPATH=$(getContractFilePath "$CONTRACT")
-  wait
+  local FILEPATH=$(getContractFilePath "$CONTRACT" "$VERSION")
 
   # Check if FILE exists
   if [ ! -f "$FILEPATH" ]; then
@@ -245,12 +441,12 @@ function getCurrentContractVersion() {
     return 1
   fi
 
-  # Search for "@custom:version" in the file and store the first result in the variable
-  local VERSION=$(grep "@custom:version" "$FILEPATH" | cut -d ' ' -f 3)
+  # Search for "@custom:bfp-version" in the file and store the first result in the variable
+  local VERSION=$(grep "@custom:bfp-version" "$FILEPATH" | cut -d ' ' -f 3)
 
   # Check if VERSION is empty
   if [ -z "$VERSION" ]; then
-    error "'@custom:version' string not found in $FILEPATH"
+    error "'@custom:bfp-version' string not found in $FILEPATH"
     return 1
   fi
 
@@ -309,6 +505,9 @@ function doesAddressContainBytecode() {
 
   # get correct node URL for given NETWORK
   NODE_URL_KEY="ETH_NODE_URI_$(tr '[:lower:]' '[:upper:]' <<<$NETWORK)"
+  if [[ "$NETWORK" == "bsc-testnet" ]]; then
+    NODE_URL_KEY="ETH_NODE_URI_BSCTEST"
+  fi
   NODE_URL=${!NODE_URL_KEY}
 
   # check if NODE_URL is available
@@ -317,25 +516,13 @@ function doesAddressContainBytecode() {
     return 1
   fi
 
-  # make sure address is in correct checksum format
-  jsCode="const { Web3 } = require('web3');
-    const web3 = new Web3();
-    const address = '$ADDRESS';
-    const checksumAddress = web3.utils.toChecksumAddress(address);
-    console.log(checksumAddress);"
-  CHECKSUM_ADDRESS=$(node -e "$jsCode")
-
-  # get CONTRACT code from ADDRESS using web3
-  jsCode="const { Web3 } = require('web3');
-    const web3 = new Web3('$NODE_URL');
-    web3.eth.getCode('$CHECKSUM_ADDRESS', (error, RESULT) => { console.log(RESULT); });"
-  contract_code=$(node -e "$jsCode")
-
+  # get contract code from address using cast
+  contract_code=$(cast code "$ADDRESS" --rpc-url "$NODE_URL")
   # return ƒalse if ADDRESS does not contain CONTRACT code, otherwise true
   if [[ "$contract_code" == "0x" || "$contract_code" == "" ]]; then
     echo "false"
   else
-    echo "true"
+    echo $contract_code
   fi
 }
 function doNotContinueUnlessGasIsBelowThreshold() {
@@ -366,4 +553,187 @@ function doNotContinueUnlessGasIsBelowThreshold() {
     # wait 5 seconds before checking gas price again
     sleep 5
   done
+}
+function findContractInMasterLog() {
+  # read function arguments into variables
+  local CONTRACT="$1"
+  local NETWORK="$2"
+  local ENVIRONMENT="$3"
+  local VERSION="$4"
+
+  local FOUND=false
+
+  # Check if log file exists
+  if [ ! -f "$LOG_FILE_PATH" ]; then
+    echo "deployments log file does not exist in path $LOG_FILE_PATH. Please check and run the script again."
+    exit 1
+  fi
+
+  # Process JSON data incrementally using jq
+  entries=$(jq --arg CONTRACT "$CONTRACT" --arg NETWORK "$NETWORK" --arg ENVIRONMENT "$ENVIRONMENT" --arg VERSION "$VERSION" '
+    . as $data |
+    keys[] as $contract |
+    $data[$contract] |
+    keys[] as $network |
+    $data[$contract][$network] |
+    keys[] as $environment |
+    $data[$contract][$network][$environment] |
+    keys[] as $version |
+    select($contract == $CONTRACT and $network == $NETWORK and $environment == $ENVIRONMENT and $version == $VERSION) |
+    $data[$contract][$network][$environment][$version][0]
+  ' "$LOG_FILE_PATH")
+
+  # Loop through the entries
+  while IFS= read -r entry; do
+    if [[ -n "$entry" ]]; then # If entry is not empty
+      FOUND=true
+      echo "$entry"
+    fi
+  done <<<"$entries"
+
+  if ! $FOUND; then
+    echo "[info] No matching entry found in deployments log file for CONTRACT=$CONTRACT, NETWORK=$NETWORK, ENVIRONMENT=$ENVIRONMENT, VERSION=$VERSION"
+    exit 1
+  fi
+
+  exit 0
+}
+function getOptimizerRuns() {
+  # define FILE path for foundry config FILE
+  FILEPATH="foundry.toml"
+
+  # Check if FILE exists
+  if [ ! -f "$FILEPATH" ]; then
+    error ": $FILEPATH does not exist."
+    return 1
+  fi
+
+  # Search for "optimizer_runs =" in the FILE and store the first RESULT in the variable
+  VERSION=$(grep "optimizer_runs =" $FILEPATH | cut -d ' ' -f 3)
+
+  # Check if VERSION is empty
+  if [ -z "$VERSION" ]; then
+    error ": optimizer_runs string not found in $FILEPATH."
+    return 1
+  fi
+
+  # return OPTIMIZER_RUNS value
+  echo "$VERSION"
+
+}
+function logContractDeploymentInfo {
+  # read function arguments into variables
+  local CONTRACT="$1"
+  local NETWORK="$2"
+  local TIMESTAMP="$3"
+  local VERSION="$4"
+  local OPTIMIZER_RUNS="$5"
+  local CONSTRUCTOR_ARGS="$6"
+  local ENVIRONMENT="$7"
+  local ADDRESS="$8"
+  local VERIFIED="$9"
+  local SALT="${10}"
+  local CONTRACT_FILE_PATH="${11}"
+  local CONTRACT_NAME="${12}"
+
+  if [[ "$ADDRESS" == "null" || -z "$ADDRESS" ]]; then
+    error "trying to log an invalid address value (=$ADDRESS) for $CONTRACT on network $NETWORK (environment=$ENVIRONMENT) to master log file. Log will not be updated. Please check and run this script again to secure deploy log data."
+    return 1
+  fi
+
+  # logging for debug purposes
+  echo ""
+  echoDebug "in function logContractDeploymentInfo"
+  echoDebug "CONTRACT=$CONTRACT"
+  echoDebug "NETWORK=$NETWORK"
+  echoDebug "TIMESTAMP=$TIMESTAMP"
+  echoDebug "VERSION=$VERSION"
+  echoDebug "OPTIMIZER_RUNS=$OPTIMIZER_RUNS"
+  echoDebug "CONSTRUCTOR_ARGS=$CONSTRUCTOR_ARGS"
+  echoDebug "ENVIRONMENT=$ENVIRONMENT"
+  echoDebug "ADDRESS=$ADDRESS"
+  echoDebug "VERIFIED=$VERIFIED"
+  echoDebug "SALT=$SALT"
+  echo ""
+
+  # Check if log FILE exists, if not create it
+  if [ ! -f "$LOG_FILE_PATH" ]; then
+    echo "{}" >"$LOG_FILE_PATH"
+  fi
+
+  # Check if entry already exists in log FILE
+  local existing_entry=$(jq --arg CONTRACT "$CONTRACT" \
+    --arg NETWORK "$NETWORK" \
+    --arg ENVIRONMENT "$ENVIRONMENT" \
+    --arg VERSION "$VERSION" \
+    '.[$CONTRACT][$NETWORK][$ENVIRONMENT][$VERSION]' \
+    "$LOG_FILE_PATH")
+
+  # Update existing entry or add new entry to log FILE
+  if [[ "$existing_entry" == "null" ]]; then
+    jq --arg CONTRACT "$CONTRACT" \
+      --arg NETWORK "$NETWORK" \
+      --arg ENVIRONMENT "$ENVIRONMENT" \
+      --arg VERSION "$VERSION" \
+      --arg ADDRESS "$ADDRESS" \
+      --arg OPTIMIZER_RUNS "$OPTIMIZER_RUNS" \
+      --arg TIMESTAMP "$TIMESTAMP" \
+      --arg CONSTRUCTOR_ARGS "$CONSTRUCTOR_ARGS" \
+      --arg VERIFIED "$VERIFIED" \
+      --arg SALT "$SALT" \
+      --arg CONTRACT_FILE_PATH "$CONTRACT_FILE_PATH" \
+      --arg CONTRACT_NAME "$CONTRACT_NAME" \
+      '.[$CONTRACT][$NETWORK][$ENVIRONMENT][$VERSION] += [{ ADDRESS: $ADDRESS, OPTIMIZER_RUNS: $OPTIMIZER_RUNS, TIMESTAMP: $TIMESTAMP, CONSTRUCTOR_ARGS: $CONSTRUCTOR_ARGS, SALT: $SALT, VERIFIED: $VERIFIED, CONTRACT_FILE_PATH: $CONTRACT_FILE_PATH, CONTRACT_NAME: $CONTRACT_NAME }]' \
+      "$LOG_FILE_PATH" >tmpfile && mv tmpfile "$LOG_FILE_PATH"
+  else
+    jq --arg CONTRACT "$CONTRACT" \
+      --arg NETWORK "$NETWORK" \
+      --arg ENVIRONMENT "$ENVIRONMENT" \
+      --arg VERSION "$VERSION" \
+      --arg ADDRESS "$ADDRESS" \
+      --arg OPTIMIZER_RUNS "$OPTIMIZER_RUNS" \
+      --arg TIMESTAMP "$TIMESTAMP" \
+      --arg CONSTRUCTOR_ARGS "$CONSTRUCTOR_ARGS" \
+      --arg VERIFIED "$VERIFIED" \
+      --arg SALT "$SALT" \
+      --arg CONTRACT_FILE_PATH "$CONTRACT_FILE_PATH" \
+      --arg CONTRACT_NAME "$CONTRACT_NAME" \
+      '.[$CONTRACT][$NETWORK][$ENVIRONMENT][$VERSION][-1] |= { ADDRESS: $ADDRESS, OPTIMIZER_RUNS: $OPTIMIZER_RUNS, TIMESTAMP: $TIMESTAMP, CONSTRUCTOR_ARGS: $CONSTRUCTOR_ARGS, SALT: $SALT, VERIFIED: $VERIFIED, CONTRACT_FILE_PATH: $CONTRACT_FILE_PATH, CONTRACT_NAME: $CONTRACT_NAME }' \
+      "$LOG_FILE_PATH" >tmpfile && mv tmpfile "$LOG_FILE_PATH"
+  fi
+
+  echoDebug "contract deployment info added to log FILE (CONTRACT=$CONTRACT, NETWORK=$NETWORK, ENVIRONMENT=$ENVIRONMENT, VERSION=$VERSION)"
+}
+function saveContract() {
+  # read function arguments into variables
+  local NETWORK=$1
+  local CONTRACT=$2
+  local ADDRESS=$3
+  local FILE_SUFFIX=$4
+
+  # load JSON FILE that contains deployment addresses
+  ADDRESSES_FILE="./deployments/${NETWORK}.${FILE_SUFFIX}json"
+
+  # logging for debug purposes
+  echo ""
+  echoDebug "in function saveContract"
+  echoDebug "NETWORK=$NETWORK"
+  echoDebug "CONTRACT=$CONTRACT"
+  echoDebug "ADDRESS=$ADDRESS"
+  echoDebug "FILE_SUFFIX=$FILE_SUFFIX"
+  echoDebug "ADDRESSES_FILE=$ADDRESSES_FILE"
+
+  if [[ "$ADDRESS" == *"null"* || -z "$ADDRESS" ]]; then
+    error "trying to write a 'null' address to $ADDRESSES_FILE for $CONTRACT. Log file will not be updated."
+    return 1
+  fi
+
+  # create an empty json if it does not exist
+  if [[ ! -e $ADDRESSES_FILE ]]; then
+    echo "{}" >"$ADDRESSES_FILE"
+  fi
+
+  # add new address to address log FILE
+  RESULT=$(cat "$ADDRESSES_FILE" | jq -r ". + {\"$CONTRACT\": \"$ADDRESS\"}" || cat "$ADDRESSES_FILE")
+  printf %s "$RESULT" >"$ADDRESSES_FILE"
 }

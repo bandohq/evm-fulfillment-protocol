@@ -8,7 +8,7 @@ import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/O
 import { UUPSUpgradeable } from '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import { IBandoFulfillable } from "./IBandoFulfillable.sol";
-import { IFulfillableRegistry, Service } from "./periphery/registry/FulfillableRegistry.sol";
+import { IFulfillableRegistry, Service } from "./periphery/registry/IFulfillableRegistry.sol";
 import {
     FulFillmentRecord,
     FulFillmentRequest,

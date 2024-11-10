@@ -14,7 +14,8 @@ deploySingleContract() {
   ENVIRONMENT="$3"
   VERSION="$4"
   EXIT_ON_ERROR="$5"
-
+  CURRENT_VERSION="1"
+  IS_PROXY="$6"
   # load env variables
   source .env
 
@@ -84,8 +85,17 @@ deploySingleContract() {
   fi
 
   # get current contract version
-  local VERSION=$(getCurrentContractVersion "$CONTRACT")
-
+  echo "[info] IS_PROXY: $IS_PROXY"
+  if [[ $IS_PROXY == "true" ]]; then
+    echo "[info] contract is a proxy"
+    local CONTRACT_NAME=$CONTRACT"V"$CURRENT_VERSION
+    local CONTRACT_FILE_PATH=$(getContractFilePath "$CONTRACT_NAME" "$CURRENT_VERSION")
+  else
+    echo "[info] contract is not a proxy"
+    local CONTRACT_NAME=$CONTRACT
+    local CONTRACT_FILE_PATH=$(getContractFilePath "$CONTRACT_NAME" "")
+  fi
+  local VERSION=$(getCurrentContractVersion "$CONTRACT_NAME" "$CURRENT_VERSION")
   # get file suffix based on value in variable ENVIRONMENT
   FILE_SUFFIX=$(getFileSuffix "$ENVIRONMENT")
 
@@ -133,7 +143,7 @@ deploySingleContract() {
     doNotContinueUnlessGasIsBelowThreshold "$NETWORK"
 
     # try to execute call
-    RAW_RETURN_DATA=$(DEPLOYSALT=$DEPLOYSALT NETWORK=$NETWORK FILE_SUFFIX=$FILE_SUFFIX PRIVATE_KEY=$(getPrivateKey "$NETWORK" "$ENVIRONMENT") forge script "$FULL_SCRIPT_PATH" -f $NETWORK -vvvv --json --silent --broadcast --skip-simulation --legacy)
+    RAW_RETURN_DATA=$(DEPLOYSALT=$DEPLOYSALT NETWORK=$NETWORK FILE_SUFFIX=$FILE_SUFFIX SOL_PRIVATE_KEY=$SOL_PRIVATE_KEY forge script "$FULL_SCRIPT_PATH" -f $NETWORK --private-key $PRIVATE_KEY -vvvv --json --silent --broadcast --skip-simulation --legacy)
     RETURN_CODE=$?
     # print return data only if debug mode is activated
     echoDebug "RAW_RETURN_DATA: $RAW_RETURN_DATA"
@@ -164,7 +174,7 @@ deploySingleContract() {
       local COUNT=0
       while [ $COUNT -lt "$MAX_WAITING_TIME_FOR_BLOCKCHAIN_SYNC" ]; do
         # check if bytecode is deployed at address
-        if doesAddressContainBytecode "$NETWORK" "$ADDRESS" >/dev/null; then
+        if [[ $(doesAddressContainBytecode "$NETWORK" "$ADDRESS") != "false" ]]; then
           echo "[info] bytecode deployment at address $ADDRESS verified through block explorer"
           break 2 # exit both loops if the operation was successful
         fi
@@ -211,6 +221,11 @@ deploySingleContract() {
 
   # extract constructor arguments from return data
   CONSTRUCTOR_ARGS=$(echo $RETURN_DATA | jq -r '.constructorArgs.value // "0x"')
+  IS_PROXY=$(echo $RETURN_DATA | jq -r '.isProxy.value')
+  echo "[info] IS_PROXY: $IS_PROXY"
+  if [[ "$IS_PROXY" == "true" ]]; then
+    IMPLEMENTATION=$(echo $RETURN_DATA | jq -r '.implementation.value')
+  fi
   echo "[info] $CONTRACT deployed to $NETWORK at address $ADDRESS"
 
   # check if log entry exists for this file and if yes, if contract is verified already
@@ -273,27 +288,47 @@ deploySingleContract() {
         TIMESTAMP=$(echo "$LOG_ENTRY" | jq -r ".TIMESTAMP")
         CONSTRUCTOR_ARGS=$(echo "$LOG_ENTRY" | jq -r ".CONSTRUCTOR_ARGS")
         TIMESTAMP=$(echo "$LOG_ENTRY" | jq -r ".TIMESTAMP")
+        CONTRACT_FILE_PATH=$(echo "$LOG_ENTRY" | jq -r ".CONTRACT_FILE_PATH")
+        CONTRACT_NAME=$(echo "$LOG_ENTRY" | jq -r ".CONTRACT_NAME")
 
         # update VERIFIED info in log file
-        logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT"
+        logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
       else
         echoDebug "contract was not verified just now. No further action needed."
       fi
     else
       echoDebug "address of existing log entry does not match with current deployed-to address (=re-deployment)"
-
-      # overwrite existing log entry with new deployment info
-      logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT"
+      # write to logfile
+      if [[ "$IS_PROXY" == "true" ]]; then
+        PROXY_FILE_PATH=$(getContractFilePath "$CONTRACT"Proxy "$CURRENT_VERSION")
+        PROXY_CONSTRUCTOR_ARGS=$(echo $RETURN_DATA | jq -r '.proxyConstructorArgs.value')
+        logContractDeploymentInfo "$CONTRACT"Proxy "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$PROXY_CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT" "$PROXY_FILE_PATH" "$CONTRACT"Proxy
+        logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$IMPLEMENTATION" $VERIFIED "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
+      else
+        logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
+      fi    
     fi
   else
     echoDebug "log entry does not exist or contract was re-deployed. Log entry will be (over-)written now."
 
     # write to logfile
-    logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT"
+    if [[ "$IS_PROXY" == "true" ]]; then
+      PROXY_FILE_PATH=$(getContractFilePath "$CONTRACT"Proxy "$CURRENT_VERSION")
+      PROXY_CONSTRUCTOR_ARGS=$(echo $RETURN_DATA | jq -r '.proxyConstructorArgs.value')
+      logContractDeploymentInfo "$CONTRACT"Proxy "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$PROXY_CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT" "$PROXY_FILE_PATH" "$CONTRACT"Proxy
+      logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$IMPLEMENTATION" $VERIFIED "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
+    else
+      logContractDeploymentInfo "$CONTRACT" "$NETWORK" "$TIMESTAMP" "$VERSION" "$OPTIMIZER" "$CONSTRUCTOR_ARGS" "$ENVIRONMENT" "$ADDRESS" $VERIFIED "$SALT" "$CONTRACT_FILE_PATH" "$CONTRACT_NAME"
+    fi
   fi
 
   # save contract in network-specific deployment files
-  saveContract "$NETWORK" "$CONTRACT" "$ADDRESS" "$FILE_SUFFIX"
+  if [[ "$IS_PROXY" == "true" ]]; then
+    saveContract "$NETWORK" "$CONTRACT"Proxy "$ADDRESS" "$FILE_SUFFIX"
+    saveContract "$NETWORK" "$CONTRACT" "$IMPLEMENTATION" "$FILE_SUFFIX"
+  else
+    saveContract "$NETWORK" "$CONTRACT" "$ADDRESS" "$FILE_SUFFIX"
+  fi
 
   return 0
 }

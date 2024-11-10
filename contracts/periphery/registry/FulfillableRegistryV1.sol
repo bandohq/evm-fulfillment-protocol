@@ -5,12 +5,12 @@ import { UUPSUpgradeable } from '@openzeppelin/contracts-upgradeable/proxy/utils
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { IFulfillableRegistry, Service } from './IFulfillableRegistry.sol';
 
-/// @title FulfillableRegistry
+/// @title FulfillableRegistryV1
 /// @author g6s
 /// @notice A registry for fulfillable services
 /// @dev This contract is upgradeable, Ownable, and uses UUPSUpgradeable
 /// @custom:bfp-version 1.0.0
-contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUpgradeable {
+contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, OwnableUpgradeable {
 
     /// @notice Mapping to store services by their ID
     mapping(uint256 => Service) public _serviceRegistry;
@@ -51,9 +51,9 @@ contract FulfillableRegistry is IFulfillableRegistry, UUPSUpgradeable, OwnableUp
     }
 
     /// @notice Initializes the contract
-    function initialize() public virtual initializer {
-        __Ownable_init(msg.sender);
+    function initialize(address initialOwner) public virtual initializer {
         __UUPSUpgradeable_init();
+        __Ownable_init(initialOwner);
     }
 
     /// @dev UUPS upgrade authorization

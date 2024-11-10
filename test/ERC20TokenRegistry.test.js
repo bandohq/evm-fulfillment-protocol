@@ -11,8 +11,8 @@ describe("ERC20TokenRegistry", function () {
   beforeEach(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
 
-    ERC20TokenRegistry = await ethers.getContractFactory("ERC20TokenRegistry");
-    registry = await upgrades.deployProxy(ERC20TokenRegistry, [], { kind: 'uups' });
+    ERC20TokenRegistry = await ethers.getContractFactory("ERC20TokenRegistryV1");
+    registry = await upgrades.deployProxy(ERC20TokenRegistry, [await owner.getAddress()]);
     await registry.waitForDeployment();
   });
 
@@ -37,15 +37,15 @@ describe("ERC20TokenRegistry", function () {
 
   describe("Upgradeability", function () {
     it("Should allow owner to upgrade", async function () {
-      const ERC20TokenRegistryV2 = await ethers.getContractFactory("ERC20TokenRegistry");
+      const ERC20TokenRegistryV2 = await ethers.getContractFactory("ERC20TokenRegistryV1");
       await expect(upgrades.upgradeProxy(await registry.getAddress(), ERC20TokenRegistryV2))
         .to.not.be.reverted;
     });
 
     it("Should not allow non-owner to upgrade", async function () {
-      const ERC20TokenRegistryV2 = await ethers.getContractFactory("ERC20TokenRegistry", addr1);
+      const ERC20TokenRegistryV2 = await ethers.getContractFactory("ERC20TokenRegistryV1", addr1);
       await expect(upgrades.upgradeProxy(await registry.getAddress(), ERC20TokenRegistryV2))
-      .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
+        .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
     });
   });
 
