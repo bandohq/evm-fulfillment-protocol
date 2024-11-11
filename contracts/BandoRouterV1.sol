@@ -6,7 +6,6 @@ import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/P
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBandoERC20Fulfillable } from "./IBandoERC20Fulfillable.sol";
@@ -33,8 +32,7 @@ import { FulfillmentRequestLib } from "./libraries/FulfillmentRequestLib.sol";
 contract BandoRouterV1 is
     OwnableUpgradeable,
     PausableUpgradeable,
-    UUPSUpgradeable,
-    ReentrancyGuardUpgradeable {
+    UUPSUpgradeable {
 
     using Address for address payable;
     using Math for uint256;
@@ -74,7 +72,6 @@ contract BandoRouterV1 is
     /// @dev Sets up the contract with initial state, including Ownable, Pausable, UUPSUpgradeable, and ReentrancyGuard
     function initialize(address initialOwner) public virtual initializer {
         __UUPSUpgradeable_init();
-        __ReentrancyGuard_init();
         __Pausable_init();
         __Ownable_init(initialOwner);
     }
@@ -140,7 +137,7 @@ contract BandoRouterV1 is
     function requestERC20Service(
         uint256 serviceID, 
         ERC20FulFillmentRequest memory request
-    ) public whenNotPaused nonReentrant returns (bool) {
+    ) public whenNotPaused returns (bool) {
         if(msg.sender != request.payer) {
             revert PayerMismatch(request.payer, msg.sender);
         }
@@ -172,7 +169,7 @@ contract BandoRouterV1 is
     function requestService(
         uint256 serviceID,
         FulFillmentRequest memory request
-    ) public payable whenNotPaused nonReentrant returns (bool) {
+    ) public payable whenNotPaused returns (bool) {
         if(msg.sender != request.payer) {
             revert PayerMismatch(request.payer, msg.sender);
         }
