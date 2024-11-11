@@ -296,10 +296,6 @@ contract BandoFulfillableV1 is
         require(asuccess, "Overflow while adding authorized refunds");
         uint256 total_refunds = addResult;
         require(
-            deposits >= weiAmount,
-            "Amount is bigger than the total in escrow"
-        );
-        require(
             deposits >= total_refunds,
             "Total refunds would be bigger than the total in escrow"
         );

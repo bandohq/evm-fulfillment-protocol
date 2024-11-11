@@ -301,10 +301,6 @@ contract BandoERC20FulfillableV1 is
         require(asuccess, "Overflow while adding authorized refunds");
         uint256 total_refunds = addResult;
         require(
-            depositsAmount >= amount,
-            "Token Amount is bigger than the total in escrow"
-        );
-        require(
             depositsAmount >= total_refunds,
             "Total token refunds would be bigger than the total in escrow"
         );
