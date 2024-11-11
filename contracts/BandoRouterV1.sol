@@ -65,6 +65,11 @@ contract BandoRouterV1 is
     /// @param serviceRef The service reference that failed validation
     event RefValidationFailed(uint256 serviceID, string serviceRef);
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice Initializes the contract
     /// @dev Sets up the contract with initial state, including Ownable, Pausable, UUPSUpgradeable, and ReentrancyGuard
     function initialize(address initialOwner) public virtual initializer {

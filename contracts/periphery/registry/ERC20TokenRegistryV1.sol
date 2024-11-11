@@ -49,6 +49,11 @@ contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param token The address of the token to check
     event TokenRemoved(address indexed token);
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice Initializes the contract
     /// @dev This function replaces the constructor for upgradeable contracts
     function initialize(address initialOwner) public initializer {

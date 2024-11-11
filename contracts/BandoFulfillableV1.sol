@@ -102,6 +102,11 @@ contract BandoFulfillableV1 is
         uint256 => mapping(address => uint256)
     ) public _authorized_refunds;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     // UUPS upgrade authorization
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 

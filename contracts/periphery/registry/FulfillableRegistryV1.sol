@@ -50,6 +50,11 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
         _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice Initializes the contract
     function initialize(address initialOwner) public virtual initializer {
         __UUPSUpgradeable_init();

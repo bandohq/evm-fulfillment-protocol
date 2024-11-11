@@ -102,6 +102,11 @@ contract BandoERC20FulfillableV1 is
         uint256 => mapping(address => mapping(address => uint256))
     ) private _erc20_authorized_refunds;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice UUPS upgrade authorization
     /// @param newImplementation The address of the new implementation.
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}

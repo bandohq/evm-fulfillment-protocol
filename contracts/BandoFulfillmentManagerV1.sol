@@ -50,6 +50,11 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
     /// @notice ERC20 escrow address
     address public _erc20_escrow;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     /// @notice Initializes the contract
     function initialize() public virtual initializer {
         __Ownable_init(msg.sender);
