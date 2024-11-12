@@ -135,6 +135,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @param fulfiller the address of the fulfiller
      */
     function addFulfiller(address fulfiller, uint256 serviceID) external onlyOwner {
+        require(!_fulfillerServices[fulfiller][serviceID], "Service already registered for this fulfiller");
         _fulfillerServices[fulfiller][serviceID] = true; // Associate the service ID with the fulfiller
         _fulfillerServiceCount[fulfiller]++; // Increment the service count for the fulfiller
     }
