@@ -140,5 +140,13 @@ describe('BandoFulfillableRegistry', () => {
         expect(service.fulfiller).to.equal(newFulfiller);
         expect(service.beneficiary).to.equal(newBeneficiary);
       });
+
+      it('should revert if the fulfiller address is invalid', async () => {
+        const serviceID = 4;
+        const newFulfiller = ZERO_ADDRESS;
+        await expect(registry.updateServiceFulfiller(serviceID, newFulfiller))
+          .to.be.revertedWithCustomError(registry, 'InvalidAddress')
+          .withArgs(ZERO_ADDRESS);
+      });
     });
 });

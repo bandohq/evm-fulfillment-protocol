@@ -36,6 +36,10 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     /// @dev The manager address
     address public _manager;
 
+    /// @notice Error for invalid addresses
+    /// @param _address The address that is invalid
+    error InvalidAddress(address _address);
+
     /// @notice ServiceAdded event
     /// @param serviceID The service identifier
     event ServiceRemoved(uint256 serviceID);
@@ -119,6 +123,9 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @param newFulfiller the new fulfiller address
      */
     function updateServiceFulfiller(uint256 serviceId, address newFulfiller) external onlyOwner {
+        if(newFulfiller == address(0)) {
+            revert InvalidAddress(newFulfiller);
+        }
         require(_serviceRegistry[serviceId].fulfiller != address(0), 'FulfillableRegistry: Service does not exist');
         _serviceRegistry[serviceId].fulfiller = newFulfiller;
     }
@@ -128,7 +135,6 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @param fulfiller the address of the fulfiller
      */
     function addFulfiller(address fulfiller, uint256 serviceID) external onlyOwner {
-        require(!_fulfillerServices[fulfiller][serviceID], "Service already registered for this fulfiller");
         _fulfillerServices[fulfiller][serviceID] = true; // Associate the service ID with the fulfiller
         _fulfillerServiceCount[fulfiller]++; // Increment the service count for the fulfiller
     }
