@@ -311,7 +311,8 @@ describe("BandoRouterV1", function () {
         await ercFulfiller.approve(await routerContract.getAddress(), 100);
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = 100;
         await expect(v2Fulfiller.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST))
-          .to.have.revertedWith('BandoRouterV1: Insufficient balance')
+          .to.have.revertedWithCustomError(erc20Test, 'ERC20InsufficientBalance')
+          .withArgs(await fulfiller.getAddress(), 0, 100);
     });
 
     it("should fail when payer has not enough token allowance", async () => {

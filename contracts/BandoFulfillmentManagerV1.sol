@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.20 <0.9.0;
+pragma solidity >=0.8.28;
 
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { UUPSUpgradeable } from '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
-import { ReentrancyGuardUpgradeable } from '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
 import { IFulfillableRegistry, Service } from './periphery/registry/IFulfillableRegistry.sol';
 import { IBandoFulfillable } from './IBandoFulfillable.sol';
 import { IBandoERC20Fulfillable } from './BandoERC20FulfillableV1.sol';
@@ -39,7 +38,7 @@ import {
 /// @dev The owner of the contract is the operator of the fulfillment protocol.
 /// But the fulfillers are the only ones that can register a fulfillment result 
 /// and withdraw a refund.
-contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuardUpgradeable {
+contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
 
     /// @notice service registry address
     address public _serviceRegistry;
@@ -148,7 +147,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
     /// It registers a fulfillment result for a service calling the escrow contract.
     /// @param serviceID The service identifier
     /// @param fulfillment The fulfillment result
-    function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual nonReentrant {
+    function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
@@ -161,7 +160,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
     /// @param serviceID The service identifier
     /// @param token The address of the ERC20 token
     /// @param refundee The address of the refund recipient
-    function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual nonReentrant {
+    function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
@@ -174,7 +173,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
     /// It registers a fulfillment result for a service calling the escrow contract.
     /// @param serviceID The service identifier
     /// @param fulfillment The fulfillment result
-    function registerERC20Fulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual nonReentrant {
+    function registerERC20Fulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
@@ -185,7 +184,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
     /// @dev beneficiaryWithdraw
     /// @notice This method must only be called by the service beneficiary.
     /// @param serviceID The service identifier
-    function beneficiaryWithdraw(uint256 serviceID) public virtual nonReentrant {
+    function beneficiaryWithdraw(uint256 serviceID) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         require(service.beneficiary == msg.sender, "Only the beneficiary can withdraw");
         IBandoFulfillable(_escrow).beneficiaryWithdraw(serviceID);
@@ -195,7 +194,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable, Reent
     /// @notice This method must only be called by the service beneficiary.
     /// @param serviceID The service identifier
     /// @param token The address of the ERC20 token
-    function beneficiaryWithdrawERC20(uint256 serviceID, address token) public virtual nonReentrant {
+    function beneficiaryWithdrawERC20(uint256 serviceID, address token) public virtual {
         Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         require(service.beneficiary == msg.sender, "Only the beneficiary can withdraw");
         IBandoERC20Fulfillable(_erc20_escrow).beneficiaryWithdraw(serviceID, token);

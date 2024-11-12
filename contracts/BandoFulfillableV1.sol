@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.8.20 <0.9.0;
+pragma solidity 0.8.28;
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
@@ -295,10 +295,6 @@ contract BandoFulfillableV1 is
         );
         require(asuccess, "Overflow while adding authorized refunds");
         uint256 total_refunds = addResult;
-        require(
-            deposits >= weiAmount,
-            "Amount is bigger than the total in escrow"
-        );
         require(
             deposits >= total_refunds,
             "Total refunds would be bigger than the total in escrow"

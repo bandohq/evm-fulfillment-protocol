@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.20 <0.9.0;
+pragma solidity >=0.8.28;
 
 import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OwnableUpgradeable } from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { IBandoERC20Fulfillable } from "./IBandoERC20Fulfillable.sol";
@@ -33,8 +32,7 @@ import { FulfillmentRequestLib } from "./libraries/FulfillmentRequestLib.sol";
 contract BandoRouterV1 is
     OwnableUpgradeable,
     PausableUpgradeable,
-    UUPSUpgradeable,
-    ReentrancyGuardUpgradeable {
+    UUPSUpgradeable {
 
     using Address for address payable;
     using Math for uint256;
@@ -74,7 +72,6 @@ contract BandoRouterV1 is
     /// @dev Sets up the contract with initial state, including Ownable, Pausable, UUPSUpgradeable, and ReentrancyGuard
     function initialize(address initialOwner) public virtual initializer {
         __UUPSUpgradeable_init();
-        __ReentrancyGuard_init();
         __Pausable_init();
         __Ownable_init(initialOwner);
     }
@@ -140,13 +137,11 @@ contract BandoRouterV1 is
     function requestERC20Service(
         uint256 serviceID, 
         ERC20FulFillmentRequest memory request
-    ) public whenNotPaused nonReentrant returns (bool) {
+    ) public whenNotPaused returns (bool) {
         if(msg.sender != request.payer) {
             revert PayerMismatch(request.payer, msg.sender);
         }
         FulfillmentRequestLib.validateERC20Request(serviceID, request, _fulfillableRegistry, _tokenRegistry);
-        uint256 pre_balance = IERC20(request.token).balanceOf(msg.sender);
-        require(pre_balance >= request.tokenAmount, "BandoRouterV1: Insufficient balance");
         /// @dev Transfer the payment to the ERC20 escrow contract
         /// It is important to have msg.sender in the from field as a best security practice
         /// this is the reason this is done here and not in the escrow contract
@@ -154,10 +149,6 @@ contract BandoRouterV1 is
             msg.sender,
             _erc20Escrow,
             request.tokenAmount
-        );
-        require(
-            IERC20(request.token).balanceOf(msg.sender) <= pre_balance - request.tokenAmount,
-            "BandoRouterV1: ERC20 invalid transfer return"
         );
         IBandoERC20Fulfillable(_erc20Escrow).depositERC20(serviceID, request);
         emit ERC20ServiceRequested(serviceID, request);
@@ -172,7 +163,7 @@ contract BandoRouterV1 is
     function requestService(
         uint256 serviceID,
         FulFillmentRequest memory request
-    ) public payable whenNotPaused nonReentrant returns (bool) {
+    ) public payable whenNotPaused returns (bool) {
         if(msg.sender != request.payer) {
             revert PayerMismatch(request.payer, msg.sender);
         }
