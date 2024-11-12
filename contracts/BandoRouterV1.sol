@@ -142,8 +142,6 @@ contract BandoRouterV1 is
             revert PayerMismatch(request.payer, msg.sender);
         }
         FulfillmentRequestLib.validateERC20Request(serviceID, request, _fulfillableRegistry, _tokenRegistry);
-        uint256 pre_balance = IERC20(request.token).balanceOf(msg.sender);
-        require(pre_balance >= request.tokenAmount, "BandoRouterV1: Insufficient balance");
         /// @dev Transfer the payment to the ERC20 escrow contract
         /// It is important to have msg.sender in the from field as a best security practice
         /// this is the reason this is done here and not in the escrow contract
@@ -151,10 +149,6 @@ contract BandoRouterV1 is
             msg.sender,
             _erc20Escrow,
             request.tokenAmount
-        );
-        require(
-            IERC20(request.token).balanceOf(msg.sender) <= pre_balance - request.tokenAmount,
-            "BandoRouterV1: ERC20 invalid transfer return"
         );
         IBandoERC20Fulfillable(_erc20Escrow).depositERC20(serviceID, request);
         emit ERC20ServiceRequested(serviceID, request);
