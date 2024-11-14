@@ -267,8 +267,9 @@ describe("BandoRouterV1", function () {
       DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
       DUMMY_VALID_FULFILLMENTREQUEST.serviceRef = validRef;
       DUMMY_VALID_FULFILLMENTREQUEST.payer = await owner.getAddress();
-      const feeAmount = new BN(service.feeAmount.toString());
-      const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
+        const feeAmount = new BN(service.feeAmount.toString());
+        const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
+      console.log(weiAmount.add(feeAmount).toString());
       const tx = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount).toString() });
       const receipt = await tx.wait()
       expect(receipt).to.be.an('object').that.have.property('hash');
@@ -351,6 +352,40 @@ describe("BandoRouterV1", function () {
       expect(tx).to.emit(v2, 'ERC20ServiceRequested');
     });
   });
+  
+  describe('Withdraw Refunds', () => {
+    it("should authorize a refund after register a fulfillment with a failed status.", async () => {
+      const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
+      const FAILED_FULFILLMENT_RESULT = {
+          id: payerRecordIds[0],
+          status: 0,
+          externalID: "012345678912",
+          receiptURI: "https://example.com/receipt",
+      };
+      const ownerDeposit = await escrow.getDepositsFor(await owner.getAddress(), 1);
+      console.log(ownerDeposit);
+      const r = await manager.registerFulfillment(1, FAILED_FULFILLMENT_RESULT);
+      await expect(r).not.to.be.reverted;
+      await expect(r).to.emit(escrow, 'RefundAuthorized').withArgs(await owner.getAddress(), ownerDeposit);
+      const record = await escrow.record(payerRecordIds[0]);
+      expect(record[10]).to.be.equal(0);
+    });
+
+    it('should not allow an address that is not the refundee to withdraw a refund', async () => {
+        await expect(v2.withdrawRefund(1, await beneficiary.getAddress()))
+            .to.be.revertedWithCustomError(v2, 'PayerMismatch');
+    });
+
+    it('should allow router to withdraw a refund', async () => {
+        const refunds = await escrow.getRefundsFor(await owner.getAddress(), 1);
+        expect(refunds.toString()).to.be.equal(ethers.parseUnits("1", "ether").toString());
+        const r = await v2.withdrawRefund(1, await owner.getAddress());
+        await expect(r).not.to.be.reverted;
+        await expect(r).to.emit(escrow, 'RefundWithdrawn').withArgs(await owner.getAddress(), ethers.parseUnits("1", "ether"));
+        const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
+        expect(postBalance).to.be.equal(1000);
+    });
+});
 
   describe('Withdraw ERC20 Refunds', () => {
     it("should authorize a refund after register a fulfillment with a failed status.", async () => {
