@@ -378,9 +378,9 @@ describe("BandoRouterV1", function () {
         expect(record.status).to.equal(0); // Failed status
     });
 
-    it('should not allow an address with no ERC20 refunds', async () => {
+    it('should not allow an address other than the refundee to withdraw an ERC20 refund', async () => {
         await expect(v2.withdrawERC20Refund(1, await erc20Test.getAddress(), await beneficiary.getAddress()))
-          .to.be.revertedWith("Address is not allowed any refunds");
+          .to.be.revertedWithCustomError(v2, 'PayerMismatch');
     });
 
     it('should allow router to withdraw an ERC20 refund', async () => {
