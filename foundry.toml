@@ -13,6 +13,7 @@ fs_permissions = [
 ]
 ffi = true
 cache = true
+solc_version = "0.8.28"
 
 [rpc_endpoints]
 mainnet = "${ETH_NODE_URI_MAINNET}"

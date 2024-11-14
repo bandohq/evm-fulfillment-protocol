@@ -255,12 +255,11 @@ contract BandoERC20FulfillableV1 is
     /// WARNING: Forwarding all gas opens the door to reentrancy vulnerabilities.
     /// Make sure you trust the recipient, or are either following the
     /// checks-effects-interactions pattern or using {ReentrancyGuard}.
-    ///
+    /// @param serviceID The identifier of the service.
     /// @param token The address of the ERC20 token.
     /// @param refundee The address whose funds will be withdrawn and transferred to.
-    ///
     function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual nonReentrant returns (bool) {
-        require(_manager == msg.sender, "Caller is not the manager");
+        require(_router == msg.sender, "Caller is not the router");
         uint256 authorized_refunds = getERC20RefundsFor(
             token,
             refundee,

@@ -337,11 +337,13 @@ describe("BandoRouterV1", function () {
     });
 
     it("should route to service escrow", async () => {
+      await manager.setService(2, ethers.parseUnits('0', 'ether'), await fulfiller.getAddress(), await beneficiary.getAddress());
+      await manager.setServiceRef(2, validRef);
       DUMMY_VALID_ERC20_FULFILLMENTREQUEST.payer = await owner.getAddress();
-      DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = 10000;
+      DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = "10000";
       DUMMY_VALID_ERC20_FULFILLMENTREQUEST.token = await erc20Test.getAddress();
       DUMMY_VALID_ERC20_FULFILLMENTREQUEST.serviceRef = validRef;
-      const tx = await v2.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST);
+      const tx = await v2.requestERC20Service(2, DUMMY_VALID_ERC20_FULFILLMENTREQUEST);
       const receipt = await tx.wait()
       expect(receipt).to.be.an('object').that.have.property('hash');
       expect(receipt).to.be.an('object').that.have.property('status');
@@ -349,4 +351,45 @@ describe("BandoRouterV1", function () {
       expect(tx).to.emit(v2, 'ERC20ServiceRequested');
     });
   });
+
+  describe('Withdraw ERC20 Refunds', () => {
+    it("should authorize a refund after register a fulfillment with a failed status.", async () => {
+        // Get the existing record from the previous test
+        const payerRecordIds = await erc20_escrow.recordsOf(await owner.getAddress()); // Get the latest record
+        const ownerDeposit = await erc20_escrow.getERC20DepositsFor(
+            await erc20Test.getAddress(), 
+            await owner.getAddress(), 
+            2,
+        );
+        console.log(ownerDeposit);
+        const FAILED_FULFILLMENT_RESULT = {
+            id: payerRecordIds[0],
+            status: 0,
+            externalID: validRef,
+            receiptURI: "https://example.com/receipt",
+        };
+
+        const r = await manager.registerERC20Fulfillment(2, FAILED_FULFILLMENT_RESULT);
+        await expect(r).not.to.be.reverted;
+        await expect(r).to.emit(erc20_escrow, 'ERC20RefundAuthorized')
+            .withArgs(await owner.getAddress(), ownerDeposit);
+
+        const record = await erc20_escrow.record(payerRecordIds[0]);
+        expect(record.status).to.equal(0); // Failed status
+    });
+
+    it('should not allow an address with no ERC20 refunds', async () => {
+        await expect(v2.withdrawERC20Refund(1, await erc20Test.getAddress(), await beneficiary.getAddress()))
+          .to.be.revertedWith("Address is not allowed any refunds");
+    });
+
+    it('should allow router to withdraw an ERC20 refund', async () => {
+        const refunds = await erc20_escrow.getERC20RefundsFor(await erc20Test.getAddress(), await owner.getAddress(), 2);
+        expect(refunds.toString()).to.be.equal("10000");
+        const r = await v2.withdrawERC20Refund(2, await erc20Test.getAddress(), await owner.getAddress());
+        await expect(r).not.to.be.reverted;
+        await expect(r).to.emit(erc20_escrow, 'ERC20RefundWithdrawn')
+          .withArgs(await erc20Test.getAddress(), await owner.getAddress(), "10000");
+    });
+});
 });
