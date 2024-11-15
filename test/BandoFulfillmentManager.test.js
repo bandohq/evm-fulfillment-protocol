@@ -248,23 +248,6 @@ describe('BandoFulfillmentManagerV1', () => {
         });
     });
 
-    describe('Withdraw Refunds', () => {
-        it('should not allow an address with no refunds', async () => {
-            await expect(manager.withdrawRefund(1, await beneficiary.getAddress()))
-                .to.be.revertedWith("Address is not allowed any refunds");
-        });
-
-        it('should allow manager to withdraw a refund', async () => {
-            const refunds = await escrow.getRefundsFor(await owner.getAddress(), 1);
-            expect(refunds.toString()).to.be.equal("1000");
-            const r = await manager.withdrawRefund(1, await owner.getAddress());
-            await expect(r).not.to.be.reverted;
-            await expect(r).to.emit(escrow, 'RefundWithdrawn').withArgs(await owner.getAddress(), ethers.parseUnits('1000', 'wei'));
-            const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
-            expect(postBalance).to.be.equal(1000);
-        });
-    });
-
     describe('Register ERC20 Fulfillments', () => {
         it('should only allow to register a fulfillment via the manager', async () => {
             const serviceID = 1;
@@ -332,22 +315,6 @@ describe('BandoFulfillmentManagerV1', () => {
             await expect(r).to.emit(erc20_escrow, 'ERC20RefundAuthorized').withArgs(await owner.getAddress(), "10000");
             const record = await erc20_escrow.record(payerRecordIds[1]);
             expect(record[11]).to.be.equal(0);
-        });
-    });
-
-    describe('Withdraw ERC20 Refunds', () => {
-        it('should not allow an address with no ERC20 refunds', async () => {
-            await expect(manager.withdrawERC20Refund(1, await erc20Test.getAddress(), await beneficiary.getAddress()))
-                .to.be.revertedWith("Address is not allowed any refunds");
-        });
-
-        it('should allow manager to withdraw an ERC20 refund', async () => {
-            const refunds = await erc20_escrow.getERC20RefundsFor(await erc20Test.getAddress(), await owner.getAddress(), 1);
-            expect(refunds.toString()).to.be.equal("10000");
-            const r = await manager.withdrawERC20Refund(1, await erc20Test.getAddress(), await owner.getAddress());
-            await expect(r).not.to.be.reverted;
-            await expect(r).to.emit(erc20_escrow, 'ERC20RefundWithdrawn')
-                .withArgs(await erc20Test.getAddress(), await owner.getAddress(), "10000");
         });
     });
 

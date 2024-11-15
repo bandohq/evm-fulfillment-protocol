@@ -224,24 +224,23 @@ describe("BandoERC20FulfillableV1", () => {
       expect(record[11]).to.be.equal(0);
     });
 
-    it("should allow manager to withdraw a refund.", async () => {
-      await escrow.setManager(managerEOA.address);
-      const fromManager = await escrow.connect(managerEOA);
-      const r = fromManager.withdrawERC20Refund(1, erc20Test, owner);
+    it("should allow router to withdraw a refund.", async () => {
+      await escrow.setRouter(router.address);
+      const fromRouter = await escrow.connect(router);
+      const r = fromRouter.withdrawERC20Refund(1, erc20Test, owner);
       await expect(r).not.to.be.reverted;
       await expect(r).to.emit(escrow, 'ERC20RefundWithdrawn').withArgs(erc20Test, owner, ethers.parseUnits('1000', 18));
-      await escrow.setManager(await manager.getAddress());
+      await escrow.setRouter(await routerContract.getAddress());
     });
 
     it("should not allow manager to withdraw a refund when there is none.", async () => {
-      await escrow.setManager(managerEOA.address);
-      const fromManager = await escrow.connect(managerEOA);
+      await escrow.setRouter(router.address);
+      const fromRouter = await escrow.connect(router);
       await expect(
-       fromManager.withdrawERC20Refund(1, erc20Test, owner)
+       fromRouter.withdrawERC20Refund(1, erc20Test, owner)
       ).to.be.revertedWith('Address is not allowed any refunds');
-      await escrow.setManager(await manager.getAddress());
+      await escrow.setRouter(await routerContract.getAddress());
       // check balances post withdraw
-      const erc20PostBalance = await erc20Test.balanceOf(await escrow.getAddress());
     });
 
     it("should not allow to register a fulfillment when it already was registered.", async () => {

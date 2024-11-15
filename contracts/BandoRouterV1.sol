@@ -12,6 +12,7 @@ import { IBandoERC20Fulfillable } from "./IBandoERC20Fulfillable.sol";
 import { IBandoFulfillable } from "./IBandoFulfillable.sol";
 import { FulFillmentRequest, ERC20FulFillmentRequest } from "./FulfillmentTypes.sol";
 import { FulfillmentRequestLib } from "./libraries/FulfillmentRequestLib.sol";
+import { IFulfillableRegistry, Service } from "./periphery/registry/IFulfillableRegistry.sol";
 
 /// @title BandoRouterV1
 /// @author g6s
@@ -171,5 +172,28 @@ contract BandoRouterV1 is
         IBandoFulfillable(_escrow).deposit{value: request.weiAmount}(serviceID, request);
         emit ServiceRequested(serviceID, request);
         return true;
+    }
+
+    /// @dev withdrawERC20Refund
+    /// @notice This method must only be called by the user.
+    /// @param serviceID The service identifier
+    /// @param token The address of the ERC20 token
+    /// @param refundee The address of the refund recipient
+    function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual {
+        if (msg.sender != refundee) {
+            revert PayerMismatch(refundee, msg.sender);
+        }
+        require(IBandoERC20Fulfillable(_erc20Escrow).withdrawERC20Refund(serviceID, token, refundee), "Withdrawal failed");
+    }
+
+    /// @dev withdrawRefund
+    /// @notice This method must only be called by the user.
+    /// @param serviceID The service identifier
+    /// @param refundee The address of the refund recipient
+    function withdrawRefund(uint256 serviceID, address payable refundee) public virtual {
+        if (msg.sender != refundee) {
+            revert PayerMismatch(refundee, msg.sender);
+        }
+        require(IBandoFulfillable(_escrow).withdrawRefund(serviceID, refundee), "Withdrawal failed");
     }
 }

@@ -176,25 +176,21 @@ describe("BandoFulfillableV1", () => {
     });
 
     it("should allow manager to withdraw a refund.", async () => {
-      const fromManager = await escrow.connect(managerEOA);
-      await escrow.setManager(managerEOA.address);
+      const fromRouter = await escrow.connect(router);
       const refunds = await escrow.getRefundsFor(DUMMY_ADDRESS, 1);
       expect(refunds.toString()).to.be.equal("101");
-      const r = await fromManager.withdrawRefund(1, DUMMY_ADDRESS);
+      const r = await fromRouter.withdrawRefund(1, DUMMY_ADDRESS);
       await expect(r).not.to.be.reverted;
       await expect(r).to.emit(escrow, 'RefundWithdrawn').withArgs(DUMMY_ADDRESS, ethers.parseUnits('101', 'wei'));
       const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
       expect(postBalance).to.be.equal(101);
-      await escrow.setManager(await manager.getAddress());
     });
 
-    it("should not allow manager to withdraw a refund when there is none.", async () => {
-      const fromManager = await escrow.connect(managerEOA);
-      await escrow.setManager(managerEOA.address);
+    it("should not allow router to withdraw a refund when there is none.", async () => {
+      const fromRouter = await escrow.connect(router);
       await expect(
-        fromManager.withdrawRefund(1, DUMMY_ADDRESS)
+        fromRouter.withdrawRefund(1, DUMMY_ADDRESS)
       ).to.be.revertedWith('Address is not allowed any refunds');
-      await escrow.setManager(await manager.getAddress());
     });
 
     it("should not allow to register a fulfillment when it already was registered.", async () => {

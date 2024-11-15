@@ -249,7 +249,7 @@ contract BandoFulfillableV1 is
         uint256 serviceID,
         address payable refundee
     ) public virtual nonReentrant returns (bool) {
-        require(_manager == msg.sender, "Caller is not the manager");
+        require(_router == msg.sender, "Caller is not the router");
         uint256 authorized_refunds = getRefundsFor(
             refundee,
             serviceID

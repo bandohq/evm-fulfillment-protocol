@@ -130,18 +130,6 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         IFulfillableRegistry(_serviceRegistry).addServiceRef(serviceID, serviceRef);
     }
 
-    /// @dev withdrawRefund
-    /// @notice This method must only be called by the service fulfiller or the owner.
-    /// @param serviceID The service identifier
-    /// @param refundee The address of the refund recipient
-    function withdrawRefund(uint256 serviceID, address payable refundee) public virtual {
-        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
-        if (msg.sender != service.fulfiller) {
-            require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
-        }
-        require(IBandoFulfillable(_escrow).withdrawRefund(serviceID, refundee), "Withdrawal failed");
-    }
-
     /// @dev registerFulfillment
     /// @notice This method must only be called by the service fulfiller or the owner
     /// It registers a fulfillment result for a service calling the escrow contract.
@@ -153,19 +141,6 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
         IBandoFulfillable(_escrow).registerFulfillment(serviceID, fulfillment);
-    }
-
-    /// @dev withdrawERC20Refund
-    /// @notice This method must only be called by the service fulfiller or the owner.
-    /// @param serviceID The service identifier
-    /// @param token The address of the ERC20 token
-    /// @param refundee The address of the refund recipient
-    function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual {
-        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
-        if (msg.sender != service.fulfiller) {
-            require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
-        }
-        require(IBandoERC20Fulfillable(_erc20_escrow).withdrawERC20Refund(serviceID, token, refundee), "Withdrawal failed");
     }
 
     /// @dev registerERC20Fulfillment
