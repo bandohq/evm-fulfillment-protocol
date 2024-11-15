@@ -93,13 +93,13 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// The validator address is intended to be a contract that validates the service's
     /// identifier. eg. phone number, bill number, etc.
     /// @param serviceID The service identifier
-    /// @param feeAmount The fee amount for the service
+    /// @param feeAmountPercentage The fee amount percentage for the service
     /// @param fulfiller The address of the fulfiller
     /// @param beneficiary The address of the beneficiary
     /// @return Service memory The created service
     function setService(
         uint256 serviceID,
-        uint256 feeAmount,
+        uint8 feeAmountPercentage,
         address fulfiller,
         address payable beneficiary
     ) 
@@ -114,10 +114,10 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         Service memory service = Service({
             serviceId: serviceID,
             fulfiller: fulfiller,
-            feeAmount: feeAmount,
             beneficiary: beneficiary
         });
         IFulfillableRegistry(_serviceRegistry).addService(serviceID, service);
+        setServiceFulfillmentFeePercentage(serviceID, feeAmountPercentage);
         return service;
     }
 
@@ -128,6 +128,15 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param serviceRef The service reference
     function setServiceRef(uint256 serviceID, string memory serviceRef) public virtual onlyOwner {
         IFulfillableRegistry(_serviceRegistry).addServiceRef(serviceID, serviceRef);
+    }
+
+    /// @dev setServiceFulfillmentFeePercentage
+    /// @notice This method must only be called by the owner.
+    /// It sets up the fulfillment fee percentage for a service.
+    /// @param serviceID The service identifier
+    /// @param fulfillmentFeePercentage The fulfillment fee percentage
+    function setServiceFulfillmentFeePercentage(uint256 serviceID, uint8 fulfillmentFeePercentage) public virtual onlyOwner {
+        IFulfillableRegistry(_serviceRegistry).updateServiceFeeAmountPercentage(serviceID, fulfillmentFeePercentage);
     }
 
     /// @dev registerFulfillment

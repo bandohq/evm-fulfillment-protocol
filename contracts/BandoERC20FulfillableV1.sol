@@ -187,7 +187,6 @@ contract BandoERC20FulfillableV1 is
             entryTime: block.timestamp,
             payer: fulfillmentRequest.payer,
             tokenAmount: fulfillmentRequest.tokenAmount,
-            feeAmount: service.feeAmount,
             fiatAmount: fulfillmentRequest.fiatAmount,
             receiptURI: "",
             status: FulFillmentResultState.PENDING,
@@ -341,20 +340,16 @@ contract BandoERC20FulfillableV1 is
             _fulfillmentRecords[fulfillment.id].payer,
             serviceID
         );
-        (bool ffsuccess, uint256 total_amount) = _fulfillmentRecords[fulfillment.id].tokenAmount.tryAdd(
-            service.feeAmount
-        );
-        require(ffsuccess, "Overflow while adding fulfillment amount and fee");
-        require(depositsAmount >= total_amount, "There is not enough balance to be released");
+        uint256 tokenAmount = _fulfillmentRecords[fulfillment.id].tokenAmount;
         if(fulfillment.status == FulFillmentResultState.FAILED) {
-            _authorizeRefund(service, token, _fulfillmentRecords[fulfillment.id].payer, total_amount);
+            _authorizeRefund(service, token, _fulfillmentRecords[fulfillment.id].payer, tokenAmount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
         } else if(fulfillment.status != FulFillmentResultState.SUCCESS) {
             revert('Unexpected status');
         } else {
-            (bool rlsuccess, uint256 releaseResult) = _releaseablePools[serviceID][token].tryAdd(total_amount);
+            (bool rlsuccess, uint256 releaseResult) = _releaseablePools[serviceID][token].tryAdd(tokenAmount);
             require(rlsuccess, "Overflow while adding to releaseable pool");
-            (bool dsuccess, uint256 subResult) = depositsAmount.trySub(total_amount);
+            (bool dsuccess, uint256 subResult) = depositsAmount.trySub(tokenAmount);
             require(dsuccess, "Overflow while substracting from deposits");
             _releaseablePools[serviceID][token] = releaseResult;
             setERC20DepositsFor(

@@ -44,9 +44,16 @@ contract BandoRouterV1 is
     /// @param sender The address of the msg.sender
     error PayerMismatch(address payer, address sender);
 
+    /// @notice The address of the fulfillable registry
     address public _fulfillableRegistry;
+
+    /// @notice The address of the token registry
     address public _tokenRegistry;
+
+    /// @notice The address of the escrow contract
     address payable public _escrow;
+
+    /// @notice The address of the ERC20 escrow contract
     address payable public _erc20Escrow;
 
     /// @notice Emitted when an ERC20 service is requested

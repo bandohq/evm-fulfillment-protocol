@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import { FulFillmentRequest, ERC20FulFillmentRequest } from '../FulfillmentTypes.sol';
 import { Service, IFulfillableRegistry } from '../periphery/registry/IFulfillableRegistry.sol';
@@ -32,7 +32,7 @@ library FulfillmentRequestLib {
     error OverflowError();
 
     /// @notice AmountMismatch error message
-    /// It is thrown when the amount sent does not match weiAmount + feeAmount
+    /// It is thrown when the fee amount validations fail
     error AmountMismatch();
 
     /// @notice UnsupportedToken error message
@@ -42,7 +42,6 @@ library FulfillmentRequestLib {
 
     /// @notice validateRequest
     /// @dev It checks if the amount sent is greater than zero, if the fiat amount is greater than zero,
-    /// if the service reference is valid, if the amount sent matches the weiAmount + feeAmount and returns the service
     /// @param serviceID the product/service ID
     /// @param request a valid FulFillmentRequest
     /// @param fulfillableRegistry the registry address
@@ -62,15 +61,6 @@ library FulfillmentRequestLib {
         
         if (!IFulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
             revert InvalidRef();
-        }
-        
-        (bool success, uint256 total_amount) = request.weiAmount.tryAdd(service.feeAmount);
-        if (!success) {
-            revert OverflowError();
-        }
-        
-        if (msg.value != total_amount) {
-            revert AmountMismatch();
         }
 
         return service;

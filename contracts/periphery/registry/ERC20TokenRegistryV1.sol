@@ -35,19 +35,34 @@ import { UUPSUpgradeable } from "@openzeppelin/contracts-upgradeable/proxy/utils
 /// Key Security Considerations:
 /// - Check for potential issues with gas limits if a large number of tokens are added/removed in a single transaction
 contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
-    /* 
-     * Mapping to store the whitelist status of tokens
-     * The key is the token address, and the value is a boolean indicating whitelist status
-     */
+
+    /// @notice Mapping to store the whitelist status of tokens
+    /// @dev The key is the token address, and the value is a boolean indicating whitelist status
     mapping(address => bool) private whitelist;
+
+    /// @notice The swap fee percentage charged to the payer for the fulfillment
+    /// @dev This fee is charged to the payer for the fulfillment
+    /// @dev token => swapFeePercentage
+    /// @dev This fee ideally should be zero for stablecoins.
+    mapping(address => uint8) public _swapFeePercentage;
 
     /// @notice Emitted when a token is added to the whitelist
     /// @param token The address of the token to check
-    event TokenAdded(address indexed token);
+    /// @param swapFeePercentage The swap fee percentage for the token
+    event TokenAdded(address indexed token, uint8 swapFeePercentage);
 
     /// @notice Emitted when a token is removed from the whitelist
     /// @param token The address of the token to check
     event TokenRemoved(address indexed token);
+
+    /// @notice event emitted when the swap fee percentage is updated
+    /// @param token The address of the token to check
+    /// @param swapFeePercentage The new swap fee percentage
+    event SwapFeePercentageUpdated(address indexed token, uint8 swapFeePercentage);
+
+    /// @notice Error for invalid swap fee percentage
+    /// @param swapFeePercentage The swap fee percentage that is invalid
+    error InvalidSwapFeePercentage(uint8 swapFeePercentage);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -76,11 +91,13 @@ contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @notice Adds a token to the whitelist
     /// @dev Only the contract owner can add tokens
     /// @param token The address of the token to add
-    function addToken(address token) public onlyOwner {
+    /// @param swapFeePercentage The swap fee percentage for the token
+    function addToken(address token, uint8 swapFeePercentage) public onlyOwner {
         require(token != address(0), "ERC20TokenRegistry: Token address cannot be zero");
         require(!whitelist[token], "ERC20TokenRegistry: Token already whitelisted");
         whitelist[token] = true;
-        emit TokenAdded(token);
+        _swapFeePercentage[token] = swapFeePercentage;
+        emit TokenAdded(token, swapFeePercentage);
     }
 
     /// @notice Removes a token from the whitelist
@@ -90,5 +107,17 @@ contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
         require(whitelist[token], "ERC20TokenRegistry: Token not whitelisted");
         whitelist[token] = false;
         emit TokenRemoved(token);
+    }
+
+    /// @notice Updates the swap fee percentage for a token
+    /// @dev Only the contract owner can update the swap fee percentage
+    /// @param token The address of the token to update
+    /// @param swapFeePercentage The new swap fee percentage
+    function updateSwapFeePercentage(address token, uint8 swapFeePercentage) public onlyOwner {
+        if (swapFeePercentage > 100 || swapFeePercentage < 0) {
+            revert InvalidSwapFeePercentage(swapFeePercentage);
+        }
+        _swapFeePercentage[token] = swapFeePercentage;
+        emit SwapFeePercentageUpdated(token, swapFeePercentage);
     }
 }

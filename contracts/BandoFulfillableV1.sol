@@ -224,7 +224,6 @@ contract BandoFulfillableV1 is
             entryTime: block.timestamp,
             payer: fulfillmentRequest.payer,
             weiAmount: fulfillmentRequest.weiAmount,
-            feeAmount: service.feeAmount,
             fiatAmount: fulfillmentRequest.fiatAmount,
             receiptURI: "",
             status: FulFillmentResultState.PENDING
@@ -336,17 +335,9 @@ contract BandoFulfillableV1 is
                 FulFillmentResultState.PENDING,
             "Fulfillment already registered"
         );
-        Service memory service = _registryContract.getService(serviceID);
         address payer = _fulfillmentRecords[fulfillment.id].payer;
         uint256 deposits = getDepositsFor(payer, serviceID);
-        (bool ffsuccess, uint256 total_amount) = _fulfillmentRecords[
-            fulfillment.id
-        ].weiAmount.tryAdd(service.feeAmount);
-        require(ffsuccess, "Overflow while adding fulfillment amount and fee");
-        require(
-            deposits >= total_amount,
-            "There is not enough balance to be released"
-        );
+        uint256 total_amount = _fulfillmentRecords[fulfillment.id].weiAmount;
         if (fulfillment.status == FulFillmentResultState.FAILED) {
             _authorizeRefund(serviceID, payer, total_amount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;

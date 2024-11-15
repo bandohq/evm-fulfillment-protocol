@@ -8,7 +8,6 @@ pragma solidity >=0.8.28;
 struct Service {
     uint256 serviceId;
     address payable beneficiary;
-    uint256 feeAmount;
     address fulfiller;
 }
 
@@ -63,12 +62,12 @@ interface IFulfillableRegistry {
     function updateServiceBeneficiary(uint256 serviceId, address payable newBeneficiary) external;
 
     /**
-     * @notice updateServiceFeeAmount
-     * @dev Updates the fee amount of a service.
+     * @notice updateServiceFeeAmountPercentage
+     * @dev Updates the fee amount percentage of a service.
      * @param serviceId the service identifier
-     * @param newFeeAmount the new fee amount
+     * @param newFeeAmountPercentage the new fee amount percentage
      */
-    function updateServiceFeeAmount(uint256 serviceId, uint256 newFeeAmount) external;
+    function updateServiceFeeAmountPercentage(uint256 serviceId, uint8 newFeeAmountPercentage) external;
 
     /**
      * @notice updateServiceFulfiller

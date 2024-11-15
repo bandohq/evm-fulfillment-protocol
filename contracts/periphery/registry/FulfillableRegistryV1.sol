@@ -19,6 +19,11 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     /// @dev serviceID => (index => reference)
     mapping(uint256 => mapping(uint256 => string)) public _serviceRefs;
 
+    /// @notice Mapping to store fulfillment fees percentage by service ID
+    /// @dev This fee represent the markup fee charged to the payer for the fulfillment
+    /// @dev serviceID => fulfillmentFeePercentage
+    mapping(uint256 => uint8) public _serviceFulfillmentFeePercentage;
+
     /// Mapping to store the count of references for each service
     /// @dev serviceID => reference count
     mapping(uint256 => uint256) public _serviceRefCount;
@@ -35,6 +40,10 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
 
     /// @dev The manager address
     address public _manager;
+
+    /// @notice Error for invalid fee amount percentage
+    /// @param feeAmountPercentage The fee amount percentage that is invalid
+    error InvalidFeeAmountPercentage(uint8 feeAmountPercentage);
 
     /// @notice Error for invalid addresses
     /// @param _address The address that is invalid
@@ -100,20 +109,23 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @param serviceId the service identifier
      * @param newBeneficiary the new beneficiary address
      */
-    function updateServiceBeneficiary(uint256 serviceId, address payable newBeneficiary) external onlyOwner {
+    function updateServiceBeneficiary(uint256 serviceId, address payable newBeneficiary) external onlyManager {
         require(_serviceRegistry[serviceId].fulfiller != address(0), 'FulfillableRegistry: Service does not exist');
         _serviceRegistry[serviceId].beneficiary = newBeneficiary;
     }
 
     /**
-     * @notice updateServiceFeeAmount
-     * @dev Updates the fee amount of a service.
+     * @notice updateServiceFeeAmountPercentage
+     * @dev Updates the fee amount percentage of a service.
      * @param serviceId the service identifier
-     * @param newFeeAmount the new fee amount
+     * @param newFeeAmountPercentage the new fee amount percentage
      */
-    function updateServiceFeeAmount(uint256 serviceId, uint256 newFeeAmount) external onlyOwner {
+    function updateServiceFeeAmountPercentage(uint256 serviceId, uint8 newFeeAmountPercentage) external onlyManager {
         require(_serviceRegistry[serviceId].fulfiller != address(0), 'FulfillableRegistry: Service does not exist');
-        _serviceRegistry[serviceId].feeAmount = newFeeAmount;
+        if(newFeeAmountPercentage > 100 || newFeeAmountPercentage < 0) {
+            revert InvalidFeeAmountPercentage(newFeeAmountPercentage);
+        }
+        _serviceFulfillmentFeePercentage[serviceId] = newFeeAmountPercentage;
     }
 
     /**
@@ -122,7 +134,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @param serviceId the service identifier
      * @param newFulfiller the new fulfiller address
      */
-    function updateServiceFulfiller(uint256 serviceId, address newFulfiller) external onlyOwner {
+    function updateServiceFulfiller(uint256 serviceId, address newFulfiller) external onlyManager {
         if(newFulfiller == address(0)) {
             revert InvalidAddress(newFulfiller);
         }
@@ -134,7 +146,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * addFulfiller
      * @param fulfiller the address of the fulfiller
      */
-    function addFulfiller(address fulfiller, uint256 serviceID) external onlyOwner {
+    function addFulfiller(address fulfiller, uint256 serviceID) external onlyManager {
         require(!_fulfillerServices[fulfiller][serviceID], "Service already registered for this fulfiller");
         _fulfillerServices[fulfiller][serviceID] = true; // Associate the service ID with the fulfiller
         _fulfillerServiceCount[fulfiller]++; // Increment the service count for the fulfiller
@@ -157,7 +169,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * removeServiceAddress
      * @param serviceId the service identifier
      */
-    function removeServiceAddress(uint256 serviceId) external onlyOwner {
+    function removeServiceAddress(uint256 serviceId) external onlyManager {
         delete _serviceRegistry[serviceId];
         _serviceCount--;
         emit ServiceRemoved(serviceId);
