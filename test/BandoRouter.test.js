@@ -355,35 +355,41 @@ describe("BandoRouterV1", function () {
   
   describe('Withdraw Refunds', () => {
     it("should authorize a refund after register a fulfillment with a failed status.", async () => {
+      await manager.setService(3, ethers.parseUnits('0', 'ether'), await fulfiller.getAddress(), await beneficiary.getAddress());
+      await manager.setServiceRef(3, validRef);
+      DUMMY_VALID_FULFILLMENTREQUEST.payer = await owner.getAddress();
+      const tx = await v2.requestService(3, DUMMY_VALID_FULFILLMENTREQUEST, { value: DUMMY_VALID_FULFILLMENTREQUEST.weiAmount});
       const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
       const FAILED_FULFILLMENT_RESULT = {
-          id: payerRecordIds[0],
+          id: payerRecordIds[payerRecordIds.length - 1],
           status: 0,
           externalID: "012345678912",
           receiptURI: "https://example.com/receipt",
       };
-      const ownerDeposit = await escrow.getDepositsFor(await owner.getAddress(), 1);
+      const ownerDeposit = await escrow.getDepositsFor(await owner.getAddress(), 3);
       console.log(ownerDeposit);
-      const r = await manager.registerFulfillment(1, FAILED_FULFILLMENT_RESULT);
+      const r = await manager.registerFulfillment(3, FAILED_FULFILLMENT_RESULT);
       await expect(r).not.to.be.reverted;
       await expect(r).to.emit(escrow, 'RefundAuthorized').withArgs(await owner.getAddress(), ownerDeposit);
-      const record = await escrow.record(payerRecordIds[0]);
+      const record = await escrow.record(payerRecordIds[payerRecordIds.length - 1]);
       expect(record[10]).to.be.equal(0);
     });
 
     it('should not allow an address that is not the refundee to withdraw a refund', async () => {
-        await expect(v2.withdrawRefund(1, await beneficiary.getAddress()))
+        await expect(v2.withdrawRefund(3, await beneficiary.getAddress()))
             .to.be.revertedWithCustomError(v2, 'PayerMismatch');
     });
 
     it('should allow router to withdraw a refund', async () => {
-        const refunds = await escrow.getRefundsFor(await owner.getAddress(), 1);
+        const refunds = await escrow.getRefundsFor(await owner.getAddress(), 3);
         expect(refunds.toString()).to.be.equal(ethers.parseUnits("1", "ether").toString());
-        const r = await v2.withdrawRefund(1, await owner.getAddress());
+        const preBalance = await ethers.provider.getBalance(await escrow.getAddress());
+        expect(preBalance).to.be.equal(ethers.parseUnits("2", "ether"));
+        const r = await v2.withdrawRefund(3, await owner.getAddress());
         await expect(r).not.to.be.reverted;
         await expect(r).to.emit(escrow, 'RefundWithdrawn').withArgs(await owner.getAddress(), ethers.parseUnits("1", "ether"));
         const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
-        expect(postBalance).to.be.equal(1000);
+        expect(postBalance).to.be.equal(ethers.parseUnits("1", "ether"));
     });
 });
 
