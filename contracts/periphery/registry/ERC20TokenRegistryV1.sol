@@ -58,7 +58,7 @@ contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @notice event emitted when the swap fee percentage is updated
     /// @param token The address of the token to check
     /// @param swapFeeBasisPoints The new swap fee percentage
-    event swapFeeBasisPointsUpdated(address indexed token, uint16 swapFeeBasisPoints);
+    event SwapFeeBasisPointsUpdated(address indexed token, uint16 swapFeeBasisPoints);
 
     /// @notice Error for invalid swap fee percentage
     /// @param swapFeeBasisPoints The swap fee percentage that is invalid
