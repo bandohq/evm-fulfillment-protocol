@@ -4,6 +4,7 @@ pragma solidity ^0.8.28;
 import { FulFillmentRequest, ERC20FulFillmentRequest } from '../FulfillmentTypes.sol';
 import { Service, IFulfillableRegistry } from '../periphery/registry/IFulfillableRegistry.sol';
 import { IERC20TokenRegistry } from "../periphery/registry/IERC20TokenRegistry.sol";
+import { ERC20TokenRegistryV1 } from "../periphery/registry/ERC20TokenRegistryV1.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
@@ -14,6 +15,7 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 library FulfillmentRequestLib {
     using Address for address payable;
     using Math for uint256;
+    using Math for uint16;
 
     /// @notice InsufficientAmount error message
     /// It is thrown when the amount sent is zero
@@ -57,7 +59,7 @@ library FulfillmentRequestLib {
             revert InvalidFiatAmount();
         }
         
-        Service memory service = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        (Service memory service, ) = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
         
         if (!IFulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
             revert InvalidRef();
@@ -91,12 +93,38 @@ library FulfillmentRequestLib {
             revert UnsupportedToken(request.token);
         }
         
-        Service memory service = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        (Service memory service, ) = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
         
         if (!IFulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
             revert InvalidRef();
         }
 
         return service;
+    }
+
+    /// @notice calculateFees: Gets service fee and swap fee (if any)
+    /// and calculates the fee based on the configured fees.
+    /// @dev Fees are represented in basis points to work with integers
+    /// on fee percentages below 1%
+    /// @param fulfillableRegistry Service registry contract address
+    /// @param tokenRegistry Token registry contract address
+    /// @param serviceID Service/product ID
+    /// @param tokenAddress Token address (zero address for native coin)
+    /// @param amount The amount to calculate the fees for
+    function calculateFees(
+        address fulfillableRegistry,
+        address tokenRegistry,
+        uint256 serviceID,
+        address tokenAddress,
+        uint256 amount
+    ) internal view returns (uint256 serviceFeeAmount) {
+        (, uint16 feeBasisPoints) = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        // Calculate the service fee in basis points based on the amount
+        serviceFeeAmount = amount.mulDiv(feeBasisPoints, 10000);
+        uint16 swapFeeBasisPoints = ERC20TokenRegistryV1(tokenRegistry)._swapFeeBasisPoints(tokenAddress);
+        if(swapFeeBasisPoints > 0) {
+            uint256 swapFeeAmount = amount.mulDiv(swapFeeBasisPoints, 10000);
+            serviceFeeAmount += swapFeeAmount;
+        }
     }
 }

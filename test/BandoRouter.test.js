@@ -12,7 +12,8 @@ const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   weiAmount: 999,
   fiatAmount: 10,
-  serviceRef: "01234XYZ" //invalid CFE 
+  serviceRef: "01234XYZ", //invalid CFE
+  feeAmount: 100,
 }
 
 /**
@@ -22,7 +23,8 @@ const DUMMY_VALID_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   weiAmount: ethers.parseUnits("11000", "ether"),
   fiatAmount: 101,
-  serviceRef: "012345678912" //valid CFE
+  serviceRef: "012345678912", //valid CFE
+  feeAmount: 100,
 }
 
 const DUMMY_ERC20_FULFILLMENTREQUEST = {
@@ -31,6 +33,7 @@ const DUMMY_ERC20_FULFILLMENTREQUEST = {
   fiatAmount: 10,
   serviceRef: "01234XYZ",
   token: '0x0',
+  feeAmount: 100,
 }
 
 const DUMMY_VALID_ERC20_FULFILLMENTREQUEST = {
@@ -39,6 +42,7 @@ const DUMMY_VALID_ERC20_FULFILLMENTREQUEST = {
   fiatAmount: 10,
   serviceRef: "012345678912", //valid CFE
   token: '0x0',
+  feeAmount: 100,
 }
 
 let routerContract;
@@ -96,7 +100,6 @@ describe("BandoRouterV1", function () {
     /**
      * configure protocol state vars.
      */
-    const feeAmount = ethers.parseUnits('0.1', 'ether');
     await escrow.setManager(await manager.getAddress());
     await escrow.setFulfillableRegistry(registryAddress);
     await escrow.setRouter(await routerContract.getAddress());
@@ -117,7 +120,7 @@ describe("BandoRouterV1", function () {
      */
     await manager.setService(
       1,
-      feeAmount,
+      25,
       await fulfiller.getAddress(),
       await beneficiary.getAddress(),
     );
@@ -127,6 +130,7 @@ describe("BandoRouterV1", function () {
      */
     await tokenRegistry.addToken(
       await erc20Test.getAddress(),
+      25,
     );
   });
 
@@ -155,7 +159,7 @@ describe("BandoRouterV1", function () {
     });
 
     it("should have upgraded to new implementation", async () => {
-        const UpgradeTester = await ethers.getContractFactory('RouterUpgradeTester')
+        const UpgradeTester = await ethers.getContractFactory('RouterUpgradeTester');
         v2 = await upgrades.upgradeProxy(await routerContract.getAddress(), UpgradeTester);
         assert.equal(await v2.getAddress(), await routerContract.getAddress());
         v2 = UpgradeTester.attach(await routerContract.getAddress());
@@ -240,8 +244,6 @@ describe("BandoRouterV1", function () {
     });
 
     it("should fail with insufficient funds error", async () => {
-        const service = await registry.getService(1);
-        const feeAmount = new BN(service.feeAmount.toString());
         const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
         DUMMY_VALID_FULFILLMENTREQUEST.payer = await owner.getAddress();
         total = weiAmount.add(feeAmount)
@@ -263,23 +265,20 @@ describe("BandoRouterV1", function () {
     });
 
     it("should route to service escrow", async () => {
-      const service = await registry.getService(1);
+      const [service, ] = await registry.getService(1);
       DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
       DUMMY_VALID_FULFILLMENTREQUEST.serviceRef = validRef;
       DUMMY_VALID_FULFILLMENTREQUEST.payer = await owner.getAddress();
-        const feeAmount = new BN(service.feeAmount.toString());
         const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
-      console.log(weiAmount.add(feeAmount).toString());
       const tx = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount).toString() });
       const receipt = await tx.wait()
       expect(receipt).to.be.an('object').that.have.property('hash');
     });
 
     it("should fail if payer is different from sender", async () => {
-      const service = await registry.getService(1);
+      const [service, ] = await registry.getService(1);
       DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
       DUMMY_VALID_FULFILLMENTREQUEST.payer = await fulfiller.getAddress();
-      const feeAmount = new BN(service.feeAmount.toString());
       const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
       await expect(
         v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount).toString() })

@@ -26,7 +26,7 @@ interface IFulfillableRegistry {
     /// @param serviceId The unique identifier for the service.
     /// @param service The service details.
     /// @return Returns true if the service is successfully added.
-    function addService(uint256 serviceId, Service memory service) external returns (bool);
+    function addService(uint256 serviceId, Service memory service, uint16 fulfillmentFeePercentage) external returns (bool);
 
     /// @notice Registers a new fulfiller for a service.
     /// @param fulfiller The address of the fulfiller.
@@ -36,7 +36,7 @@ interface IFulfillableRegistry {
     /// @notice Retrieves the service details by its identifier.
     /// @param serviceId The service identifier.
     /// @return The service details.
-    function getService(uint256 serviceId) external view returns (Service memory);
+    function getService(uint256 serviceId) external view returns (Service memory, uint16);
 
     /// @notice Removes a service from the registry.
     /// @param serviceId The service identifier.
@@ -62,12 +62,12 @@ interface IFulfillableRegistry {
     function updateServiceBeneficiary(uint256 serviceId, address payable newBeneficiary) external;
 
     /**
-     * @notice updateServiceFeeAmountPercentage
+     * @notice updateServicefeeAmountBasisPoints
      * @dev Updates the fee amount percentage of a service.
      * @param serviceId the service identifier
-     * @param newFeeAmountPercentage the new fee amount percentage
+     * @param newfeeAmountBasisPoints the new fee amount percentage
      */
-    function updateServiceFeeAmountPercentage(uint256 serviceId, uint8 newFeeAmountPercentage) external;
+    function updateServicefeeAmountBasisPoints(uint256 serviceId, uint16 newfeeAmountBasisPoints) external;
 
     /**
      * @notice updateServiceFulfiller

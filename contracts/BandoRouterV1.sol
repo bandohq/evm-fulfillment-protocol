@@ -64,7 +64,8 @@ contract BandoRouterV1 is
     /// @notice Emitted when a native token service is requested
     /// @param serviceID The ID of the requested service
     /// @param request The details of the fulfillment request
-    event ServiceRequested(uint256 serviceID, FulFillmentRequest request);
+    /// @param serviceFeeAmount The amount of the service fee
+    event ServiceRequested(uint256 serviceID, FulFillmentRequest request, uint256 serviceFeeAmount);
 
     /// @notice Emitted when the validation of a service reference fails
     /// @param serviceID The ID of the service for which validation failed
@@ -150,6 +151,13 @@ contract BandoRouterV1 is
             revert PayerMismatch(request.payer, msg.sender);
         }
         FulfillmentRequestLib.validateERC20Request(serviceID, request, _fulfillableRegistry, _tokenRegistry);
+        uint256 feeAmount = FulfillmentRequestLib.calculateFees(
+            _fulfillableRegistry,
+            _tokenRegistry,
+            serviceID,
+            request.token,
+            request.tokenAmount
+        );
         /// @dev Transfer the payment to the ERC20 escrow contract
         /// It is important to have msg.sender in the from field as a best security practice
         /// this is the reason this is done here and not in the escrow contract
@@ -158,7 +166,7 @@ contract BandoRouterV1 is
             _erc20Escrow,
             request.tokenAmount
         );
-        IBandoERC20Fulfillable(_erc20Escrow).depositERC20(serviceID, request);
+        IBandoERC20Fulfillable(_erc20Escrow).depositERC20(serviceID, request, feeAmount);
         emit ERC20ServiceRequested(serviceID, request);
         return true;
     }
@@ -176,8 +184,15 @@ contract BandoRouterV1 is
             revert PayerMismatch(request.payer, msg.sender);
         }
         FulfillmentRequestLib.validateRequest(serviceID, request, _fulfillableRegistry);
-        IBandoFulfillable(_escrow).deposit{value: request.weiAmount}(serviceID, request);
-        emit ServiceRequested(serviceID, request);
+        uint256 feeAmount = FulfillmentRequestLib.calculateFees(
+            _fulfillableRegistry,
+            _tokenRegistry,
+            serviceID,
+            address(0),
+            msg.value
+        );
+        IBandoFulfillable(_escrow).deposit{value: msg.value}(serviceID, request, feeAmount);
+        emit ServiceRequested(serviceID, request, feeAmount);
         return true;
     }
 

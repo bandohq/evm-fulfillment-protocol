@@ -24,12 +24,12 @@ describe("ERC20TokenRegistry", function () {
 
   describe("Access Control", function () {
     it("Should not allow non-owner to add token", async function () {
-      await expect(registry.connect(addr1).addToken(addr2.address))
+      await expect(registry.connect(addr1).addToken(addr2.address, 0))
         .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
     });
 
     it("Should not allow non-owner to remove token", async function () {
-      await registry.addToken(addr2.address);
+      await registry.addToken(addr2.address, 0);
       await expect(registry.connect(addr1).removeToken(addr2.address))
         .to.be.revertedWithCustomError(registry, 'OwnableUnauthorizedAccount');
     });
@@ -51,38 +51,39 @@ describe("ERC20TokenRegistry", function () {
 
   describe("Token Management", function () {
     it("Should add a token to the whitelist", async function () {
-      await expect(registry.addToken(addr1.address))
+      await expect(registry.addToken(addr1.address, 0))
         .to.emit(registry, "TokenAdded");
       expect(await registry.isTokenWhitelisted(addr1.address)).to.be.true;
     });
 
     it("Should emit TokenAdded event when adding a token", async function () {
-      await expect(registry.addToken(addr1.address))
+      await expect(registry.addToken(addr1.address, 0))
         .to.emit(registry, "TokenAdded")
-        .withArgs(addr1.address);
+        .withArgs(addr1.address, 0);
     });
 
     it("Should remove a token from the whitelist", async function () {
-      await registry.addToken(addr1.address);
+      await registry.addToken(addr1.address, 0);
       await registry.removeToken(addr1.address);
       expect(await registry.isTokenWhitelisted(addr1.address)).to.be.false;
     });
 
     it("Should emit TokenRemoved event when removing a token", async function () {
-      await registry.addToken(addr1.address);
+      await registry.addToken(addr1.address, 0);
       await expect(registry.removeToken(addr1.address))
         .to.emit(registry, "TokenRemoved")
         .withArgs(addr1.address);
     });
 
-    it("Should not allow adding zero address", async function () {
-      await expect(registry.addToken(ethers.ZeroAddress))
-        .to.be.revertedWith("ERC20TokenRegistry: Token address cannot be zero");
+    it("Should allow adding zero address as the native token", async function () {
+      await expect(registry.addToken(ethers.ZeroAddress, 0))
+        .to.emit(registry, "TokenAdded")
+        .withArgs(ethers.ZeroAddress, 0);
     });
 
     it("Should not allow adding already whitelisted token", async function () {
-      await registry.addToken(addr1.address);
-      await expect(registry.addToken(addr1.address))
+      await registry.addToken(addr1.address, 0);
+      await expect(registry.addToken(addr1.address, 0))
         .to.be.revertedWith("ERC20TokenRegistry: Token already whitelisted");
     });
 

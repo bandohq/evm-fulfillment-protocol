@@ -18,7 +18,8 @@ interface IBandoFulfillable {
     /// @param request The fulfillment request details
     function deposit(
         uint256 serviceID,
-        FulFillmentRequest memory request
+        FulFillmentRequest memory request,
+        uint256 feeAmount
     ) external payable;
 
     /// @notice Registers a fulfillment for a service

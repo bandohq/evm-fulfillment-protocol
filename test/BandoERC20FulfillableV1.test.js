@@ -9,6 +9,7 @@ const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   tokenAmount: 100,
   fiatAmount: 10,
+  feeAmount: 0,
   serviceRef: uuidv4(),
   token: ''
 }
@@ -100,7 +101,7 @@ describe("BandoERC20FulfillableV1", () => {
     await routerContract.setERC20Escrow(await escrow.getAddress());
     await manager.setService(1, 0, fulfiller.address, beneficiary.address);
     await manager.setServiceRef(1, DUMMY_FULFILLMENTREQUEST.serviceRef);
-    await tokenRegistry.addToken(taddr);
+    await tokenRegistry.addToken(taddr, 0);
   });
 
   describe("Configuration Specs", async () => {
@@ -175,6 +176,7 @@ describe("BandoERC20FulfillableV1", () => {
     it("should persist unique fulfillment records on the blockchain", async () => {
       const payerRecordIds = await escrow.recordsOf(owner);
       const record1 = await escrow.record(payerRecordIds[0]);
+      console.log(record1);
       expect(record1[0]).to.be.equal(1); //record ID
       expect(record1[2]).to.be.equal(await fulfiller.getAddress()); //fulfiller
       expect(record1[3]).to.be.equal(await erc20Test.getAddress()); //token

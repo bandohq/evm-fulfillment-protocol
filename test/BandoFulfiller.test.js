@@ -9,6 +9,7 @@ const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   weiAmount: 101,
   fiatAmount: 10,
+  feeAmount: 0,
   serviceRef: "01234XYZ"
 }
  

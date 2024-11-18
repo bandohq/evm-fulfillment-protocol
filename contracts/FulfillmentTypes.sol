@@ -25,6 +25,8 @@ struct FulFillmentRecord {
     address payer;
     /// @notice Amount in wei
     uint256 weiAmount;
+    /// @notice Fee amount charged in wei
+    uint256 feeAmount;
     /// @notice Fiat amount to be charged for the fulfillable
     uint256 fiatAmount;
     /// @notice Time at which the fulfillment was submitted
@@ -66,6 +68,8 @@ struct ERC20FulFillmentRecord {
     address payer;
     /// @notice Amount of tokens
     uint256 tokenAmount;
+    /// @notice Fee amount charged in tokens
+    uint256 feeAmount;
     /// @notice Fiat amount to be charged for the fulfillable
     uint256 fiatAmount;
     /// @notice Time at which the fulfillment was submitted
