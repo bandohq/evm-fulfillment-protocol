@@ -134,7 +134,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// It sets up the fulfillment fee percentage for a service.
     /// @param serviceID The service identifier
     /// @param fulfillmentFeePercentage The fulfillment fee percentage
-    function setServiceFulfillmentFeePercentage(uint256 serviceID, uint16 fulfillmentFeePercentage) public virtual onlyOwner {
+      function setServiceFulfillmentFee(uint256 serviceID, uint16 fulfillmentFeeBasisPoints) public virtual onlyOwner {
         IFulfillableRegistry(_serviceRegistry).updateServicefeeAmountBasisPoints(serviceID, fulfillmentFeePercentage);
     }
 
