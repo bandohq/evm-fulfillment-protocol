@@ -9,7 +9,6 @@ const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   tokenAmount: 100,
   fiatAmount: 10,
-  feeAmount: 0,
   serviceRef: uuidv4(),
   token: ''
 }
@@ -43,6 +42,7 @@ let erc20Test;
 let registryAddress;
 let manager;
 let routerContract;
+
 
 describe("BandoERC20FulfillableV1", () => {
   
@@ -99,9 +99,9 @@ describe("BandoERC20FulfillableV1", () => {
     await routerContract.setTokenRegistry(await tokenRegistry.getAddress());
     await routerContract.setEscrow(DUMMY_ADDRESS);
     await routerContract.setERC20Escrow(await escrow.getAddress());
-    await manager.setService(1, 0, fulfiller.address, beneficiary.address);
+    await manager.setService(1, 100, fulfiller.address, beneficiary.address);
     await manager.setServiceRef(1, DUMMY_FULFILLMENTREQUEST.serviceRef);
-    await tokenRegistry.addToken(taddr, 0);
+    await tokenRegistry.addToken(taddr, 10);
   });
 
   describe("Configuration Specs", async () => {
@@ -124,7 +124,7 @@ describe("BandoERC20FulfillableV1", () => {
   describe("Deposit Specs", () => {
     it("should not allow a payable deposit coming from any random address.", async () => {
       await expect(
-        escrow.depositERC20(1, DUMMY_FULFILLMENTREQUEST)
+        escrow.depositERC20(1, DUMMY_FULFILLMENTREQUEST, 1)
       ).to.be.revertedWith('Caller is not the router');
     });
 
@@ -153,15 +153,15 @@ describe("BandoERC20FulfillableV1", () => {
       DUMMY_FULFILLMENTREQUEST.token = await erc20Test.getAddress();
       const response = await routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST);
       const BNresponse = await escrow.getERC20DepositsFor(DUMMY_FULFILLMENTREQUEST.token, DUMMY_FULFILLMENTREQUEST.payer, 1);
-      assert.equal(BNresponse.toString(), "1000000000000000000000");
+      assert.equal(BNresponse.toString(), "1011000000000000000000");
       const erc20PostBalance = await erc20Test.balanceOf(await escrow.getAddress());
-      expect(erc20PostBalance).to.be.equal("1000000000000000000000");
+      expect(erc20PostBalance).to.be.equal("1011000000000000000000");
 
       const response2 = await routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST);
       const BNresponse2 = await escrow.getERC20DepositsFor(DUMMY_FULFILLMENTREQUEST.token, DUMMY_FULFILLMENTREQUEST.payer, 1);
-      assert.equal(BNresponse2.toString(), "2000000000000000000000");
+      assert.equal(BNresponse2.toString(), "2022000000000000000000");
       const erc20PostBalance2 = await erc20Test.balanceOf(await escrow.getAddress());
-      expect(erc20PostBalance2).to.be.equal("2000000000000000000000");
+      expect(erc20PostBalance2).to.be.equal("2022000000000000000000");
     });
 
     it("should emit a ERC2ODepositReceived event", async () => {
@@ -176,7 +176,6 @@ describe("BandoERC20FulfillableV1", () => {
     it("should persist unique fulfillment records on the blockchain", async () => {
       const payerRecordIds = await escrow.recordsOf(owner);
       const record1 = await escrow.record(payerRecordIds[0]);
-      console.log(record1);
       expect(record1[0]).to.be.equal(1); //record ID
       expect(record1[2]).to.be.equal(await fulfiller.getAddress()); //fulfiller
       expect(record1[3]).to.be.equal(await erc20Test.getAddress()); //token
@@ -198,6 +197,7 @@ describe("BandoERC20FulfillableV1", () => {
       await expect(
         fromManager.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
       ).not.to.be.reverted;
+      let fees = await escrow.getERC20FeesFor(erc20Test, 1);
       await escrow.setManager(await manager.getAddress());
       const record = await escrow.record(payerRecordIds[0]);
       expect(record[11]).to.be.equal(1);
@@ -220,7 +220,7 @@ describe("BandoERC20FulfillableV1", () => {
       const fromManager = await escrow.connect(managerEOA);
       const r = fromManager.registerFulfillment(1, FAILED_FULFILLMENT_RESULT);
       await expect(r).not.to.be.reverted;
-      await expect(r).to.emit(escrow, 'ERC20RefundAuthorized').withArgs(owner, ethers.parseUnits('1000', 18));
+      await expect(r).to.emit(escrow, 'ERC20RefundAuthorized').withArgs(owner, ethers.parseUnits('1011', 18));
       const record = await escrow.record(payerRecordIds[1]);
       await escrow.setManager(await manager.getAddress());
       expect(record[11]).to.be.equal(0);
@@ -231,7 +231,7 @@ describe("BandoERC20FulfillableV1", () => {
       const fromRouter = await escrow.connect(router);
       const r = fromRouter.withdrawERC20Refund(1, erc20Test, owner);
       await expect(r).not.to.be.reverted;
-      await expect(r).to.emit(escrow, 'ERC20RefundWithdrawn').withArgs(erc20Test, owner, ethers.parseUnits('1000', 18));
+      await expect(r).to.emit(escrow, 'ERC20RefundWithdrawn').withArgs(erc20Test, owner, ethers.parseUnits('1011', 18));
       await escrow.setRouter(await routerContract.getAddress());
     });
 
@@ -283,5 +283,116 @@ describe("BandoERC20FulfillableV1", () => {
         fromManager.beneficiaryWithdraw(1, erc20Test)
       ).to.be.revertedWith('There is no balance to release.');
     });
+  });
+
+  describe("withdrawAccumulatedFees", function() {
+      it("should not allow non-manager to withdraw fees", async function() {
+          await expect(
+              escrow.connect(owner).withdrawAccumulatedFees(1, erc20Test)
+          ).to.be.revertedWith("Caller is not the manager");
+      });
+
+      it("should not allow withdrawal when no fees are accumulated", async function() {
+          await escrow.setManager(managerEOA.address);
+          await expect(
+              escrow.connect(managerEOA).withdrawAccumulatedFees(1, ethers.ZeroAddress)
+          ).to.be.revertedWith("No fees to withdraw");
+          await escrow.setManager(await manager.getAddress());
+      });
+
+      it("should accumulate fees after successful fulfillment", async function() {
+          const records = await escrow.recordsOf(await owner.getAddress());
+          const recordId = records[2];
+          // Register successful fulfillment
+          const SUCCESS_RESULT = {
+              id: recordId,
+              status: 1, // SUCCESS
+              externalID: uuidv4(),
+              receiptURI: "https://example.com"
+          };
+          
+          await manager.registerERC20Fulfillment(1, SUCCESS_RESULT);
+          /* 
+          * fees:
+          * success record1 fee = 11 (1000 tokens)
+          * success record2 fee = 1.1 (100 tokens)
+          * total fees = 12.1 (1210000000000000000)
+          */
+          const accumulatedFees = await escrow.getERC20FeesFor(erc20Test, 1);
+          const formattedFees = ethers.formatUnits(accumulatedFees, await erc20Test.decimals());
+          expect(formattedFees).to.equal("12.1");
+      });
+
+      it("should not accumulate fees for failed fulfillment", async function() {
+        DUMMY_FULFILLMENTREQUEST.payer = owner;
+        DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits("1000", 18);
+        await expect(
+          routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST)
+        ).to.emit(escrow, "ERC20DepositReceived")
+        const records = await escrow.recordsOf(await owner.getAddress());
+        const recordId = records[records.length - 1];
+        // Register failed fulfillment
+        const FAILED_RESULT = {
+              id: recordId,
+              status: 0, // FAILED
+              externalID: uuidv4(),
+              receiptURI: "https://example.com"
+          };
+          
+          await manager.registerERC20Fulfillment(1, FAILED_RESULT);
+          // Fees should not be accumulated. 
+          // They should be the amount accumulated on other successful fulfillments
+          const accumulatedFees = await escrow.getERC20FeesFor(erc20Test, 1);
+          const formattedFees = ethers.formatUnits(accumulatedFees, await erc20Test.decimals());
+          expect(formattedFees).to.equal("12.1");
+      });
+
+      it("should successfully withdraw accumulated fees", async function() {          
+          // Get beneficiary's initial balance
+          const [service, ] = await registry.getService(1);
+          const beneficiary = service.beneficiary;
+          const initialBalance = await erc20Test.balanceOf(beneficiary);
+          // Withdraw fees
+          const tx = await manager.withdrawERC20Fees(1, erc20Test);
+          
+          // Verify event emission
+          await expect(tx)
+              .to.emit(escrow, 'ERC20FeesWithdrawn')
+              .withArgs(1, await erc20Test.getAddress(), beneficiary, "12100000000000000000");
+          
+          // Verify beneficiary received the fees
+          const finalBalance = await erc20Test.balanceOf(beneficiary);
+          const BNfeeAmount = ethers.parseUnits("12.1", 18);
+          expect(finalBalance - initialBalance).to.equal(BNfeeAmount);
+          
+          // Verify fees were reset
+          const postWithdrawFees = await escrow.getERC20FeesFor(erc20Test, 1);
+          expect(postWithdrawFees).to.equal(0);
+      });
+
+      it("should handle zero service fees correctly", async function() {
+          // Setup a service with zero fees
+          await manager.setService(2, 0, fulfiller.address, beneficiary.address);
+          await manager.setServiceRef(2, DUMMY_FULFILLMENTREQUEST.serviceRef);
+          DUMMY_FULFILLMENTREQUEST.payer = owner;
+          DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits("1000", 18);
+          await expect(
+            routerContract.requestERC20Service(2, DUMMY_FULFILLMENTREQUEST)
+          ).to.emit(escrow, "ERC20DepositReceived")
+          const records = await escrow.recordsOf(await owner.getAddress());
+          const recordId = records[records.length - 1];
+          const SUCCESS_RESULT = {
+              id: recordId,
+              status: 1,
+              externalID: DUMMY_FULFILLMENTREQUEST.serviceRef,
+              receiptURI: "https://example.com"
+          };
+          
+          await manager.registerERC20Fulfillment(2, SUCCESS_RESULT);
+          // Fee should be the swap fee for the token (10 basis points)
+          const calculatedFee = (DUMMY_FULFILLMENTREQUEST.tokenAmount * BigInt(10)) / BigInt(10000);
+          const accumulatedFees = await escrow.getERC20FeesFor(erc20Test, 2);
+          expect(accumulatedFees).to.equal(calculatedFee);
+      });
   });
 });

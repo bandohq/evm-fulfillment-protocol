@@ -46,4 +46,9 @@ interface IBandoERC20Fulfillable {
     /// @param serviceID The service identifier
     /// @param token The address of the ERC20 token
     function beneficiaryWithdraw(uint256 serviceID, address token) external;
+
+    /// @notice Withdraws the accumulated fees for a service
+    /// @param serviceID The service identifier
+    /// @param token The address of the ERC20 token
+    function withdrawAccumulatedFees(uint256 serviceID, address token) external;
 }

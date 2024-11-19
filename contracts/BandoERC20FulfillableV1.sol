@@ -182,7 +182,7 @@ contract BandoERC20FulfillableV1 is
         uint256 feeAmount
     ) public virtual nonReentrant {
         require(_router == msg.sender, "Caller is not the router");
-        uint256 amount = fulfillmentRequest.tokenAmount;
+        (, uint256 fullAmount) = fulfillmentRequest.tokenAmount.tryAdd(feeAmount);
         address token = fulfillmentRequest.token;
         (Service memory service, ) = _registryContract.getService(serviceID);
         uint256 depositsAmount = getERC20DepositsFor(
@@ -190,8 +190,7 @@ contract BandoERC20FulfillableV1 is
             fulfillmentRequest.payer,
             serviceID
         );
-        (bool success, uint256 result) = amount.tryAdd(depositsAmount);
-        require(success, "Overflow while adding deposits");
+        (, uint256 result) = fullAmount.tryAdd(depositsAmount);
         setERC20DepositsFor(
             token,
             fulfillmentRequest.payer,
@@ -254,6 +253,14 @@ contract BandoERC20FulfillableV1 is
     /// @return amount The amount of ERC20 tokens authorized for refund.
     function getERC20RefundsFor(address token, address refundee, uint256 serviceID) public view returns (uint256 amount) {
         amount = _erc20_authorized_refunds[serviceID][token][refundee];
+    }
+
+    /// @dev Retrieves the amount of ERC20 fees accumulated for a given token and service ID.
+    /// @param token The address of the ERC20 token.
+    /// @param serviceID The identifier of the service.
+    /// @return amount The amount of ERC20 tokens accumulated as fees.
+    function getERC20FeesFor(address token, uint256 serviceID) public view returns (uint256 amount) {
+        amount = _accumulatedFees[serviceID][token];
     }
 
     /// @dev Sets the amount of ERC20 refunds authorized for a given token, refundee, and service ID.
@@ -356,37 +363,15 @@ contract BandoERC20FulfillableV1 is
         require(_fulfillmentRecords[fulfillment.id].status == FulFillmentResultState.PENDING, "Fulfillment already registered");
         (Service memory service, ) = _registryContract.getService(serviceID);
         address token = _fulfillmentRecords[fulfillment.id].token;
-        uint depositsAmount = getERC20DepositsFor(
-            token,
-            _fulfillmentRecords[fulfillment.id].payer,
-            serviceID
-        );
         uint256 tokenAmount = _fulfillmentRecords[fulfillment.id].tokenAmount;
+        (, uint256 fullAmount) = tokenAmount.tryAdd(_fulfillmentRecords[fulfillment.id].feeAmount);
         if(fulfillment.status == FulFillmentResultState.FAILED) {
-            _authorizeRefund(service, token, _fulfillmentRecords[fulfillment.id].payer, tokenAmount);
+            _authorizeRefund(service, token, _fulfillmentRecords[fulfillment.id].payer, fullAmount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
         } else if(fulfillment.status != FulFillmentResultState.SUCCESS) {
             revert('Unexpected status');
         } else {
-            (bool asuccess, uint256 feeResult) = _accumulatedFees[serviceID][token].tryAdd(
-                _fulfillmentRecords[fulfillment.id].feeAmount
-            );
-            require(asuccess, "Overflow while adding accumulated fees");
-            _accumulatedFees[serviceID][token] = feeResult;
-            (bool rlsuccess, uint256 releaseResult) = _releaseablePools[serviceID][token].tryAdd(tokenAmount);
-            require(rlsuccess, "Overflow while adding to releaseable pool");
-            (bool dsuccess, uint256 subResult) = depositsAmount.trySub(tokenAmount);
-            require(dsuccess, "Overflow while substracting from deposits");
-            _releaseablePools[serviceID][token] = releaseResult;
-            setERC20DepositsFor(
-                token,
-                _fulfillmentRecords[fulfillment.id].payer,
-                serviceID,
-                subResult
-            );
-            _fulfillmentRecords[fulfillment.id].receiptURI = fulfillment.receiptURI;
-            _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
-            _fulfillmentRecords[fulfillment.id].externalID = fulfillment.externalID;
+            _successFulfillment(serviceID, _fulfillmentRecords[fulfillment.id], fullAmount);
         }
         return true;
     }
@@ -406,7 +391,7 @@ contract BandoERC20FulfillableV1 is
     /// Only the manager can withdraw the accumulated fees.
     /// @param serviceId The service identifier
     /// @param token The token address
-    function withdrawAccumulatedERC20Fees(
+    function withdrawAccumulatedFees(
         uint256 serviceId,
         address token
     ) external nonReentrant {
@@ -428,5 +413,36 @@ contract BandoERC20FulfillableV1 is
             service.beneficiary,
             amount
         );
+    }
+
+    /// @dev Internal function to handle the success of a fulfillment.
+    /// @param serviceID The service identifier.
+    /// @param frecord The fulfillment record.
+    /// @param fullAmount The total amount of the fulfillment.
+    function _successFulfillment(uint256 serviceID, ERC20FulFillmentRecord memory frecord, uint256 fullAmount) internal {
+        (bool asuccess, uint256 feeResult) = _accumulatedFees[serviceID][frecord.token].tryAdd(
+            _fulfillmentRecords[frecord.id].feeAmount
+        );
+        uint depositsAmount = getERC20DepositsFor(
+            frecord.token,
+            _fulfillmentRecords[frecord.id].payer,
+            serviceID
+        );
+        require(asuccess, "Overflow while adding accumulated fees");
+        _accumulatedFees[serviceID][frecord.token] = feeResult;
+        (bool rlsuccess, uint256 releaseResult) = _releaseablePools[serviceID][frecord.token].tryAdd(frecord.tokenAmount);
+        require(rlsuccess, "Overflow while adding to releaseable pool");
+        (bool dsuccess, uint256 subResult) = depositsAmount.trySub(fullAmount);
+        require(dsuccess, "Overflow while substracting from deposits");
+        _releaseablePools[serviceID][frecord.token] = releaseResult;
+        setERC20DepositsFor(
+            frecord.token,
+            frecord.payer,
+            serviceID,
+            subResult
+        );
+        _fulfillmentRecords[frecord.id].receiptURI = frecord.receiptURI;
+        _fulfillmentRecords[frecord.id].status = FulFillmentResultState.SUCCESS;
+        _fulfillmentRecords[frecord.id].externalID = frecord.externalID;
     }
 }

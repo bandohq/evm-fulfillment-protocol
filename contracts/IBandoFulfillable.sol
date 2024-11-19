@@ -53,4 +53,8 @@ interface IBandoFulfillable {
     /// @notice Withdraws the beneficiary's available balance to release (fulfilled with success).
     /// @param serviceID The service identifier
     function beneficiaryWithdraw(uint256 serviceID) external;
+
+    /// @notice Withdraws the accumulated fees for a service
+    /// @param serviceID The service identifier
+    function withdrawAccumulatedFees(uint256 serviceID) external;
 }

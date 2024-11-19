@@ -182,4 +182,27 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         require(service.beneficiary == msg.sender, "Only the beneficiary can withdraw");
         IBandoERC20Fulfillable(_erc20_escrow).beneficiaryWithdraw(serviceID, token);
     }
+
+    /// @dev withdrawERC20Fees
+    /// @notice This method must only be called by the owner.
+    /// @param serviceID The service identifier
+    /// @param token The address of the ERC20 token
+    function withdrawERC20Fees(uint256 serviceID, address token) public virtual onlyOwner {
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        if (msg.sender != service.fulfiller) {
+            require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
+        }
+        IBandoERC20Fulfillable(_erc20_escrow).withdrawAccumulatedFees(serviceID, token);
+    }
+
+    /// @dev withdrawNativeFees
+    /// @notice This method must only be called by the owner.
+    /// @param serviceID The service identifier
+    function withdrawNativeFees(uint256 serviceID) public virtual onlyOwner {
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        if (msg.sender != service.fulfiller) {
+            require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
+        }
+        IBandoFulfillable(_escrow).withdrawAccumulatedFees(serviceID);
+    }
 }

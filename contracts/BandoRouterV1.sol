@@ -158,13 +158,14 @@ contract BandoRouterV1 is
             request.token,
             request.tokenAmount
         );
+        (, uint256 total_amount) = request.tokenAmount.tryAdd(feeAmount);
         /// @dev Transfer the payment to the ERC20 escrow contract
         /// It is important to have msg.sender in the from field as a best security practice
         /// this is the reason this is done here and not in the escrow contract
         IERC20(request.token).safeTransferFrom(
             msg.sender,
             _erc20Escrow,
-            request.tokenAmount
+            total_amount
         );
         IBandoERC20Fulfillable(_erc20Escrow).depositERC20(serviceID, request, feeAmount);
         emit ERC20ServiceRequested(serviceID, request);

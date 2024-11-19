@@ -122,7 +122,7 @@ describe('BandoFulfillmentManagerV1', () => {
     describe('Set Service', () => {
         it('should set up a service', async () => {
             const serviceID = 1;
-            const feeAmountBasisPoints = 10
+            const feeAmountBasisPoints = 100;
 
             // Set up the service
             const result = await manager.setService(
@@ -158,7 +158,7 @@ describe('BandoFulfillmentManagerV1', () => {
 
         it('should revert if the service already exists.', async () => {
             const serviceID = 1;
-            const feeAmountBasisPoints = 10
+            const feeAmountBasisPoints = 100;
 
             // Ensure the transaction reverts with an appropriate error message
             await expect(
@@ -188,11 +188,10 @@ describe('BandoFulfillmentManagerV1', () => {
                 fiatAmount: "1000",
                 serviceRef: "012345678912",
                 weiAmount: ethers.parseUnits('1000', 'wei'),
-                feeAmount: 100,
             };
             const weiAmount = new BN(fulfillmentRequest.weiAmount);
             // Request the service through the router
-            await router.requestService(serviceID, fulfillmentRequest, { value: weiAmount.toString() });
+            await router.requestService(serviceID, fulfillmentRequest, { value: "1010" });
             const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
             const SUCCESS_FULFILLMENT_RESULT = {
                 id: payerRecordIds[0],

@@ -159,6 +159,13 @@ contract BandoFulfillableV1 is
         _registryContract = IFulfillableRegistry(fulfillableRegistry_);
     }
 
+    /// @notice Retrieves the accumulated fees for a given service ID
+    /// @param serviceId The ID of the service
+    /// @return amount The total amount of accumulated fees for the given service ID
+    function getNativeFeesFor(uint256 serviceId) public view returns (uint256 amount) {
+        amount = _accumulatedFees[serviceId];
+    }
+
     /// @notice Retrieves the total deposits for a given payer and service ID
     /// @param payer The address of the payer
     /// @param serviceID The ID of the service
@@ -215,12 +222,12 @@ contract BandoFulfillableV1 is
     ) public payable virtual nonReentrant {
         require(_router == msg.sender, "Caller is not the router");
         (Service memory service, ) = _registryContract.getService(serviceID);
-        uint256 amount = msg.value;
+        uint256 total_amount = msg.value;
         uint256 depositsAmount = getDepositsFor(
             fulfillmentRequest.payer,
             serviceID
         );
-        (bool success, uint256 result) = amount.tryAdd(depositsAmount);
+        (bool success, uint256 result) = total_amount.tryAdd(depositsAmount);
         require(success, "Overflow while adding deposits");
         setDepositsFor(
             fulfillmentRequest.payer,
@@ -235,7 +242,7 @@ contract BandoFulfillableV1 is
             fulfiller: service.fulfiller,
             entryTime: block.timestamp,
             payer: fulfillmentRequest.payer,
-            weiAmount: msg.value,
+            weiAmount: fulfillmentRequest.weiAmount,
             feeAmount: feeAmount,
             fiatAmount: fulfillmentRequest.fiatAmount,
             receiptURI: "",
@@ -350,7 +357,8 @@ contract BandoFulfillableV1 is
         );
         address payer = _fulfillmentRecords[fulfillment.id].payer;
         uint256 deposits = getDepositsFor(payer, serviceID);
-        uint256 total_amount = _fulfillmentRecords[fulfillment.id].weiAmount;
+        uint256 wei_amount = _fulfillmentRecords[fulfillment.id].weiAmount;
+        (, uint256 total_amount) = wei_amount.tryAdd(_fulfillmentRecords[fulfillment.id].feeAmount);
         if (fulfillment.status == FulFillmentResultState.FAILED) {
             _authorizeRefund(serviceID, payer, total_amount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
@@ -362,7 +370,7 @@ contract BandoFulfillableV1 is
             );
             require(asuccess, "Overflow while adding accumulated fees");
             _accumulatedFees[serviceID] = addResult;
-            (bool rlsuccess, uint256 releaseResult) = _releaseablePool[serviceID].tryAdd(total_amount);
+            (bool rlsuccess, uint256 releaseResult) = _releaseablePool[serviceID].tryAdd(wei_amount);
             require(rlsuccess, "Overflow while adding to releaseable pool");
             (bool dsuccess, uint256 subResult) = deposits.trySub(total_amount);
             require(dsuccess, "Overflow while substracting from deposits");
@@ -394,7 +402,7 @@ contract BandoFulfillableV1 is
         uint256 amount = _accumulatedFees[serviceId];
         require(amount > 0, "No fees to withdraw");
         _accumulatedFees[serviceId] = 0;
-        payable(service.beneficiary).sendValue(amount);
+        service.beneficiary.sendValue(amount);
         emit FeesWithdrawn(serviceId, service.beneficiary, amount);
     }
 }
