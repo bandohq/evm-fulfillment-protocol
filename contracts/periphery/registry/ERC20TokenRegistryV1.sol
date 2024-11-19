@@ -117,6 +117,6 @@ contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
             revert InvalidswapFeeBasisPoints(swapFeeBasisPoints);
         }
         _swapFeeBasisPoints[token] = swapFeeBasisPoints;
-        emit swapFeeBasisPointsUpdated(token, swapFeeBasisPoints);
+        emit SwapFeeBasisPointsUpdated(token, swapFeeBasisPoints);
     }
 }
