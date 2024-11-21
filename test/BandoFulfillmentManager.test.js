@@ -60,7 +60,6 @@ describe('BandoFulfillmentManagerV1', () => {
         /**
          * configure protocol state vars.
          */
-        const feeAmount = ethers.parseUnits('0.1', 'ether');
         await escrow.setManager(await manager.getAddress());
         await escrow.setFulfillableRegistry(registryAddress);
         await escrow.setRouter(await router.getAddress());
@@ -189,9 +188,10 @@ describe('BandoFulfillmentManagerV1', () => {
                 serviceRef: "012345678912",
                 weiAmount: ethers.parseUnits('1000', 'wei'),
             };
-            const weiAmount = new BN(fulfillmentRequest.weiAmount);
+            // 1000 wei + 10.9999 service fee wei = 1011 wei
+            const total_amount = ethers.parseUnits('1011', 'wei');
             // Request the service through the router
-            await router.requestService(serviceID, fulfillmentRequest, { value: "1010" });
+            await router.requestService(serviceID, fulfillmentRequest, { value: total_amount });
             const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
             const SUCCESS_FULFILLMENT_RESULT = {
                 id: payerRecordIds[0],
@@ -216,11 +216,9 @@ describe('BandoFulfillmentManagerV1', () => {
                 fiatAmount: "1000",
                 serviceRef: "012345678912",
                 weiAmount: ethers.parseUnits('1000', 'wei'),
-                feeAmount: 100,
             };
-            const weiAmount = new BN(fulfillmentRequest.weiAmount);
             // Request the service through the router
-            await router.requestService(1, fulfillmentRequest, { value: weiAmount.toString() });
+            await router.requestService(1, fulfillmentRequest, { value: "1011" });
             const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
             const INVALID_FULFILLMENT_RESULT = {
                 id: payerRecordIds[1],
@@ -243,7 +241,8 @@ describe('BandoFulfillmentManagerV1', () => {
             };
             const r = await manager.registerFulfillment(1, FAILED_FULFILLMENT_RESULT);
             await expect(r).not.to.be.reverted;
-            await expect(r).to.emit(escrow, 'RefundAuthorized').withArgs(await owner.getAddress(), ethers.parseUnits('1000', 'wei'));
+            await expect(r).to.emit(escrow, 'RefundAuthorized')
+                .withArgs(await owner.getAddress(), ethers.parseUnits('1011', 'wei'));
             const record = await escrow.record(payerRecordIds[1]);
             expect(record[10]).to.be.equal(0);
         });
@@ -288,9 +287,7 @@ describe('BandoFulfillmentManagerV1', () => {
                 serviceRef: "012345678912",
                 tokenAmount: "10000",
                 token: await erc20Test.getAddress(),
-                feeAmount: 100,
             };
-            const weiAmount = new BN(fulfillmentRequest.weiAmount);
             // Request the service through the router
             await router.requestERC20Service(1, fulfillmentRequest);
             const payerRecordIds = await erc20_escrow.recordsOf(await owner.getAddress());
@@ -315,7 +312,8 @@ describe('BandoFulfillmentManagerV1', () => {
             };
             const r = await manager.registerERC20Fulfillment(1, FAILED_FULFILLMENT_RESULT);
             await expect(r).not.to.be.reverted;
-            await expect(r).to.emit(erc20_escrow, 'ERC20RefundAuthorized').withArgs(await owner.getAddress(), "10000");
+            await expect(r).to.emit(erc20_escrow, 'ERC20RefundAuthorized')
+                .withArgs(await owner.getAddress(), "10100");
             const record = await erc20_escrow.record(payerRecordIds[1]);
             expect(record[11]).to.be.equal(0);
         });

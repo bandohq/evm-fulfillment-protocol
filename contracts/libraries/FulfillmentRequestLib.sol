@@ -106,6 +106,11 @@ library FulfillmentRequestLib {
     /// and calculates the fee based on the configured fees.
     /// @dev Fees are represented in basis points to work with integers
     /// on fee percentages below 1%
+    /// The fee is also rounded up to the nearest integer.
+    /// This is to avoid rounding errors when calculating the total amount.
+    /// And to avoid underpaying.
+    /// totalFee = (amount * basisPoints + 9999) / 10000
+    /// totalAmount = amount + serviceFee + swapFee
     /// @param fulfillableRegistry Service registry contract address
     /// @param tokenRegistry Token registry contract address
     /// @param serviceID Service/product ID
@@ -120,11 +125,17 @@ library FulfillmentRequestLib {
     ) internal view returns (uint256 serviceFeeAmount) {
         (, uint16 feeBasisPoints) = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
         // Calculate the service fee in basis points based on the amount
-        serviceFeeAmount = amount.mulDiv(feeBasisPoints, 10000);
+        (, uint256 serviceFeeTemp) = amount.tryMul(feeBasisPoints);
+        (, uint256 serviceFeeTemp2) = serviceFeeTemp.tryAdd(9999);
+        (, serviceFeeAmount) = serviceFeeTemp2.tryDiv(10000);
+
         uint16 swapFeeBasisPoints = ERC20TokenRegistryV1(tokenRegistry)._swapFeeBasisPoints(tokenAddress);
         if(swapFeeBasisPoints > 0) {
-            uint256 swapFeeAmount = amount.mulDiv(swapFeeBasisPoints, 10000);
-            serviceFeeAmount += swapFeeAmount;
+            (, uint256 swapFeeTemp) = amount.tryMul(swapFeeBasisPoints);
+            (, uint256 swapFeeTemp2) = swapFeeTemp.tryAdd(9999);
+            (, uint256 swapFeeAmount) = swapFeeTemp2.tryDiv(10000);
+            (, uint256 totalFee) = serviceFeeAmount.tryAdd(swapFeeAmount);
+            serviceFeeAmount = totalFee;
         }
     }
 }
