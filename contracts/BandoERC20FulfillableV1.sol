@@ -70,6 +70,18 @@ contract BandoERC20FulfillableV1 is
         uint256 amount
     );
 
+    /// @notice Event emitted when the manager is updated.
+    /// @param manager The address of the new manager.
+    event ManagerUpdated(address indexed manager);
+
+    /// @notice Event emitted when the router is updated.
+    /// @param router The address of the new router.
+    event RouterUpdated(address indexed router);
+
+    /// @notice Event emitted when the fulfillable registry is updated.
+    /// @param fulfillableRegistry The address of the new fulfillable registry.
+    event FulfillableRegistryUpdated(address indexed fulfillableRegistry);
+
     /*****************************/
     /* STATE VARIABLES           */
     /*****************************/
@@ -144,6 +156,7 @@ contract BandoERC20FulfillableV1 is
     function setManager(address manager_) public onlyOwner {
         require(manager_ != address(0), "Manager address cannot be 0");
         _manager = manager_;
+        emit ManagerUpdated(manager_);
     }
 
     /// @dev Sets the protocol router address.
@@ -151,6 +164,7 @@ contract BandoERC20FulfillableV1 is
     function setRouter(address router_) public onlyOwner {
         require(router_ != address(0), "Router address cannot be 0");
         _router = router_;
+        emit RouterUpdated(router_);
     }
 
     /// @dev Sets the fulfillable registry address.
@@ -159,6 +173,7 @@ contract BandoERC20FulfillableV1 is
         require(fulfillableRegistry_ != address(0), "Fulfillable registry address cannot be 0");
         _fulfillableRegistry = fulfillableRegistry_;
         _registryContract = IFulfillableRegistry(fulfillableRegistry_);
+        emit FulfillableRegistryUpdated(fulfillableRegistry_);
     }
 
     /// @dev Returns the fulfillment records for a given payer.

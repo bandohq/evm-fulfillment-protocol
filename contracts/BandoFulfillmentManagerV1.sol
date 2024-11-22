@@ -49,6 +49,18 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @notice ERC20 escrow address
     address public _erc20_escrow;
 
+    /// @notice Event emitted when the registry is updated.
+    /// @param registry The address of the new registry.
+    event RegistryUpdated(address indexed registry);
+
+    /// @notice Event emitted when the escrow is updated.
+    /// @param escrow The address of the new escrow.
+    event EscrowUpdated(address indexed escrow);
+
+    /// @notice Event emitted when the ERC20 escrow is updated.
+    /// @param erc20Escrow The address of the new ERC20 escrow.
+    event ERC20EscrowUpdated(address indexed erc20Escrow);
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -68,6 +80,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     function setServiceRegistry(address serviceRegistry_) public onlyOwner {
         require(serviceRegistry_ != address(0), "Service registry cannot be the zero address");
         _serviceRegistry = serviceRegistry_;
+        emit RegistryUpdated(serviceRegistry_);
     }
 
     /// @dev Sets the escrow address.
@@ -75,6 +88,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     function setEscrow(address payable escrow_) public onlyOwner {
         require(escrow_ != address(0), "Escrow cannot be the zero address");
         _escrow = escrow_;
+        emit EscrowUpdated(escrow_);
     }
 
     /// @dev Sets the ERC20 escrow address.
@@ -82,6 +96,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     function setERC20Escrow(address payable erc20Escrow_) public onlyOwner {
         require(erc20Escrow_ != address(0), "ERC20 escrow cannot be the zero address");
         _erc20_escrow = erc20Escrow_;
+        emit ERC20EscrowUpdated(erc20Escrow_);
     }
 
     /// @dev setService

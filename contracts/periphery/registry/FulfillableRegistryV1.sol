@@ -58,6 +58,35 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     /// @param fulfiller The fulfiller address
     event ServiceAdded(uint256 serviceID, address indexed fulfiller);
 
+    /// @notice ManagerUpdated event
+    /// @param manager The address of the new manager
+    event ManagerUpdated(address indexed manager);
+
+    /// @notice ServiceRefAdded event
+    /// @param serviceID The service identifier
+    /// @param ref The reference to the service
+    event ServiceRefAdded(uint256 serviceID, string ref);
+
+    /// @notice ServiceFulfillmentFeeSet event
+    /// @param serviceID The service identifier
+    /// @param fulfillmentFeeBasisPoints The fulfillment fee basis points
+    event ServiceFulfillmentFeeSet(uint256 serviceID, uint16 fulfillmentFeeBasisPoints);
+
+    /// @notice ServiceBeneficiaryUpdated event
+    /// @param serviceID The service identifier
+    /// @param beneficiary The beneficiary address
+    event ServiceBeneficiaryUpdated(uint256 serviceID, address beneficiary);
+
+    /// @notice ServiceFulfillerUpdated event
+    /// @param serviceID The service identifier
+    /// @param fulfiller The fulfiller address
+    event ServiceFulfillerUpdated(uint256 serviceID, address fulfiller);
+
+    /// @notice FulfillerAdded event
+    /// @param fulfiller The fulfiller address
+    /// @param serviceID The service identifier
+    event FulfillerAdded(address fulfiller, uint256 serviceID);
+
     modifier onlyManager() {
         require(msg.sender == _manager, "FulfillableRegistry: Only the manager can call this function");
         _;
@@ -84,6 +113,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     function setManager(address manager_) public onlyOwner {
         require(manager_ != address(0), "FulfillableRegistry: Manager cannot be the zero address");
         _manager = manager_;
+        emit ManagerUpdated(manager_);
     }
 
     /**
@@ -118,6 +148,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     function updateServiceBeneficiary(uint256 serviceId, address payable newBeneficiary) external onlyOwner {
         require(_serviceRegistry[serviceId].fulfiller != address(0), 'FulfillableRegistry: Service does not exist');
         _serviceRegistry[serviceId].beneficiary = newBeneficiary;
+        emit ServiceBeneficiaryUpdated(serviceId, newBeneficiary);
     }
 
     /**
@@ -132,6 +163,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
             revert InvalidfeeAmountBasisPoints(newfeeAmountBasisPoints);
         }
         _serviceFulfillmentFeeBasisPoints[serviceId] = newfeeAmountBasisPoints;
+        emit ServiceFulfillmentFeeSet(serviceId, newfeeAmountBasisPoints);
     }
 
     /**
@@ -146,6 +178,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
         }
         require(_serviceRegistry[serviceId].fulfiller != address(0), 'FulfillableRegistry: Service does not exist');
         _serviceRegistry[serviceId].fulfiller = newFulfiller;
+        emit ServiceFulfillerUpdated(serviceId, newFulfiller);
     }
 
     /**
@@ -156,6 +189,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
         require(!_fulfillerServices[fulfiller][serviceID], "Service already registered for this fulfiller");
         _fulfillerServices[fulfiller][serviceID] = true; // Associate the service ID with the fulfiller
         _fulfillerServiceCount[fulfiller]++; // Increment the service count for the fulfiller
+        emit FulfillerAdded(fulfiller, serviceID);
     }
 
     /**
@@ -192,6 +226,7 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
         uint256 refCount = _serviceRefCount[serviceId];
         _serviceRefs[serviceId][refCount] = ref; // Store the reference at the current index
         _serviceRefCount[serviceId]++; // Increment the reference count
+        emit ServiceRefAdded(serviceId, ref);
     }
 
     /**

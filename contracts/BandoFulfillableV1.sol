@@ -66,6 +66,17 @@ contract BandoFulfillableV1 is
     /// @param amount The amount withdrawn
     event FeesWithdrawn(uint256 indexed serviceId, address beneficiary, uint256 amount);
 
+    /// @notice Event emitted when the manager is updated.
+    /// @param manager The address of the new manager.
+    event ManagerUpdated(address indexed manager);
+
+    /// @notice Event emitted when the router is updated.
+    /// @param router The address of the new router.
+    event RouterUpdated(address indexed router);
+
+    /// @notice Event emitted when the fulfillable registry is updated.
+    /// @param fulfillableRegistry The address of the new fulfillable registry.
+    event FulfillableRegistryUpdated(address indexed fulfillableRegistry);
 
     /*****************************/
     /* STATE VARIABLES           */
@@ -140,6 +151,7 @@ contract BandoFulfillableV1 is
     function setManager(address manager_) public onlyOwner {
         require(manager_ != address(0), "Manager cannot be the zero address");
         _manager = manager_;
+        emit ManagerUpdated(manager_);
     }
 
     /// @notice Sets the protocol router address
@@ -148,6 +160,7 @@ contract BandoFulfillableV1 is
     function setRouter(address router_) public onlyOwner {
         require(router_ != address(0), "Router cannot be the zero address");
         _router = router_;
+        emit RouterUpdated(router_);
     }
 
     /// @notice Sets the fulfillable registry address
@@ -157,6 +170,7 @@ contract BandoFulfillableV1 is
         require(fulfillableRegistry_ != address(0), "Fulfillable registry cannot be the zero address");
         _fulfillableRegistry = fulfillableRegistry_;
         _registryContract = IFulfillableRegistry(fulfillableRegistry_);
+        emit FulfillableRegistryUpdated(fulfillableRegistry_);
     }
 
     /// @notice Retrieves the accumulated fees for a given service ID
