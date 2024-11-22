@@ -18,7 +18,8 @@ interface IBandoFulfillable {
     /// @param request The fulfillment request details
     function deposit(
         uint256 serviceID,
-        FulFillmentRequest memory request
+        FulFillmentRequest memory request,
+        uint256 feeAmount
     ) external payable;
 
     /// @notice Registers a fulfillment for a service
@@ -52,4 +53,8 @@ interface IBandoFulfillable {
     /// @notice Withdraws the beneficiary's available balance to release (fulfilled with success).
     /// @param serviceID The service identifier
     function beneficiaryWithdraw(uint256 serviceID) external;
+
+    /// @notice Withdraws the accumulated fees for a service
+    /// @param serviceID The service identifier
+    function withdrawAccumulatedFees(uint256 serviceID) external;
 }

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.28;
 
 import { FulFillmentRequest, ERC20FulFillmentRequest } from '../FulfillmentTypes.sol';
 import { Service, IFulfillableRegistry } from '../periphery/registry/IFulfillableRegistry.sol';
 import { IERC20TokenRegistry } from "../periphery/registry/IERC20TokenRegistry.sol";
+import { ERC20TokenRegistryV1 } from "../periphery/registry/ERC20TokenRegistryV1.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
@@ -14,6 +15,7 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 library FulfillmentRequestLib {
     using Address for address payable;
     using Math for uint256;
+    using Math for uint16;
 
     /// @notice InsufficientAmount error message
     /// It is thrown when the amount sent is zero
@@ -32,7 +34,7 @@ library FulfillmentRequestLib {
     error OverflowError();
 
     /// @notice AmountMismatch error message
-    /// It is thrown when the amount sent does not match weiAmount + feeAmount
+    /// It is thrown when the fee amount validations fail
     error AmountMismatch();
 
     /// @notice UnsupportedToken error message
@@ -42,7 +44,6 @@ library FulfillmentRequestLib {
 
     /// @notice validateRequest
     /// @dev It checks if the amount sent is greater than zero, if the fiat amount is greater than zero,
-    /// if the service reference is valid, if the amount sent matches the weiAmount + feeAmount and returns the service
     /// @param serviceID the product/service ID
     /// @param request a valid FulFillmentRequest
     /// @param fulfillableRegistry the registry address
@@ -58,19 +59,10 @@ library FulfillmentRequestLib {
             revert InvalidFiatAmount();
         }
         
-        Service memory service = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        (Service memory service, ) = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
         
         if (!IFulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
             revert InvalidRef();
-        }
-        
-        (bool success, uint256 total_amount) = request.weiAmount.tryAdd(service.feeAmount);
-        if (!success) {
-            revert OverflowError();
-        }
-        
-        if (msg.value != total_amount) {
-            revert AmountMismatch();
         }
 
         return service;
@@ -101,12 +93,49 @@ library FulfillmentRequestLib {
             revert UnsupportedToken(request.token);
         }
         
-        Service memory service = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        (Service memory service, ) = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
         
         if (!IFulfillableRegistry(fulfillableRegistry).isRefValid(serviceID, request.serviceRef)) {
             revert InvalidRef();
         }
 
         return service;
+    }
+
+    /// @notice calculateFees: Gets service fee and swap fee (if any)
+    /// and calculates the fee based on the configured fees.
+    /// @dev Fees are represented in basis points to work with integers
+    /// on fee percentages below 1%
+    /// The fee is also rounded up to the nearest integer.
+    /// This is to avoid rounding errors when calculating the total amount.
+    /// And to avoid underpaying.
+    /// totalFee = (amount * basisPoints + 9999) / 10000
+    /// totalAmount = amount + serviceFee + swapFee
+    /// @param fulfillableRegistry Service registry contract address
+    /// @param tokenRegistry Token registry contract address
+    /// @param serviceID Service/product ID
+    /// @param tokenAddress Token address (zero address for native coin)
+    /// @param amount The amount to calculate the fees for
+    function calculateFees(
+        address fulfillableRegistry,
+        address tokenRegistry,
+        uint256 serviceID,
+        address tokenAddress,
+        uint256 amount
+    ) internal view returns (uint256 serviceFeeAmount) {
+        (, uint16 feeBasisPoints) = IFulfillableRegistry(fulfillableRegistry).getService(serviceID);
+        // Calculate the service fee in basis points based on the amount
+        (, uint256 serviceFeeTemp) = amount.tryMul(feeBasisPoints);
+        (, uint256 serviceFeeTemp2) = serviceFeeTemp.tryAdd(9999);
+        (, serviceFeeAmount) = serviceFeeTemp2.tryDiv(10000);
+
+        uint16 swapFeeBasisPoints = ERC20TokenRegistryV1(tokenRegistry)._swapFeeBasisPoints(tokenAddress);
+        if(swapFeeBasisPoints > 0) {
+            (, uint256 swapFeeTemp) = amount.tryMul(swapFeeBasisPoints);
+            (, uint256 swapFeeTemp2) = swapFeeTemp.tryAdd(9999);
+            (, uint256 swapFeeAmount) = swapFeeTemp2.tryDiv(10000);
+            (, uint256 totalFee) = serviceFeeAmount.tryAdd(swapFeeAmount);
+            serviceFeeAmount = totalFee;
+        }
     }
 }

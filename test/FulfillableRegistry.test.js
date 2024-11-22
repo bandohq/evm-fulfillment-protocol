@@ -3,12 +3,8 @@ const { ethers, upgrades } = require('hardhat');
 const eth = require('ethers');
 const { setupRegistry } = require('./utils/registryUtils');
 
-describe('BandoFulfillableRegistry', () => {
+describe('FulfillableRegistryV1', () => {
     let owner;
-    let erc20_escrow;
-    let escrow;
-    let beneficiary;
-    let router;
     let registry;
     let manager;
     const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
@@ -33,24 +29,22 @@ describe('BandoFulfillableRegistry', () => {
     describe('setService', () => {
         it('should set up a service', async () => {
             const serviceID = 1;
-            const feeAmount = ethers.parseUnits('0.1', 'ether');
             // Verify no services exist in counter
             expect(await registry._serviceCount()).to.equal(0);
             // Set up the service
             await expect(manager.setService(
               serviceID,
-              feeAmount,
+              10, //fulfillmentFeePercentage
               DUMMY_ADDRESS, //Fulfiller
               DUMMY_ADDRESS, //beneficiary
             )).to.emit(registry, 'ServiceAdded');
 
             // Retrieve the service details from the registry
-            const service = await registry.getService(serviceID);
+            const [service, ] = await registry.getService(serviceID);
 
             // Verify the service details
             expect(service.serviceId).to.equal(serviceID);
             expect(service.fulfiller).to.equal(DUMMY_ADDRESS);
-            expect(service.feeAmount).to.equal(feeAmount);
 
             // Verify the service count
             expect(await registry._serviceCount()).to.equal(1);
@@ -62,7 +56,7 @@ describe('BandoFulfillableRegistry', () => {
             const feeAmount = ethers.parseUnits('0.1', 'ether');
             await expect(manager.setService(
               serviceID,
-              feeAmount,
+              10, //fulfillmentFeePercentage
               DUMMY_ADDRESS, //Fulfiller
               DUMMY_ADDRESS, //beneficiary
             )).to.be.revertedWith('Service ID is invalid');
@@ -73,7 +67,7 @@ describe('BandoFulfillableRegistry', () => {
             const feeAmount = ethers.parseUnits('0.1', 'ether');
             await expect(manager.setService(
               serviceID,
-              feeAmount,
+              10, //fulfillmentFeePercentage
               DUMMY_ADDRESS, //Fulfiller
               DUMMY_ADDRESS, //beneficiary
             )).to.be.revertedWith('FulfillableRegistry: Service already exists');
@@ -84,7 +78,7 @@ describe('BandoFulfillableRegistry', () => {
             const feeAmount = ethers.parseUnits('0.1', 'ether');
             await expect(manager.setService(
               serviceID,
-              feeAmount,
+              10, //fulfillmentFeePercentage
               DUMMY_ADDRESS, //Fulfiller
               ZERO_ADDRESS, //beneficiary
             )).to.be.revertedWith("Beneficiary address is invalid");
@@ -95,7 +89,7 @@ describe('BandoFulfillableRegistry', () => {
             const feeAmount = ethers.parseUnits('0.1', 'ether');
             await expect(manager.setService(
               serviceID,
-              feeAmount,
+              10, //fulfillmentFeePercentage
               ZERO_ADDRESS, //Fulfiller
               DUMMY_ADDRESS, //beneficiary
             )).to.be.revertedWith("Fulfiller address is invalid");
@@ -133,10 +127,8 @@ describe('BandoFulfillableRegistry', () => {
         const newBeneficiary = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
         const newFulfiller = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
         await registry.updateServiceBeneficiary(serviceID, newBeneficiary);
-        await registry.updateServiceFeeAmount(serviceID, newFeeAmount);
         await registry.updateServiceFulfiller(serviceID, newFulfiller);
-        const service = await registry.getService(serviceID);
-        expect(service.feeAmount).to.equal(newFeeAmount);
+        const [service, ] = await registry.getService(serviceID);
         expect(service.fulfiller).to.equal(newFulfiller);
         expect(service.beneficiary).to.equal(newBeneficiary);
       });

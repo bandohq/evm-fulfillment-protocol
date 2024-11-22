@@ -12,7 +12,7 @@ const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   weiAmount: 999,
   fiatAmount: 10,
-  serviceRef: "01234XYZ" //invalid CFE 
+  serviceRef: "01234XYZ", //invalid CFE
 }
 
 /**
@@ -20,9 +20,9 @@ const DUMMY_FULFILLMENTREQUEST = {
  */
 const DUMMY_VALID_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
-  weiAmount: ethers.parseUnits("11000", "ether"),
+  weiAmount: ethers.parseUnits("11000", "wei"),
   fiatAmount: 101,
-  serviceRef: "012345678912" //valid CFE
+  serviceRef: "012345678912", //valid CFE
 }
 
 const DUMMY_ERC20_FULFILLMENTREQUEST = {
@@ -96,7 +96,6 @@ describe("BandoRouterV1", function () {
     /**
      * configure protocol state vars.
      */
-    const feeAmount = ethers.parseUnits('0.1', 'ether');
     await escrow.setManager(await manager.getAddress());
     await escrow.setFulfillableRegistry(registryAddress);
     await escrow.setRouter(await routerContract.getAddress());
@@ -117,7 +116,7 @@ describe("BandoRouterV1", function () {
      */
     await manager.setService(
       1,
-      feeAmount,
+      25,
       await fulfiller.getAddress(),
       await beneficiary.getAddress(),
     );
@@ -127,6 +126,7 @@ describe("BandoRouterV1", function () {
      */
     await tokenRegistry.addToken(
       await erc20Test.getAddress(),
+      25,
     );
   });
 
@@ -155,7 +155,7 @@ describe("BandoRouterV1", function () {
     });
 
     it("should have upgraded to new implementation", async () => {
-        const UpgradeTester = await ethers.getContractFactory('RouterUpgradeTester')
+        const UpgradeTester = await ethers.getContractFactory('RouterUpgradeTester');
         v2 = await upgrades.upgradeProxy(await routerContract.getAddress(), UpgradeTester);
         assert.equal(await v2.getAddress(), await routerContract.getAddress());
         v2 = UpgradeTester.attach(await routerContract.getAddress());
@@ -240,14 +240,19 @@ describe("BandoRouterV1", function () {
     });
 
     it("should fail with insufficient funds error", async () => {
-        const service = await registry.getService(1);
-        const feeAmount = new BN(service.feeAmount.toString());
         const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
         DUMMY_VALID_FULFILLMENTREQUEST.payer = await owner.getAddress();
-        total = weiAmount.add(feeAmount)
+        DUMMY_VALID_FULFILLMENTREQUEST.serviceRef = validRef;
+        // weiAmount += weiAmount * fee basis points (25 in this case) / 10000
+        // Calculate fee amount with higher precision by multiplying first
+        const SCALE = new BN(10000);
+        const feeAmount = weiAmount.mul(new BN(25)).div(SCALE);
+        const totalAmount = weiAmount.add(feeAmount);
+        console.log(totalAmount.toString()); // Will show 11027 wei
         try {
-          await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: total.toString() })
+          const r = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: totalAmount.toString() });
         } catch (err) {
+          console.log(err);
           assert.include(err.message, "sender doesn't have enough funds to send tx");
         };
     });
@@ -263,26 +268,31 @@ describe("BandoRouterV1", function () {
     });
 
     it("should route to service escrow", async () => {
-      const service = await registry.getService(1);
+      const [service, ] = await registry.getService(1);
       DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
       DUMMY_VALID_FULFILLMENTREQUEST.serviceRef = validRef;
       DUMMY_VALID_FULFILLMENTREQUEST.payer = await owner.getAddress();
-        const feeAmount = new BN(service.feeAmount.toString());
-        const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
-      console.log(weiAmount.add(feeAmount).toString());
-      const tx = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount).toString() });
+      const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
+      // weiAmount += weiAmount * fee basis points (25 in this case) / 10000
+      // Calculate fee amount with higher precision by multiplying first
+      const SCALE = new BN(10000);
+      const feeAmount = weiAmount.mul(new BN(25)).div(SCALE);
+      const totalAmount = weiAmount.add(feeAmount);
+      const tx = await v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: totalAmount.toString() });
       const receipt = await tx.wait()
       expect(receipt).to.be.an('object').that.have.property('hash');
     });
 
     it("should fail if payer is different from sender", async () => {
-      const service = await registry.getService(1);
+      const [service, ] = await registry.getService(1);
       DUMMY_VALID_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("1", "ether");
       DUMMY_VALID_FULFILLMENTREQUEST.payer = await fulfiller.getAddress();
-      const feeAmount = new BN(service.feeAmount.toString());
       const weiAmount = new BN(DUMMY_VALID_FULFILLMENTREQUEST.weiAmount);
+      const SCALE = new BN(10000);
+      const feeAmount = weiAmount.mul(new BN(25)).add(new BN(9999)).div(SCALE);
+      const totalAmount = weiAmount.add(feeAmount);
       await expect(
-        v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: weiAmount.add(feeAmount).toString() })
+        v2.requestService(1, DUMMY_VALID_FULFILLMENTREQUEST, { value: totalAmount.toString() })
       ).to.have.revertedWithCustomError(v2, 'PayerMismatch');
     });
   });
@@ -309,11 +319,11 @@ describe("BandoRouterV1", function () {
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.serviceRef = validRef;
         const v2Fulfiller = v2.connect(fulfiller);
         const ercFulfiller = erc20Test.connect(fulfiller);
-        await ercFulfiller.approve(await routerContract.getAddress(), 100);
+        await ercFulfiller.approve(await routerContract.getAddress(), 102);
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = 100;
         await expect(v2Fulfiller.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST))
           .to.have.revertedWithCustomError(erc20Test, 'ERC20InsufficientBalance')
-          .withArgs(await fulfiller.getAddress(), 0, 100);
+          .withArgs(await fulfiller.getAddress(), 0, 102);
     });
 
     it("should fail when payer has not enough token allowance", async () => {
@@ -321,10 +331,10 @@ describe("BandoRouterV1", function () {
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.serviceRef = validRef;
         DUMMY_VALID_ERC20_FULFILLMENTREQUEST.tokenAmount = 1000;
         const v2Fulfiller = v2.connect(fulfiller);
-        await erc20Test.transfer(await fulfiller.getAddress(), 1000);
+        await erc20Test.transfer(await fulfiller.getAddress(), 1006);
         await expect(v2Fulfiller.requestERC20Service(1, DUMMY_VALID_ERC20_FULFILLMENTREQUEST))
           .to.have.revertedWithCustomError(erc20Test, 'ERC20InsufficientAllowance')
-          .withArgs(await routerContract.getAddress(), 100, 1000);
+          .withArgs(await routerContract.getAddress(), 102, 1006);
     });
 
     it("should fail with invalid Ref", async () => {
@@ -367,7 +377,7 @@ describe("BandoRouterV1", function () {
           receiptURI: "https://example.com/receipt",
       };
       const ownerDeposit = await escrow.getDepositsFor(await owner.getAddress(), 3);
-      console.log(ownerDeposit);
+      console.log("Owner Deposit: ", ownerDeposit);
       const r = await manager.registerFulfillment(3, FAILED_FULFILLMENT_RESULT);
       await expect(r).not.to.be.reverted;
       await expect(r).to.emit(escrow, 'RefundAuthorized').withArgs(await owner.getAddress(), ownerDeposit);
@@ -384,12 +394,12 @@ describe("BandoRouterV1", function () {
         const refunds = await escrow.getRefundsFor(await owner.getAddress(), 3);
         expect(refunds.toString()).to.be.equal(ethers.parseUnits("1", "ether").toString());
         const preBalance = await ethers.provider.getBalance(await escrow.getAddress());
-        expect(preBalance).to.be.equal(ethers.parseUnits("2", "ether"));
+        expect(preBalance).to.be.equal("2002500000000011027");
         const r = await v2.withdrawRefund(3, await owner.getAddress());
         await expect(r).not.to.be.reverted;
         await expect(r).to.emit(escrow, 'RefundWithdrawn').withArgs(await owner.getAddress(), ethers.parseUnits("1", "ether"));
         const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
-        expect(postBalance).to.be.equal(ethers.parseUnits("1", "ether"));
+        expect(postBalance).to.be.equal("1002500000000011027");
     });
 });
 
@@ -426,11 +436,11 @@ describe("BandoRouterV1", function () {
 
     it('should allow router to withdraw an ERC20 refund', async () => {
         const refunds = await erc20_escrow.getERC20RefundsFor(await erc20Test.getAddress(), await owner.getAddress(), 2);
-        expect(refunds.toString()).to.be.equal("10000");
+        expect(refunds.toString()).to.be.equal("10025");
         const r = await v2.withdrawERC20Refund(2, await erc20Test.getAddress(), await owner.getAddress());
         await expect(r).not.to.be.reverted;
         await expect(r).to.emit(erc20_escrow, 'ERC20RefundWithdrawn')
-          .withArgs(await erc20Test.getAddress(), await owner.getAddress(), "10000");
+          .withArgs(await erc20Test.getAddress(), await owner.getAddress(), "10025");
     });
 });
 });

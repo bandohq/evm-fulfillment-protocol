@@ -19,6 +19,11 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     /// @dev serviceID => (index => reference)
     mapping(uint256 => mapping(uint256 => string)) public _serviceRefs;
 
+    /// @notice Mapping to store fulfillment fees basis points by service ID
+    /// @dev This fee represent the markup fee charged to the payer for the fulfillment
+    /// @dev serviceID => fulfillmentFeeBasisPoints
+    mapping(uint256 => uint16) public _serviceFulfillmentFeeBasisPoints;
+
     /// Mapping to store the count of references for each service
     /// @dev serviceID => reference count
     mapping(uint256 => uint256) public _serviceRefCount;
@@ -35,6 +40,10 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
 
     /// @dev The manager address
     address public _manager;
+
+    /// @notice Error for invalid fee amount percentage
+    /// @param feeAmountBasisPoints The fee amount percentage that is invalid
+    error InvalidfeeAmountBasisPoints(uint16 feeAmountBasisPoints);
 
     /// @notice Error for invalid addresses
     /// @param _address The address that is invalid
@@ -82,13 +91,19 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * This method must only be called by the owner.
      * @param serviceId the service identifier
      * @param service the service info object
+     * @param fulfillmentFeeBasisPoints the fulfillment fee basis points
      */
-    function addService(uint256 serviceId, Service memory service) external onlyManager returns (bool) {
+    function addService(
+        uint256 serviceId,
+        Service memory service,
+        uint16 fulfillmentFeeBasisPoints
+    ) external onlyManager returns (bool) {
         require(
             _serviceRegistry[serviceId].fulfiller == address(0), 
             'FulfillableRegistry: Service already exists'
         );
         _serviceRegistry[serviceId] = service;
+        _serviceFulfillmentFeeBasisPoints[serviceId] = fulfillmentFeeBasisPoints;
         _serviceCount++;
         emit ServiceAdded(serviceId, service.fulfiller);
         return true;
@@ -106,14 +121,17 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     }
 
     /**
-     * @notice updateServiceFeeAmount
-     * @dev Updates the fee amount of a service.
+     * @notice updateServicefeeAmountBasisPoints
+     * @dev Updates the fee amount percentage of a service.
      * @param serviceId the service identifier
-     * @param newFeeAmount the new fee amount
+     * @param newfeeAmountBasisPoints the new fee amount percentage
      */
-    function updateServiceFeeAmount(uint256 serviceId, uint256 newFeeAmount) external onlyOwner {
+    function updateServicefeeAmountBasisPoints(uint256 serviceId, uint16 newfeeAmountBasisPoints) external onlyOwner {
         require(_serviceRegistry[serviceId].fulfiller != address(0), 'FulfillableRegistry: Service does not exist');
-        _serviceRegistry[serviceId].feeAmount = newFeeAmount;
+        if(newfeeAmountBasisPoints > 10000 || newfeeAmountBasisPoints < 0) {
+            revert InvalidfeeAmountBasisPoints(newfeeAmountBasisPoints);
+        }
+        _serviceFulfillmentFeeBasisPoints[serviceId] = newfeeAmountBasisPoints;
     }
 
     /**
@@ -143,14 +161,14 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     /**
      * getService
      * @param serviceId the service identifier
-     * @return the service info object
+     * @return the service info object and the fulfillment fee basis points
      */
-    function getService(uint256 serviceId) external view returns (Service memory) {
+    function getService(uint256 serviceId) external view returns (Service memory, uint16) {
         require(
             _serviceRegistry[serviceId].fulfiller != address(0), 
             'FulfillableRegistry: Service does not exist'
         );
-        return _serviceRegistry[serviceId];
+        return (_serviceRegistry[serviceId], _serviceFulfillmentFeeBasisPoints[serviceId]);
     }
 
     /**

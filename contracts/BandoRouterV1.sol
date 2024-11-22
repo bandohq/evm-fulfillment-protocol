@@ -44,9 +44,16 @@ contract BandoRouterV1 is
     /// @param sender The address of the msg.sender
     error PayerMismatch(address payer, address sender);
 
+    /// @notice The address of the fulfillable registry
     address public _fulfillableRegistry;
+
+    /// @notice The address of the token registry
     address public _tokenRegistry;
+
+    /// @notice The address of the escrow contract
     address payable public _escrow;
+
+    /// @notice The address of the ERC20 escrow contract
     address payable public _erc20Escrow;
 
     /// @notice Emitted when an ERC20 service is requested
@@ -57,7 +64,8 @@ contract BandoRouterV1 is
     /// @notice Emitted when a native token service is requested
     /// @param serviceID The ID of the requested service
     /// @param request The details of the fulfillment request
-    event ServiceRequested(uint256 serviceID, FulFillmentRequest request);
+    /// @param serviceFeeAmount The amount of the service fee
+    event ServiceRequested(uint256 serviceID, FulFillmentRequest request, uint256 serviceFeeAmount);
 
     /// @notice Emitted when the validation of a service reference fails
     /// @param serviceID The ID of the service for which validation failed
@@ -143,15 +151,23 @@ contract BandoRouterV1 is
             revert PayerMismatch(request.payer, msg.sender);
         }
         FulfillmentRequestLib.validateERC20Request(serviceID, request, _fulfillableRegistry, _tokenRegistry);
+        uint256 feeAmount = FulfillmentRequestLib.calculateFees(
+            _fulfillableRegistry,
+            _tokenRegistry,
+            serviceID,
+            request.token,
+            request.tokenAmount
+        );
+        (, uint256 total_amount) = request.tokenAmount.tryAdd(feeAmount);
         /// @dev Transfer the payment to the ERC20 escrow contract
         /// It is important to have msg.sender in the from field as a best security practice
         /// this is the reason this is done here and not in the escrow contract
         IERC20(request.token).safeTransferFrom(
             msg.sender,
             _erc20Escrow,
-            request.tokenAmount
+            total_amount
         );
-        IBandoERC20Fulfillable(_erc20Escrow).depositERC20(serviceID, request);
+        IBandoERC20Fulfillable(_erc20Escrow).depositERC20(serviceID, request, feeAmount);
         emit ERC20ServiceRequested(serviceID, request);
         return true;
     }
@@ -169,8 +185,15 @@ contract BandoRouterV1 is
             revert PayerMismatch(request.payer, msg.sender);
         }
         FulfillmentRequestLib.validateRequest(serviceID, request, _fulfillableRegistry);
-        IBandoFulfillable(_escrow).deposit{value: request.weiAmount}(serviceID, request);
-        emit ServiceRequested(serviceID, request);
+        uint256 feeAmount = FulfillmentRequestLib.calculateFees(
+            _fulfillableRegistry,
+            _tokenRegistry,
+            serviceID,
+            address(0),
+            msg.value
+        );
+        IBandoFulfillable(_escrow).deposit{value: msg.value}(serviceID, request, feeAmount);
+        emit ServiceRequested(serviceID, request, feeAmount);
         return true;
     }
 

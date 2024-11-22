@@ -9,6 +9,7 @@ const DUMMY_FULFILLMENTREQUEST = {
   payer: DUMMY_ADDRESS,
   weiAmount: 101,
   fiatAmount: 10,
+  feeAmount: 0,
   serviceRef: "01234XYZ"
 }
  
@@ -75,7 +76,7 @@ describe("BandoFulfillableV1", () => {
     await manager.setServiceRegistry(registryAddress);
     await manager.setEscrow(await escrow.getAddress());
     await manager.setERC20Escrow(DUMMY_ADDRESS);
-    const service = await manager.setService(1, 0, fulfiller.address, beneficiary.address);
+    const service = await manager.setService(1, 100, fulfiller.address, beneficiary.address);
   });
 
   describe("Configuration Specs", async () => {
@@ -98,7 +99,7 @@ describe("BandoFulfillableV1", () => {
   describe("Deposit Specs", () => {
     it("should not allow a payable deposit coming from any random address.", async () => {
       await expect(
-        escrow.deposit(1, DUMMY_FULFILLMENTREQUEST)
+        escrow.deposit(1, DUMMY_FULFILLMENTREQUEST, 1)
       ).to.be.revertedWith('Caller is not the router');
     });
 
@@ -106,7 +107,7 @@ describe("BandoFulfillableV1", () => {
       DUMMY_FULFILLMENTREQUEST.payer = DUMMY_ADDRESS;
       DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("100", "wei");
       const fromRouter = await escrow.connect(router);
-      const response = await fromRouter.deposit(1, DUMMY_FULFILLMENTREQUEST, { value: ethers.parseUnits("101", "wei")});
+      const response = await fromRouter.deposit(1, DUMMY_FULFILLMENTREQUEST, 1, { value: ethers.parseUnits("101", "wei")});
       const postBalanace = await ethers.provider.getBalance(await escrow.getAddress());
       const tx = await ethers.provider.getTransaction(response.hash);
       const BNresponse = await fulfillableContract.getDepositsFor(DUMMY_ADDRESS, 1);
@@ -117,10 +118,10 @@ describe("BandoFulfillableV1", () => {
 
     it("should emit a DepositReceived event", async () => {
       DUMMY_FULFILLMENTREQUEST.payer = DUMMY_ADDRESS;
-      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("101", "wei");
+      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("100", "wei");
       const fromRouter = await escrow.connect(router);
       await expect(
-        fromRouter.deposit(1, DUMMY_FULFILLMENTREQUEST, { value: ethers.parseUnits("101", "wei")})
+        fromRouter.deposit(1, DUMMY_FULFILLMENTREQUEST, 1, { value: ethers.parseUnits("101", "wei")})
       ).to.emit(escrow, "DepositReceived")
     });
 
@@ -212,11 +213,13 @@ describe("BandoFulfillableV1", () => {
     it("should allow manager to payout a beneficiary", async () => {
       const fromManager = await escrow.connect(managerEOA);
       await escrow.setManager(managerEOA.address);
-      const preBalance = await ethers.provider.getBalance(await beneficiary.getAddress());
+      const preBalance = await ethers.provider.getBalance(await escrow.getAddress());
+      console.log(preBalance);
       const r = await fromManager.beneficiaryWithdraw(1);
       await expect(r).not.to.be.reverted;
-      const postBalance = await ethers.provider.getBalance(await beneficiary.getAddress());
-      expect(postBalance).to.be.equal(preBalance + ethers.parseUnits('100', 'wei'));
+      const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
+      console.log(postBalance);
+      expect(postBalance).to.be.equal(preBalance - ethers.parseUnits('100', 'wei'));
       await escrow.setManager(await manager.getAddress());
     });
 
@@ -226,6 +229,28 @@ describe("BandoFulfillableV1", () => {
       await expect(
         fromManager.beneficiaryWithdraw(1)
       ).to.be.revertedWith("There is no balance to release.");
+      await escrow.setManager(await manager.getAddress());
+    });
+  });
+
+  describe("Withdraw Fees Specs", () => {
+    it("should not allow non-manager to withdraw fees", async () => {
+      await expect(
+        escrow.connect(owner).withdrawAccumulatedFees(1)
+      ).to.be.revertedWith("Caller is not the manager");
+    });
+
+    it("should allow manager to withdraw fees", async () => {
+      const fromManager = await escrow.connect(managerEOA);
+      console.log(managerEOA.address);
+      const preBalance = await ethers.provider.getBalance(await escrow.getAddress());
+      console.log(await escrow.getAddress());
+      console.log(preBalance);
+      await escrow.setManager(managerEOA.address);
+      const fees = await escrow.getNativeFeesFor(1);
+      expect(fees).to.be.equal(ethers.parseUnits("1", "wei"));
+      const r = await fromManager.withdrawAccumulatedFees(1);
+      await expect(r).not.to.be.reverted;
       await escrow.setManager(await manager.getAddress());
     });
   });

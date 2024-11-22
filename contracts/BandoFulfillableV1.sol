@@ -8,6 +8,7 @@ import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/O
 import { UUPSUpgradeable } from '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import { IBandoFulfillable } from "./IBandoFulfillable.sol";
+import { FulfillmentRequestLib } from "./libraries/FulfillmentRequestLib.sol";
 import { IFulfillableRegistry, Service } from "./periphery/registry/IFulfillableRegistry.sol";
 import {
     FulFillmentRecord,
@@ -59,6 +60,13 @@ contract BandoFulfillableV1 is
     /// @param amount The amount withdrawn
     event FeeUpdated(uint256 serviceID, uint256 amount);
 
+    /// @notice Event emitted when fees are withdrawn.
+    /// @param serviceId The service identifier
+    /// @param beneficiary The beneficiary address
+    /// @param amount The amount withdrawn
+    event FeesWithdrawn(uint256 indexed serviceId, address beneficiary, uint256 amount);
+
+
     /*****************************/
     /* STATE VARIABLES           */
     /*****************************/
@@ -90,6 +98,9 @@ contract BandoFulfillableV1 is
     /// @dev The releaseable pool to be withdrawn by the beneficiaries in wei.
     /// serviceID => releaseablePoolAmount
     mapping (uint256 => uint256) public _releaseablePool;
+
+    /// @dev A mapping to track accumulated fees per service
+    mapping(uint256 => uint256) public _accumulatedFees;
 
     /// Mapping to store native coin refunds and deposit amounts
     /// @dev serviceID => userAddress => depositedAmount
@@ -148,6 +159,13 @@ contract BandoFulfillableV1 is
         _registryContract = IFulfillableRegistry(fulfillableRegistry_);
     }
 
+    /// @notice Retrieves the accumulated fees for a given service ID
+    /// @param serviceId The ID of the service
+    /// @return amount The total amount of accumulated fees for the given service ID
+    function getNativeFeesFor(uint256 serviceId) public view returns (uint256 amount) {
+        amount = _accumulatedFees[serviceId];
+    }
+
     /// @notice Retrieves the total deposits for a given payer and service ID
     /// @param payer The address of the payer
     /// @param serviceID The ID of the service
@@ -199,16 +217,17 @@ contract BandoFulfillableV1 is
     /// @param fulfillmentRequest The fulfillment request.
     function deposit(
         uint256 serviceID,
-        FulFillmentRequest memory fulfillmentRequest
+        FulFillmentRequest memory fulfillmentRequest,
+        uint256 feeAmount
     ) public payable virtual nonReentrant {
         require(_router == msg.sender, "Caller is not the router");
-        Service memory service = _registryContract.getService(serviceID);
-        uint256 amount = msg.value;
+        (Service memory service, ) = _registryContract.getService(serviceID);
+        uint256 total_amount = msg.value;
         uint256 depositsAmount = getDepositsFor(
             fulfillmentRequest.payer,
             serviceID
         );
-        (bool success, uint256 result) = amount.tryAdd(depositsAmount);
+        (bool success, uint256 result) = total_amount.tryAdd(depositsAmount);
         require(success, "Overflow while adding deposits");
         setDepositsFor(
             fulfillmentRequest.payer,
@@ -224,7 +243,7 @@ contract BandoFulfillableV1 is
             entryTime: block.timestamp,
             payer: fulfillmentRequest.payer,
             weiAmount: fulfillmentRequest.weiAmount,
-            feeAmount: service.feeAmount,
+            feeAmount: feeAmount,
             fiatAmount: fulfillmentRequest.fiatAmount,
             receiptURI: "",
             status: FulFillmentResultState.PENDING
@@ -336,24 +355,22 @@ contract BandoFulfillableV1 is
                 FulFillmentResultState.PENDING,
             "Fulfillment already registered"
         );
-        Service memory service = _registryContract.getService(serviceID);
         address payer = _fulfillmentRecords[fulfillment.id].payer;
         uint256 deposits = getDepositsFor(payer, serviceID);
-        (bool ffsuccess, uint256 total_amount) = _fulfillmentRecords[
-            fulfillment.id
-        ].weiAmount.tryAdd(service.feeAmount);
-        require(ffsuccess, "Overflow while adding fulfillment amount and fee");
-        require(
-            deposits >= total_amount,
-            "There is not enough balance to be released"
-        );
+        uint256 wei_amount = _fulfillmentRecords[fulfillment.id].weiAmount;
+        (, uint256 total_amount) = wei_amount.tryAdd(_fulfillmentRecords[fulfillment.id].feeAmount);
         if (fulfillment.status == FulFillmentResultState.FAILED) {
             _authorizeRefund(serviceID, payer, total_amount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
         } else if (fulfillment.status != FulFillmentResultState.SUCCESS) {
             revert("Unexpected status");
         } else {
-            (bool rlsuccess, uint256 releaseResult) = _releaseablePool[serviceID].tryAdd(total_amount);
+            (bool asuccess, uint256 addResult) = _accumulatedFees[serviceID].tryAdd(
+                _fulfillmentRecords[fulfillment.id].feeAmount
+            );
+            require(asuccess, "Overflow while adding accumulated fees");
+            _accumulatedFees[serviceID] = addResult;
+            (bool rlsuccess, uint256 releaseResult) = _releaseablePool[serviceID].tryAdd(wei_amount);
             require(rlsuccess, "Overflow while adding to releaseable pool");
             (bool dsuccess, uint256 subResult) = deposits.trySub(total_amount);
             require(dsuccess, "Overflow while substracting from deposits");
@@ -372,10 +389,20 @@ contract BandoFulfillableV1 is
     /// @param serviceID The service identifier.
     function beneficiaryWithdraw(uint256 serviceID) public virtual nonReentrant {
         require(_manager == msg.sender, "Caller is not the manager");
-        Service memory service = _registryContract.getService(serviceID);
+        (Service memory service, ) = _registryContract.getService(serviceID);
         require(_releaseablePool[serviceID] > 0, "There is no balance to release.");
         uint256 amount = _releaseablePool[serviceID];
         _releaseablePool[serviceID] = 0;
         service.beneficiary.sendValue(amount);
+    }
+
+    function withdrawAccumulatedFees(uint256 serviceId) external nonReentrant {
+        require(_manager == msg.sender, "Caller is not the manager");
+        (Service memory service, ) = _registryContract.getService(serviceId);
+        uint256 amount = _accumulatedFees[serviceId];
+        require(amount > 0, "No fees to withdraw");
+        _accumulatedFees[serviceId] = 0;
+        service.beneficiary.sendValue(amount);
+        emit FeesWithdrawn(serviceId, service.beneficiary, amount);
     }
 }

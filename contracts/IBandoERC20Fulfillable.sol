@@ -17,7 +17,7 @@ interface IBandoERC20Fulfillable {
     /// @notice Deposits ERC20 tokens for a service request
     /// @param serviceID The ID of the service
     /// @param request The ERC20 fulfillment request details
-    function depositERC20(uint256 serviceID, ERC20FulFillmentRequest memory request) external;
+    function depositERC20(uint256 serviceID, ERC20FulFillmentRequest memory request, uint256 feeAmount) external;
 
     /// @notice Registers a fulfillment for a service
     /// @param serviceID The ID of the service
@@ -46,4 +46,9 @@ interface IBandoERC20Fulfillable {
     /// @param serviceID The service identifier
     /// @param token The address of the ERC20 token
     function beneficiaryWithdraw(uint256 serviceID, address token) external;
+
+    /// @notice Withdraws the accumulated fees for a service
+    /// @param serviceID The service identifier
+    /// @param token The address of the ERC20 token
+    function withdrawAccumulatedFees(uint256 serviceID, address token) external;
 }

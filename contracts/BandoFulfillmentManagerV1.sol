@@ -93,13 +93,13 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// The validator address is intended to be a contract that validates the service's
     /// identifier. eg. phone number, bill number, etc.
     /// @param serviceID The service identifier
-    /// @param feeAmount The fee amount for the service
+    /// @param feeAmountBasisPoints The fee amount percentage for the service
     /// @param fulfiller The address of the fulfiller
     /// @param beneficiary The address of the beneficiary
     /// @return Service memory The created service
     function setService(
         uint256 serviceID,
-        uint256 feeAmount,
+        uint16 feeAmountBasisPoints,
         address fulfiller,
         address payable beneficiary
     ) 
@@ -114,10 +114,9 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         Service memory service = Service({
             serviceId: serviceID,
             fulfiller: fulfiller,
-            feeAmount: feeAmount,
             beneficiary: beneficiary
         });
-        IFulfillableRegistry(_serviceRegistry).addService(serviceID, service);
+        IFulfillableRegistry(_serviceRegistry).addService(serviceID, service, feeAmountBasisPoints);
         return service;
     }
 
@@ -130,13 +129,22 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         IFulfillableRegistry(_serviceRegistry).addServiceRef(serviceID, serviceRef);
     }
 
+    /// @dev setServiceFulfillmentFeePercentage
+    /// @notice This method must only be called by the owner.
+    /// It sets up the fulfillment fee percentage for a service.
+    /// @param serviceID The service identifier
+    /// @param fulfillmentFeeBasisPoints The fulfillment fee percentage
+      function setServiceFulfillmentFee(uint256 serviceID, uint16 fulfillmentFeeBasisPoints) public virtual onlyOwner {
+        IFulfillableRegistry(_serviceRegistry).updateServicefeeAmountBasisPoints(serviceID, fulfillmentFeeBasisPoints);
+    }
+
     /// @dev registerFulfillment
     /// @notice This method must only be called by the service fulfiller or the owner
     /// It registers a fulfillment result for a service calling the escrow contract.
     /// @param serviceID The service identifier
     /// @param fulfillment The fulfillment result
     function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
-        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
         }
@@ -149,7 +157,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param serviceID The service identifier
     /// @param fulfillment The fulfillment result
     function registerERC20Fulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
-        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller) {
             require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
         }
@@ -160,7 +168,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @notice This method must only be called by the service beneficiary.
     /// @param serviceID The service identifier
     function beneficiaryWithdraw(uint256 serviceID) public virtual {
-        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         require(service.beneficiary == msg.sender, "Only the beneficiary can withdraw");
         IBandoFulfillable(_escrow).beneficiaryWithdraw(serviceID);
     }
@@ -170,8 +178,31 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param serviceID The service identifier
     /// @param token The address of the ERC20 token
     function beneficiaryWithdrawERC20(uint256 serviceID, address token) public virtual {
-        Service memory service = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         require(service.beneficiary == msg.sender, "Only the beneficiary can withdraw");
         IBandoERC20Fulfillable(_erc20_escrow).beneficiaryWithdraw(serviceID, token);
+    }
+
+    /// @dev withdrawERC20Fees
+    /// @notice This method must only be called by the owner.
+    /// @param serviceID The service identifier
+    /// @param token The address of the ERC20 token
+    function withdrawERC20Fees(uint256 serviceID, address token) public virtual onlyOwner {
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        if (msg.sender != service.fulfiller) {
+            require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
+        }
+        IBandoERC20Fulfillable(_erc20_escrow).withdrawAccumulatedFees(serviceID, token);
+    }
+
+    /// @dev withdrawNativeFees
+    /// @notice This method must only be called by the owner.
+    /// @param serviceID The service identifier
+    function withdrawNativeFees(uint256 serviceID) public virtual onlyOwner {
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        if (msg.sender != service.fulfiller) {
+            require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
+        }
+        IBandoFulfillable(_escrow).withdrawAccumulatedFees(serviceID);
     }
 }
