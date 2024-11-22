@@ -123,9 +123,9 @@ describe("BandoERC20FulfillableV1", () => {
 
   describe("Deposit Specs", () => {
     it("should not allow a payable deposit coming from any random address.", async () => {
-      await expect(
-        escrow.depositERC20(1, DUMMY_FULFILLMENTREQUEST, 1)
-      ).to.be.revertedWith('Caller is not the router');
+      await expect(escrow.depositERC20(1, DUMMY_FULFILLMENTREQUEST, 1))
+        .to.be.revertedWithCustomError(escrow, 'InvalidAddress')
+        .withArgs(owner.address);
     });
 
     it("should not allow a payable deposit from an unexistent service", async () => {
@@ -191,9 +191,9 @@ describe("BandoERC20FulfillableV1", () => {
       SUCCESS_FULFILLMENT_RESULT.id = payerRecordIds[0];
       await escrow.setManager(managerEOA.address);
       const fromManager = await escrow.connect(managerEOA);
-      await expect(
-        fromRouter.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
-      ).to.be.revertedWith('Caller is not the manager');
+      await expect(fromRouter.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT))
+        .to.be.revertedWithCustomError(escrow, 'InvalidAddress')
+        .withArgs(router.address);
       await expect(
         fromManager.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
       ).not.to.be.reverted;
@@ -238,9 +238,9 @@ describe("BandoERC20FulfillableV1", () => {
     it("should not allow manager to withdraw a refund when there is none.", async () => {
       await escrow.setRouter(router.address);
       const fromRouter = await escrow.connect(router);
-      await expect(
-       fromRouter.withdrawERC20Refund(1, erc20Test, owner)
-      ).to.be.revertedWith('Address is not allowed any refunds');
+      await expect(fromRouter.withdrawERC20Refund(1, erc20Test, owner))
+        .to.be.revertedWithCustomError(escrow, 'NoRefunds')
+        .withArgs(owner.address);
       await escrow.setRouter(await routerContract.getAddress());
       // check balances post withdraw
     });
@@ -253,8 +253,8 @@ describe("BandoERC20FulfillableV1", () => {
       const extID = record1[3];
       SUCCESS_FULFILLMENT_RESULT.id = payerRecordIds[0];
       await expect(
-        fromManager.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
-      ).to.be.revertedWith('Fulfillment already registered');
+        fromManager.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT))
+        .to.be.revertedWithCustomError(escrow, 'FulfillmentAlreadyRegistered');
     });
   });
 
@@ -273,30 +273,30 @@ describe("BandoERC20FulfillableV1", () => {
     it("should only be allowed by the manager", async () => {
       const fromRouter = await escrow.connect(router);
       await expect(
-        fromRouter.beneficiaryWithdraw(1, erc20Test)
-      ).to.be.revertedWith('Caller is not the manager');
+        fromRouter.beneficiaryWithdraw(1, erc20Test))
+          .to.be.revertedWithCustomError(escrow, 'InvalidAddress')
+          .withArgs(router.address);
     });
 
     it("should not allow the beneficiary to withdraw the funds when there is none", async () => {
       const fromManager = await escrow.connect(managerEOA);
       await expect(
-        fromManager.beneficiaryWithdraw(1, erc20Test)
-      ).to.be.revertedWith('There is no balance to release.');
+        fromManager.beneficiaryWithdraw(1, erc20Test))
+        .to.be.revertedWithCustomError(escrow, 'NoBalanceToRelease');
     });
   });
 
   describe("withdrawAccumulatedFees", function() {
       it("should not allow non-manager to withdraw fees", async function() {
-          await expect(
-              escrow.connect(owner).withdrawAccumulatedFees(1, erc20Test)
-          ).to.be.revertedWith("Caller is not the manager");
+          await expect(escrow.connect(owner).withdrawAccumulatedFees(1, erc20Test))
+            .to.be.revertedWithCustomError(escrow, 'InvalidAddress')
+            .withArgs(owner.address);
       });
 
       it("should not allow withdrawal when no fees are accumulated", async function() {
           await escrow.setManager(managerEOA.address);
-          await expect(
-              escrow.connect(managerEOA).withdrawAccumulatedFees(1, ethers.ZeroAddress)
-          ).to.be.revertedWith("No fees to withdraw");
+          await expect(escrow.connect(managerEOA).withdrawAccumulatedFees(1, ethers.ZeroAddress))
+            .to.be.revertedWithCustomError(escrow, 'NoFeesToWithdraw');
           await escrow.setManager(await manager.getAddress());
       });
 

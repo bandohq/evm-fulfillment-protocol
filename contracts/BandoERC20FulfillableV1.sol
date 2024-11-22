@@ -39,6 +39,40 @@ contract BandoERC20FulfillableV1 is
     using Math for uint256;
     using SafeERC20 for IERC20;
 
+    /*****************************/
+    /* ERROR DECLARATIONS        */
+    /*****************************/
+
+    /// @notice Error emitted when the address is invalid.
+    /// @param addr The address that is invalid.
+    error InvalidAddress(address addr);
+
+    /// @notice Error emitted when the address is not allowed any refunds.
+    /// @param refundee The address that is not allowed any refunds.
+    error NoRefunds(address refundee);
+
+    /// @notice Error emitted when an overflow occurs.
+    error Overflow(uint8 reason);
+
+    /// @notice Error emitted when the refund amount are too big.
+    error RefundsTooBig();
+
+    /// @notice Error emitted when the fulfillment status is unsupported.
+    error UnsupportedFulfillmentStatus();
+
+    /// @notice Error emitted when the fulfillment record does not exist.
+    error FulfillmentRecordDoesNotExist();
+
+    /// @notice Error emitted when the fulfillment record is already registered.
+    error FulfillmentAlreadyRegistered();
+
+    /// @notice Error emitted when there is no balance to release.
+    error NoBalanceToRelease();
+
+    /// @notice Error emitted when there is no fees to withdraw.
+    error NoFeesToWithdraw();
+
+
     /**********************/
     /* EVENT DECLARATIONS */
     /**********************/
@@ -154,7 +188,9 @@ contract BandoERC20FulfillableV1 is
     /// @dev Sets the protocol manager address.
     /// @param manager_ The address of the protocol manager.
     function setManager(address manager_) public onlyOwner {
-        require(manager_ != address(0), "Manager address cannot be 0");
+        if(manager_ == address(0)) {
+            revert InvalidAddress(manager_);
+        }
         _manager = manager_;
         emit ManagerUpdated(manager_);
     }
@@ -162,7 +198,9 @@ contract BandoERC20FulfillableV1 is
     /// @dev Sets the protocol router address.
     /// @param router_ The address of the protocol router.
     function setRouter(address router_) public onlyOwner {
-        require(router_ != address(0), "Router address cannot be 0");
+        if(router_ == address(0)) {
+            revert InvalidAddress(router_);
+        }
         _router = router_;
         emit RouterUpdated(router_);
     }
@@ -170,7 +208,9 @@ contract BandoERC20FulfillableV1 is
     /// @dev Sets the fulfillable registry address.
     /// @param fulfillableRegistry_ The address of the fulfillable registry.
     function setFulfillableRegistry(address fulfillableRegistry_) public onlyOwner {
-        require(fulfillableRegistry_ != address(0), "Fulfillable registry address cannot be 0");
+        if(fulfillableRegistry_ == address(0)) {
+            revert InvalidAddress(fulfillableRegistry_);
+        }
         _fulfillableRegistry = fulfillableRegistry_;
         _registryContract = IFulfillableRegistry(fulfillableRegistry_);
         emit FulfillableRegistryUpdated(fulfillableRegistry_);
@@ -196,7 +236,9 @@ contract BandoERC20FulfillableV1 is
         ERC20FulFillmentRequest memory fulfillmentRequest,
         uint256 feeAmount
     ) public virtual nonReentrant {
-        require(_router == msg.sender, "Caller is not the router");
+        if(msg.sender != _router) {
+            revert InvalidAddress(msg.sender);
+        }
         (, uint256 fullAmount) = fulfillmentRequest.tokenAmount.tryAdd(feeAmount);
         address token = fulfillmentRequest.token;
         (Service memory service, ) = _registryContract.getService(serviceID);
@@ -301,13 +343,17 @@ contract BandoERC20FulfillableV1 is
     /// @param token The address of the ERC20 token.
     /// @param refundee The address whose funds will be withdrawn and transferred to.
     function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual nonReentrant returns (bool) {
-        require(_router == msg.sender, "Caller is not the router");
+        if(msg.sender != _router) {
+            revert InvalidAddress(msg.sender);
+        }
         uint256 authorized_refunds = getERC20RefundsFor(
             token,
             refundee,
             serviceID
         );
-        require(authorized_refunds > 0, "Address is not allowed any refunds");
+        if(authorized_refunds == 0) {
+            revert NoRefunds(refundee);
+        }
         _withdrawRefund(token, refundee, authorized_refunds);
         setERC20RefundsFor(token, refundee, serviceID, 0);
         return true;
@@ -339,14 +385,17 @@ contract BandoERC20FulfillableV1 is
             refundee,
             service.serviceId
         );
-        require(asuccess, "Overflow while adding authorized refunds");
+        if (!asuccess) {
+            revert Overflow(1);
+        }
         uint256 total_refunds = addResult;
-        require(
-            depositsAmount >= total_refunds,
-            "Total token refunds would be bigger than the total in escrow"
-        );
+        if (depositsAmount < total_refunds) {
+            revert RefundsTooBig();
+        }
         (bool ssuccess, uint256 subResult) = depositsAmount.trySub(amount);
-        require(ssuccess, "Overflow while substracting deposits");
+        if (!ssuccess) {
+            revert Overflow(2);
+        }
         setERC20DepositsFor(
             token,
             refundee,
@@ -373,9 +422,15 @@ contract BandoERC20FulfillableV1 is
     ///
     /// @param fulfillment the fulfillment result attached to it.
     function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual nonReentrant returns (bool) {
-        require(_manager == msg.sender, "Caller is not the manager");
-        require(_fulfillmentRecords[fulfillment.id].id > 0, "Fulfillment record does not exist");
-        require(_fulfillmentRecords[fulfillment.id].status == FulFillmentResultState.PENDING, "Fulfillment already registered");
+        if(msg.sender != _manager) {
+            revert InvalidAddress(msg.sender);
+        }
+        if(_fulfillmentRecords[fulfillment.id].id == 0) {
+            revert FulfillmentRecordDoesNotExist();
+        }
+        if(_fulfillmentRecords[fulfillment.id].status != FulFillmentResultState.PENDING) {
+            revert FulfillmentAlreadyRegistered();
+        }
         (Service memory service, ) = _registryContract.getService(serviceID);
         address token = _fulfillmentRecords[fulfillment.id].token;
         uint256 tokenAmount = _fulfillmentRecords[fulfillment.id].tokenAmount;
@@ -384,7 +439,7 @@ contract BandoERC20FulfillableV1 is
             _authorizeRefund(service, token, _fulfillmentRecords[fulfillment.id].payer, fullAmount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
         } else if(fulfillment.status != FulFillmentResultState.SUCCESS) {
-            revert('Unexpected status');
+            revert UnsupportedFulfillmentStatus();
         } else {
             _successFulfillment(serviceID, _fulfillmentRecords[fulfillment.id], fullAmount);
         }
@@ -394,8 +449,12 @@ contract BandoERC20FulfillableV1 is
     /// @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
     /// Only the fulfiller of the service can withdraw the releaseable pool.
     function beneficiaryWithdraw(uint256 serviceID, address token) public virtual nonReentrant {
-        require(_manager == msg.sender, "Caller is not the manager");
-        require(_releaseablePools[serviceID][token] > 0, "There is no balance to release.");
+        if(msg.sender != _manager) {
+            revert InvalidAddress(msg.sender);
+        }
+        if(_releaseablePools[serviceID][token] == 0) {
+            revert NoBalanceToRelease();
+        }
         (Service memory service, ) = _registryContract.getService(serviceID);
         uint256 amount = _releaseablePools[serviceID][token];
         _releaseablePools[serviceID][token] = 0;
@@ -410,11 +469,15 @@ contract BandoERC20FulfillableV1 is
         uint256 serviceId,
         address token
     ) external nonReentrant {
-        require(_manager == msg.sender, "Caller is not the manager");
+        if(msg.sender != _manager) {
+            revert InvalidAddress(msg.sender);
+        }
         (Service memory service, ) = _registryContract.getService(serviceId);
         
         uint256 amount = _accumulatedFees[serviceId][token];
-        require(amount > 0, "No fees to withdraw");
+        if(amount == 0) {
+            revert NoFeesToWithdraw();
+        }
         
         // Reset accumulated fees before transfer
         _accumulatedFees[serviceId][token] = 0;
@@ -443,12 +506,18 @@ contract BandoERC20FulfillableV1 is
             _fulfillmentRecords[frecord.id].payer,
             serviceID
         );
-        require(asuccess, "Overflow while adding accumulated fees");
+        if (!asuccess) {
+            revert Overflow(3);
+        }
         _accumulatedFees[serviceID][frecord.token] = feeResult;
         (bool rlsuccess, uint256 releaseResult) = _releaseablePools[serviceID][frecord.token].tryAdd(frecord.tokenAmount);
-        require(rlsuccess, "Overflow while adding to releaseable pool");
+        if (!rlsuccess) {
+            revert Overflow(4);
+        }
         (bool dsuccess, uint256 subResult) = depositsAmount.trySub(fullAmount);
-        require(dsuccess, "Overflow while substracting from deposits");
+        if (!dsuccess) {
+            revert Overflow(5);
+        }
         _releaseablePools[serviceID][frecord.token] = releaseResult;
         setERC20DepositsFor(
             frecord.token,
