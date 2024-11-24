@@ -49,6 +49,22 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @notice ERC20 escrow address
     address public _erc20_escrow;
 
+    /// @notice Throws this error when the address is invalid.
+    /// @param address_ The address that was invalid
+    error InvalidAddress(address address_);
+
+    /// @notice Throws this error when the service ID is invalid.
+    /// @param serviceID_ The service ID that was invalid
+    error InvalidServiceId(uint256 serviceID_);
+
+    /// @notice Throws this error when the fulfiller address is invalid.
+    /// @param fulfiller_ The fulfiller address that was invalid
+    error InvalidFulfiller(address fulfiller_);
+
+    /// @notice Throws this error when the beneficiary address is invalid.
+    /// @param beneficiary_ The beneficiary address that was invalid
+    error InvalidBeneficiary(address beneficiary_);
+
     /// @notice Event emitted when the registry is updated.
     /// @param registry The address of the new registry.
     event RegistryUpdated(address indexed registry);
@@ -78,7 +94,9 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Sets the service registry address.
     /// @param serviceRegistry_ The address of the service registry.
     function setServiceRegistry(address serviceRegistry_) public onlyOwner {
-        require(serviceRegistry_ != address(0), "Service registry cannot be the zero address");
+        if(serviceRegistry_ == address(0)) {
+            revert InvalidAddress(serviceRegistry_);
+        }
         _serviceRegistry = serviceRegistry_;
         emit RegistryUpdated(serviceRegistry_);
     }
@@ -86,7 +104,9 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Sets the escrow address.
     /// @param escrow_ The address of the escrow.
     function setEscrow(address payable escrow_) public onlyOwner {
-        require(escrow_ != address(0), "Escrow cannot be the zero address");
+        if(escrow_ == address(0)) {
+            revert InvalidAddress(escrow_);
+        }
         _escrow = escrow_;
         emit EscrowUpdated(escrow_);
     }
@@ -94,7 +114,9 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Sets the ERC20 escrow address.
     /// @param erc20Escrow_ The address of the ERC20 escrow.
     function setERC20Escrow(address payable erc20Escrow_) public onlyOwner {
-        require(erc20Escrow_ != address(0), "ERC20 escrow cannot be the zero address");
+        if(erc20Escrow_ == address(0)) {
+            revert InvalidAddress(erc20Escrow_);
+        }
         _erc20_escrow = erc20Escrow_;
         emit ERC20EscrowUpdated(erc20Escrow_);
     }
@@ -123,9 +145,15 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
         onlyOwner 
         returns (Service memory)
     {
-        require(serviceID > 0, "Service ID is invalid");
-        require(fulfiller != address(0), "Fulfiller address is invalid");
-        require(beneficiary != address(0), "Beneficiary address is invalid");
+        if(serviceID == 0) {
+            revert InvalidServiceId(serviceID);
+        }
+        if(fulfiller == address(0)) {
+            revert InvalidAddress(fulfiller);
+        }
+        if(beneficiary == address(0)) {
+            revert InvalidAddress(beneficiary);
+        }
         Service memory service = Service({
             serviceId: serviceID,
             fulfiller: fulfiller,
@@ -149,7 +177,7 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// It sets up the fulfillment fee percentage for a service.
     /// @param serviceID The service identifier
     /// @param fulfillmentFeeBasisPoints The fulfillment fee percentage
-      function setServiceFulfillmentFee(uint256 serviceID, uint16 fulfillmentFeeBasisPoints) public virtual onlyOwner {
+    function setServiceFulfillmentFee(uint256 serviceID, uint16 fulfillmentFeeBasisPoints) public virtual onlyOwner {
         IFulfillableRegistry(_serviceRegistry).updateServicefeeAmountBasisPoints(serviceID, fulfillmentFeeBasisPoints);
     }
 
@@ -160,8 +188,8 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param fulfillment The fulfillment result
     function registerFulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
         (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
-        if (msg.sender != service.fulfiller) {
-            require(msg.sender == owner(), "Only the fulfiller or the owner can withdraw a refund");
+        if (msg.sender != service.fulfiller && msg.sender != owner()) {
+            revert InvalidFulfiller(msg.sender);
         }
         IBandoFulfillable(_escrow).registerFulfillment(serviceID, fulfillment);
     }
@@ -173,8 +201,8 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param fulfillment The fulfillment result
     function registerERC20Fulfillment(uint256 serviceID, FulFillmentResult memory fulfillment) public virtual {
         (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
-        if (msg.sender != service.fulfiller) {
-            require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
+        if (msg.sender != service.fulfiller && msg.sender != owner()) {
+            revert InvalidFulfiller(msg.sender);
         }
         IBandoERC20Fulfillable(_erc20_escrow).registerFulfillment(serviceID, fulfillment);
     }
@@ -184,7 +212,9 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param serviceID The service identifier
     function beneficiaryWithdraw(uint256 serviceID) public virtual {
         (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
-        require(service.beneficiary == msg.sender, "Only the beneficiary can withdraw");
+        if(service.beneficiary != msg.sender) {
+            revert InvalidBeneficiary(msg.sender);
+        }
         IBandoFulfillable(_escrow).beneficiaryWithdraw(serviceID);
     }
 
@@ -194,7 +224,9 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param token The address of the ERC20 token
     function beneficiaryWithdrawERC20(uint256 serviceID, address token) public virtual {
         (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
-        require(service.beneficiary == msg.sender, "Only the beneficiary can withdraw");
+        if(service.beneficiary != msg.sender) {
+            revert InvalidBeneficiary(msg.sender);
+        }
         IBandoERC20Fulfillable(_erc20_escrow).beneficiaryWithdraw(serviceID, token);
     }
 
@@ -204,8 +236,8 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param token The address of the ERC20 token
     function withdrawERC20Fees(uint256 serviceID, address token) public virtual onlyOwner {
         (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
-        if (msg.sender != service.fulfiller) {
-            require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
+        if (msg.sender != service.fulfiller && msg.sender != owner()) {
+            revert InvalidFulfiller(msg.sender);
         }
         IBandoERC20Fulfillable(_erc20_escrow).withdrawAccumulatedFees(serviceID, token);
     }
@@ -215,8 +247,8 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param serviceID The service identifier
     function withdrawNativeFees(uint256 serviceID) public virtual onlyOwner {
         (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
-        if (msg.sender != service.fulfiller) {
-            require(msg.sender == owner(), "Only the fulfiller or the owner can register a fulfillment");
+        if (msg.sender != service.fulfiller && msg.sender != owner()) {
+            revert InvalidFulfiller(msg.sender);
         }
         IBandoFulfillable(_escrow).withdrawAccumulatedFees(serviceID);
     }
