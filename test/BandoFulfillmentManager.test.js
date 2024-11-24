@@ -166,7 +166,10 @@ describe('BandoFulfillmentManagerV1', () => {
                     feeAmountBasisPoints,
                     fulfiller.getAddress(), //Fulfiller
                     beneficiary.getAddress(), //beneficiary
-            )).to.be.revertedWith('FulfillableRegistry: Service already exists');
+                )
+            )
+            .to.be.revertedWithCustomError(registry, 'ServiceAlreadyExists')
+            .withArgs(serviceID);
         });
 
         // TODO: Add more test cases for different scenarios

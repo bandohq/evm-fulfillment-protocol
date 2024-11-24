@@ -56,6 +56,10 @@ contract BandoRouterV1 is
     /// @notice The address of the ERC20 escrow contract
     address payable public _erc20Escrow;
 
+    /// @notice Throws this when the address is invalid.
+    /// @param address_ The address that was invalid
+    error InvalidAddress(address address_);
+
     /// @notice Emitted when an ERC20 service is requested
     /// @param serviceID The ID of the requested service
     /// @param request The details of the ERC20 fulfillment request
@@ -126,7 +130,9 @@ contract BandoRouterV1 is
     /// @dev Can only be called by the contract owner
     /// @param fulfillableRegistry_ The new address for the fulfillable registry
     function setFulfillableRegistry(address fulfillableRegistry_) public onlyOwner {
-        require(fulfillableRegistry_ != address(0), "Fulfillable registry cannot be the zero address");
+        if(fulfillableRegistry_ == address(0)) {
+            revert InvalidAddress(fulfillableRegistry_);
+        }
         _fulfillableRegistry = fulfillableRegistry_;
         emit FulfillableRegistryUpdated(fulfillableRegistry_);
     }
@@ -135,7 +141,9 @@ contract BandoRouterV1 is
     /// @dev Can only be called by the contract owner
     /// @param tokenRegistry_ The new address for the token registry
     function setTokenRegistry(address tokenRegistry_) public onlyOwner {
-        require(tokenRegistry_ != address(0), "Token registry cannot be the zero address");
+        if(tokenRegistry_ == address(0)) {
+            revert InvalidAddress(tokenRegistry_);
+        }
         _tokenRegistry = tokenRegistry_;
         emit TokenRegistryUpdated(tokenRegistry_);
     }
@@ -144,7 +152,9 @@ contract BandoRouterV1 is
     /// @dev Can only be called by the contract owner
     /// @param escrow_ The new address for the escrow contract
     function setEscrow(address payable escrow_) public onlyOwner {
-        require(escrow_ != address(0), "Escrow cannot be the zero address");
+        if(escrow_ == address(0)) {
+            revert InvalidAddress(escrow_);
+        }
         _escrow = escrow_;
         emit EscrowUpdated(escrow_);
     }
@@ -153,7 +163,9 @@ contract BandoRouterV1 is
     /// @dev Can only be called by the contract owner
     /// @param erc20Escrow_ The new address for the ERC20 escrow contract
     function setERC20Escrow(address payable erc20Escrow_) public onlyOwner {
-        require(erc20Escrow_ != address(0), "ERC20 escrow cannot be the zero address");
+        if(erc20Escrow_ == address(0)) {
+            revert InvalidAddress(erc20Escrow_);
+        }
         _erc20Escrow = erc20Escrow_;
         emit ERC20EscrowUpdated(erc20Escrow_);
     }
@@ -226,7 +238,7 @@ contract BandoRouterV1 is
         if (msg.sender != refundee) {
             revert PayerMismatch(refundee, msg.sender);
         }
-        require(IBandoERC20Fulfillable(_erc20Escrow).withdrawERC20Refund(serviceID, token, refundee), "Withdrawal failed");
+        IBandoERC20Fulfillable(_erc20Escrow).withdrawERC20Refund(serviceID, token, refundee);
     }
 
     /// @dev withdrawRefund
@@ -237,6 +249,6 @@ contract BandoRouterV1 is
         if (msg.sender != refundee) {
             revert PayerMismatch(refundee, msg.sender);
         }
-        require(IBandoFulfillable(_escrow).withdrawRefund(serviceID, refundee), "Withdrawal failed");
+        IBandoFulfillable(_escrow).withdrawRefund(serviceID, refundee);
     }
 }

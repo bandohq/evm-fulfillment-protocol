@@ -227,9 +227,9 @@ describe("BandoRouterV1", function () {
     it("should fail when service id is not set in registry", async () => {
         DUMMY_FULFILLMENTREQUEST.payer = await beneficiary.getAddress();
         const v2Signer1 = v2.connect(beneficiary)
-        await expect(
-          v2Signer1.requestService(2, DUMMY_FULFILLMENTREQUEST, {value: ethers.parseUnits("1000", "wei")})
-        ).to.be.revertedWith('FulfillableRegistry: Service does not exist');
+        await expect(v2Signer1.requestService(2, DUMMY_FULFILLMENTREQUEST, {value: ethers.parseUnits("1000", "wei")}))
+          .to.be.revertedWithCustomError(registry, 'ServiceDoesNotExist')
+          .withArgs(2);
     });
 
     it("should fail for when amount is zero.", async () => {
@@ -301,9 +301,9 @@ describe("BandoRouterV1", function () {
     it("should fail when service id is not set in registry", async () => {
         const v2Signer1 = v2.connect(beneficiary);
         DUMMY_ERC20_FULFILLMENTREQUEST.payer = await beneficiary.getAddress();
-        await expect(
-          v2Signer1.requestERC20Service(2, DUMMY_ERC20_FULFILLMENTREQUEST)
-        ).to.be.revertedWith('FulfillableRegistry: Service does not exist');
+        await expect( v2Signer1.requestERC20Service(2, DUMMY_ERC20_FULFILLMENTREQUEST))
+          .to.be.revertedWithCustomError(registry, 'ServiceDoesNotExist')
+          .withArgs(2);
     });
 
     it("should fail for when amount is zero.", async () => {
@@ -357,7 +357,7 @@ describe("BandoRouterV1", function () {
       const tx = await v2.requestERC20Service(2, DUMMY_VALID_ERC20_FULFILLMENTREQUEST);
       const receipt = await tx.wait()
       expect(receipt).to.be.an('object').that.have.property('hash');
-      expect(receipt).to.be.an('object').that.have.property('status');
+      expect(receipt).to.be.an  ('object').that.have.property('status');
       expect(receipt.status).to.be.equal(1);
       expect(tx).to.emit(v2, 'ERC20ServiceRequested');
     });
@@ -412,7 +412,6 @@ describe("BandoRouterV1", function () {
             await owner.getAddress(), 
             2,
         );
-        console.log(ownerDeposit);
         const FAILED_FULFILLMENT_RESULT = {
             id: payerRecordIds[0],
             status: 0,

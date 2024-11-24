@@ -132,9 +132,9 @@ describe("BandoERC20FulfillableV1", () => {
       DUMMY_FULFILLMENTREQUEST.payer = await owner.getAddress();
       DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits('1000', 18);
       DUMMY_FULFILLMENTREQUEST.token = await erc20Test.getAddress();
-      await expect(
-        routerContract.requestERC20Service(2, DUMMY_FULFILLMENTREQUEST)
-      ).to.be.revertedWith('FulfillableRegistry: Service does not exist');
+      await expect(routerContract.requestERC20Service(2, DUMMY_FULFILLMENTREQUEST))
+        .to.be.revertedWithCustomError(registry, 'ServiceDoesNotExist')
+        .withArgs(2);
     });
 
     it("should not allow a payable deposit from an unexistent token", async () => {
