@@ -12,6 +12,9 @@ import { IFulfillableRegistry, Service } from './IFulfillableRegistry.sol';
 /// @custom:bfp-version 1.0.0
 contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, OwnableUpgradeable {
 
+    /// @notice The maximum fulfillment fee basis points
+    uint16 public constant MAX_FULFILLMENT_FEE_BASIS_POINTS = 10000;
+
     /// @notice Mapping to store services by their ID
     mapping(uint256 => Service) public _serviceRegistry;
 
@@ -48,6 +51,14 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     /// @notice Error for invalid addresses
     /// @param _address The address that is invalid
     error InvalidAddress(address _address);
+
+    /// @notice Error for service already exists
+    /// @param serviceID The service identifier
+    error ServiceAlreadyExists(uint256 serviceID);
+
+    /// @notice Error for service does not exist
+    /// @param serviceID The service identifier
+    error ServiceDoesNotExist(uint256 serviceID);
 
     /// @notice ServiceAdded event
     /// @param serviceID The service identifier
@@ -88,7 +99,9 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
     event FulfillerAdded(address fulfiller, uint256 serviceID);
 
     modifier onlyManager() {
-        require(msg.sender == _manager, "FulfillableRegistry: Only the manager can call this function");
+        if(msg.sender != _manager) {
+            revert InvalidAddress(msg.sender);
+        }
         _;
     }
 
@@ -111,7 +124,9 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @param manager_ The address of the protocol manager.
      */
     function setManager(address manager_) public onlyOwner {
-        require(manager_ != address(0), "FulfillableRegistry: Manager cannot be the zero address");
+        if(manager_ == address(0)) {
+            revert InvalidAddress(manager_);
+        }
         _manager = manager_;
         emit ManagerUpdated(manager_);
     }
@@ -128,10 +143,9 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
         Service memory service,
         uint16 fulfillmentFeeBasisPoints
     ) external onlyManager returns (bool) {
-        require(
-            _serviceRegistry[serviceId].fulfiller == address(0), 
-            'FulfillableRegistry: Service already exists'
-        );
+        if(_serviceRegistry[serviceId].fulfiller != address(0)) {
+            revert ServiceAlreadyExists(serviceId);
+        }
         _serviceRegistry[serviceId] = service;
         _serviceFulfillmentFeeBasisPoints[serviceId] = fulfillmentFeeBasisPoints;
         _serviceCount++;
@@ -146,7 +160,9 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @param newBeneficiary the new beneficiary address
      */
     function updateServiceBeneficiary(uint256 serviceId, address payable newBeneficiary) external onlyOwner {
-        require(_serviceRegistry[serviceId].fulfiller != address(0), 'FulfillableRegistry: Service does not exist');
+        if(_serviceRegistry[serviceId].fulfiller == address(0)) {
+            revert ServiceDoesNotExist(serviceId);
+        }
         _serviceRegistry[serviceId].beneficiary = newBeneficiary;
         emit ServiceBeneficiaryUpdated(serviceId, newBeneficiary);
     }
@@ -158,8 +174,10 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @param newfeeAmountBasisPoints the new fee amount percentage
      */
     function updateServicefeeAmountBasisPoints(uint256 serviceId, uint16 newfeeAmountBasisPoints) external onlyOwner {
-        require(_serviceRegistry[serviceId].fulfiller != address(0), 'FulfillableRegistry: Service does not exist');
-        if(newfeeAmountBasisPoints > 10000 || newfeeAmountBasisPoints < 0) {
+        if(_serviceRegistry[serviceId].fulfiller == address(0)) {
+            revert ServiceDoesNotExist(serviceId);
+        }
+        if(newfeeAmountBasisPoints > MAX_FULFILLMENT_FEE_BASIS_POINTS || newfeeAmountBasisPoints < 0) {
             revert InvalidfeeAmountBasisPoints(newfeeAmountBasisPoints);
         }
         _serviceFulfillmentFeeBasisPoints[serviceId] = newfeeAmountBasisPoints;
@@ -176,7 +194,9 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
         if(newFulfiller == address(0)) {
             revert InvalidAddress(newFulfiller);
         }
-        require(_serviceRegistry[serviceId].fulfiller != address(0), 'FulfillableRegistry: Service does not exist');
+        if(_serviceRegistry[serviceId].fulfiller == address(0)) {
+            revert ServiceDoesNotExist(serviceId);
+        }
         _serviceRegistry[serviceId].fulfiller = newFulfiller;
         emit ServiceFulfillerUpdated(serviceId, newFulfiller);
     }
@@ -186,7 +206,9 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @param fulfiller the address of the fulfiller
      */
     function addFulfiller(address fulfiller, uint256 serviceID) external onlyOwner {
-        require(!_fulfillerServices[fulfiller][serviceID], "Service already registered for this fulfiller");
+        if(_fulfillerServices[fulfiller][serviceID]) {
+            revert ServiceAlreadyExists(serviceID);
+        }
         _fulfillerServices[fulfiller][serviceID] = true; // Associate the service ID with the fulfiller
         _fulfillerServiceCount[fulfiller]++; // Increment the service count for the fulfiller
         emit FulfillerAdded(fulfiller, serviceID);
@@ -198,10 +220,9 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @return the service info object and the fulfillment fee basis points
      */
     function getService(uint256 serviceId) external view returns (Service memory, uint16) {
-        require(
-            _serviceRegistry[serviceId].fulfiller != address(0), 
-            'FulfillableRegistry: Service does not exist'
-        );
+        if(_serviceRegistry[serviceId].fulfiller == address(0)) {
+            revert ServiceDoesNotExist(serviceId);
+        }
         return (_serviceRegistry[serviceId], _serviceFulfillmentFeeBasisPoints[serviceId]);
     }
 
@@ -222,7 +243,9 @@ contract FulfillableRegistryV1 is IFulfillableRegistry, UUPSUpgradeable, Ownable
      * @param ref the reference to the service
      */
     function addServiceRef(uint256 serviceId, string memory ref) external onlyManager {
-        require(_serviceRegistry[serviceId].fulfiller != address(0), "Service does not exist");
+        if(_serviceRegistry[serviceId].fulfiller == address(0)) {
+            revert ServiceDoesNotExist(serviceId);
+        }
         uint256 refCount = _serviceRefCount[serviceId];
         _serviceRefs[serviceId][refCount] = ref; // Store the reference at the current index
         _serviceRefCount[serviceId]++; // Increment the reference count

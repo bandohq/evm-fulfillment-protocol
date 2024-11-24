@@ -84,12 +84,14 @@ describe("ERC20TokenRegistry", function () {
     it("Should not allow adding already whitelisted token", async function () {
       await registry.addToken(addr1.address, 0);
       await expect(registry.addToken(addr1.address, 0))
-        .to.be.revertedWith("ERC20TokenRegistry: Token already whitelisted");
+        .to.be.revertedWithCustomError(registry, 'TokenAlreadyWhitelisted')
+        .withArgs(addr1.address);
     });
 
     it("Should not allow removing non-whitelisted token", async function () {
       await expect(registry.removeToken(addr1.address))
-        .to.be.revertedWith("ERC20TokenRegistry: Token not whitelisted");
+        .to.be.revertedWithCustomError(registry, 'TokenNotWhitelisted')
+        .withArgs(addr1.address);
     });
   });
 });

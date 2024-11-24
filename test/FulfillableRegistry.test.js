@@ -70,7 +70,8 @@ describe('FulfillableRegistryV1', () => {
               10, //fulfillmentFeePercentage
               DUMMY_ADDRESS, //Fulfiller
               DUMMY_ADDRESS, //beneficiary
-            )).to.be.revertedWith('FulfillableRegistry: Service already exists');
+            )).to.be.revertedWithCustomError(registry, 'ServiceAlreadyExists')
+              .withArgs(serviceID);
         });
 
         it('should revert if the beneficiary address is invalid', async () => {
@@ -110,7 +111,9 @@ describe('FulfillableRegistryV1', () => {
         it('should revert if the service ID is invalid', async () => {
             const serviceID = 0;
             const serviceRef = '0123456789';
-            await expect(manager.setServiceRef(serviceID, serviceRef)).to.be.revertedWith('Service does not exist');
+            await expect(manager.setServiceRef(serviceID, serviceRef))
+              .to.be.revertedWithCustomError(registry, 'ServiceDoesNotExist')
+              .withArgs(serviceID);
         });
 
         it('should mark the ref as valid', async () => {

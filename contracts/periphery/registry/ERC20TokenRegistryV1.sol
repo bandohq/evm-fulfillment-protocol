@@ -46,6 +46,18 @@ contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @dev This fee ideally should be zero for stablecoins.
     mapping(address => uint16) public _swapFeeBasisPoints;
 
+    /// @notice Error for token not whitelisted
+    /// @param token The address of the token that is not whitelisted
+    error TokenNotWhitelisted(address token);
+
+    /// @notice Error for token already whitelisted
+    /// @param token The address of the token that is already whitelisted
+    error TokenAlreadyWhitelisted(address token);
+
+    /// @notice Error for invalid swap fee percentage
+    /// @param swapFeeBasisPoints The swap fee percentage that is invalid
+    error InvalidSwapFeeBasisPoints(uint16 swapFeeBasisPoints);
+
     /// @notice Emitted when a token is added to the whitelist
     /// @param token The address of the token to check
     /// @param swapFeeBasisPoints The swap fee percentage for the token
@@ -59,10 +71,6 @@ contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param token The address of the token to check
     /// @param swapFeeBasisPoints The new swap fee percentage
     event SwapFeeBasisPointsUpdated(address indexed token, uint16 swapFeeBasisPoints);
-
-    /// @notice Error for invalid swap fee percentage
-    /// @param swapFeeBasisPoints The swap fee percentage that is invalid
-    error InvalidswapFeeBasisPoints(uint16 swapFeeBasisPoints);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -93,7 +101,9 @@ contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @param token The address of the token to add
     /// @param swapFeeBasisPoints The swap fee percentage for the token
     function addToken(address token, uint16 swapFeeBasisPoints) public onlyOwner {
-        require(!whitelist[token], "ERC20TokenRegistry: Token already whitelisted");
+        if (whitelist[token]) {
+            revert TokenAlreadyWhitelisted(token);
+        }
         whitelist[token] = true;
         _swapFeeBasisPoints[token] = swapFeeBasisPoints;
         emit TokenAdded(token, swapFeeBasisPoints);
@@ -103,7 +113,9 @@ contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Only the contract owner can remove tokens
     /// @param token The address of the token to remove
     function removeToken(address token) public onlyOwner {
-        require(whitelist[token], "ERC20TokenRegistry: Token not whitelisted");
+        if (!whitelist[token]) {
+            revert TokenNotWhitelisted(token);
+        }
         whitelist[token] = false;
         emit TokenRemoved(token);
     }
@@ -112,9 +124,9 @@ contract ERC20TokenRegistryV1 is OwnableUpgradeable, UUPSUpgradeable {
     /// @dev Only the contract owner can update the swap fee percentage
     /// @param token The address of the token to update
     /// @param swapFeeBasisPoints The new swap fee percentage
-    function updateswapFeeBasisPoints(address token, uint16 swapFeeBasisPoints) public onlyOwner {
+    function updateSwapFeeBasisPoints(address token, uint16 swapFeeBasisPoints) public onlyOwner {
         if (swapFeeBasisPoints > 10000 || swapFeeBasisPoints < 0) {
-            revert InvalidswapFeeBasisPoints(swapFeeBasisPoints);
+            revert InvalidSwapFeeBasisPoints(swapFeeBasisPoints);
         }
         _swapFeeBasisPoints[token] = swapFeeBasisPoints;
         emit SwapFeeBasisPointsUpdated(token, swapFeeBasisPoints);
