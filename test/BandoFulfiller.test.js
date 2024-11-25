@@ -203,7 +203,7 @@ describe("BandoFulfillableV1", () => {
       SUCCESS_FULFILLMENT_RESULT.id = payerRecordIds[0];
       await expect(
         fromManager.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
-      ).to.be.revertedWith('Fulfillment already registered');
+      ).to.be.revertedWithCustomError(escrow, 'FulfillmentAlreadyRegistered');
       await escrow.setManager(await manager.getAddress());
     });
   });
@@ -228,7 +228,7 @@ describe("BandoFulfillableV1", () => {
       await escrow.setManager(managerEOA.address);
       await expect(
         fromManager.beneficiaryWithdraw(1)
-      ).to.be.revertedWith("There is no balance to release.");
+      ).to.be.revertedWithCustomError(escrow, 'NoBalanceToRelease');
       await escrow.setManager(await manager.getAddress());
     });
   });

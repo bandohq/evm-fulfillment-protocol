@@ -90,10 +90,11 @@ contract BandoFulfillableV1 is
     /// @param router_ The router address that was invalid
     error InvalidRouter(address router_);
 
-    /// @notice Throws this error when the deposit overflows.
-    /// @param total_amount The total amount that was invalid
-    /// @param depositsAmount The deposits amount that was invalid
-    error DepositOverflow(uint256 total_amount, uint256 depositsAmount);
+    /// @notice Error emitted when an overflow occurs.
+    error Overflow(uint8 reason);
+
+    /// @notice Error emitted when the refund amount are too big.
+    error RefundsTooBig();
 
     /// @notice Throws this error when the no refunds are authorized.
     /// @param refundee The refundee address that was invalid
@@ -105,6 +106,18 @@ contract BandoFulfillableV1 is
 
     /// @notice Throws this error when the fulfillment status is unsupported.
     error UnsupportedStatus(FulFillmentResultState status);
+
+    /// @notice Throws this error when the fulfillment record does not exist.
+    error FulfillmentRecordDoesNotExist();
+
+    /// @notice Throws this error when the fulfillment record is already registered.
+    error FulfillmentAlreadyRegistered();
+
+    /// @notice Throws this error when there is no balance to release.
+    error NoBalanceToRelease();
+
+    /// @notice Throws this error when there is no fees to withdraw.
+    error NoFeesToWithdraw();
 
     /*****************************/
     /* STATE VARIABLES           */
@@ -279,7 +292,7 @@ contract BandoFulfillableV1 is
         );
         (bool success, uint256 result) = total_amount.tryAdd(depositsAmount);
         if (!success) {
-            revert DepositOverflow(total_amount, depositsAmount);
+            revert Overflow(6);
         }
         setDepositsFor(
             fulfillmentRequest.payer,
@@ -368,14 +381,17 @@ contract BandoFulfillableV1 is
         (bool asuccess, uint256 addResult) = authorized_refunds.tryAdd(
             weiAmount
         );
-        require(asuccess, "Overflow while adding authorized refunds");
+        if(!asuccess) {
+            revert Overflow(1);
+        }
         uint256 total_refunds = addResult;
-        require(
-            deposits >= total_refunds,
-            "Total refunds would be bigger than the total in escrow"
-        );
+        if(deposits < total_refunds) {
+            revert RefundsTooBig();
+        }
         (bool ssuccess, uint256 subResult) = deposits.trySub(weiAmount);
-        require(ssuccess, "Overflow while substracting deposits");
+        if(!ssuccess) {
+            revert Overflow(2);
+        }
         setDepositsFor(refundee, serviceID, subResult);
         setRefundsFor(refundee, serviceID, total_refunds);
         emit RefundAuthorized(refundee, weiAmount);
@@ -404,15 +420,12 @@ contract BandoFulfillableV1 is
         if (_manager != msg.sender) {
             revert InvalidManager(msg.sender);
         }
-        require(
-            _fulfillmentRecords[fulfillment.id].id > 0,
-            "Fulfillment record does not exist"
-        );
-        require(
-            _fulfillmentRecords[fulfillment.id].status ==
-                FulFillmentResultState.PENDING,
-            "Fulfillment already registered"
-        );
+        if(_fulfillmentRecords[fulfillment.id].id == 0) {
+            revert FulfillmentRecordDoesNotExist();
+        }
+        if(_fulfillmentRecords[fulfillment.id].status != FulFillmentResultState.PENDING) {
+            revert FulfillmentAlreadyRegistered();
+        }
         address payer = _fulfillmentRecords[fulfillment.id].payer;
         uint256 deposits = getDepositsFor(payer, serviceID);
         uint256 wei_amount = _fulfillmentRecords[fulfillment.id].weiAmount;
@@ -426,12 +439,18 @@ contract BandoFulfillableV1 is
             (bool asuccess, uint256 addResult) = _accumulatedFees[serviceID].tryAdd(
                 _fulfillmentRecords[fulfillment.id].feeAmount
             );
-            require(asuccess, "Overflow while adding accumulated fees");
+            if(!asuccess) {
+                    revert Overflow(3);
+            }
             _accumulatedFees[serviceID] = addResult;
             (bool rlsuccess, uint256 releaseResult) = _releaseablePool[serviceID].tryAdd(wei_amount);
-            require(rlsuccess, "Overflow while adding to releaseable pool");
+            if(!rlsuccess) {
+                revert Overflow(4);
+            }
             (bool dsuccess, uint256 subResult) = deposits.trySub(total_amount);
-            require(dsuccess, "Overflow while substracting from deposits");
+            if(!dsuccess) {
+                revert Overflow(5);
+            }
             _releaseablePool[serviceID] = releaseResult;
             setDepositsFor(payer, serviceID, subResult);
             _fulfillmentRecords[fulfillment.id].receiptURI = fulfillment
@@ -450,7 +469,9 @@ contract BandoFulfillableV1 is
             revert InvalidManager(msg.sender);
         }
         (Service memory service, ) = _registryContract.getService(serviceID);
-        require(_releaseablePool[serviceID] > 0, "There is no balance to release.");
+        if(_releaseablePool[serviceID] == 0) {
+            revert NoBalanceToRelease();
+        }
         uint256 amount = _releaseablePool[serviceID];
         _releaseablePool[serviceID] = 0;
         service.beneficiary.sendValue(amount);
@@ -464,7 +485,9 @@ contract BandoFulfillableV1 is
         }
         (Service memory service, ) = _registryContract.getService(serviceId);
         uint256 amount = _accumulatedFees[serviceId];
-        require(amount > 0, "No fees to withdraw");
+        if(amount == 0) {
+            revert NoFeesToWithdraw();
+        }
         _accumulatedFees[serviceId] = 0;
         service.beneficiary.sendValue(amount);
         emit FeesWithdrawn(serviceId, service.beneficiary, amount);
