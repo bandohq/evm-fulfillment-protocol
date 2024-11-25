@@ -79,6 +79,34 @@ contract BandoFulfillableV1 is
     event FulfillableRegistryUpdated(address indexed fulfillableRegistry);
 
     /*****************************/
+    /* ERROR DECLARATIONS        */
+    /*****************************/
+
+    /// @notice Throws this error when the address is invalid.
+    /// @param address_ The address that was invalid
+    error InvalidAddress(address address_);
+
+    /// @notice Throws this error when the router address is invalid.
+    /// @param router_ The router address that was invalid
+    error InvalidRouter(address router_);
+
+    /// @notice Throws this error when the deposit overflows.
+    /// @param total_amount The total amount that was invalid
+    /// @param depositsAmount The deposits amount that was invalid
+    error DepositOverflow(uint256 total_amount, uint256 depositsAmount);
+
+    /// @notice Throws this error when the no refunds are authorized.
+    /// @param refundee The refundee address that was invalid
+    /// @param serviceID The service ID that was invalid
+    error NoRefunds(address refundee, uint256 serviceID);
+
+    /// @notice Throws this error when the caller is not the manager.
+    error InvalidManager(address manager);
+
+    /// @notice Throws this error when the fulfillment status is unsupported.
+    error UnsupportedStatus(FulFillmentResultState status);
+
+    /*****************************/
     /* STATE VARIABLES           */
     /*****************************/
 
@@ -149,7 +177,9 @@ contract BandoFulfillableV1 is
     /// @param manager_ The address of the protocol manager
     /// @dev Only callable by the contract owner
     function setManager(address manager_) public onlyOwner {
-        require(manager_ != address(0), "Manager cannot be the zero address");
+        if (manager_ == address(0)) {
+            revert InvalidAddress(manager_);
+        }
         _manager = manager_;
         emit ManagerUpdated(manager_);
     }
@@ -158,7 +188,9 @@ contract BandoFulfillableV1 is
     /// @param router_ The address of the protocol router
     /// @dev Only callable by the contract owner
     function setRouter(address router_) public onlyOwner {
-        require(router_ != address(0), "Router cannot be the zero address");
+        if (router_ == address(0)) {
+            revert InvalidAddress(router_);
+        }
         _router = router_;
         emit RouterUpdated(router_);
     }
@@ -167,7 +199,9 @@ contract BandoFulfillableV1 is
     /// @param fulfillableRegistry_ The address of the fulfillable registry
     /// @dev Only callable by the contract owner
     function setFulfillableRegistry(address fulfillableRegistry_) public onlyOwner {
-        require(fulfillableRegistry_ != address(0), "Fulfillable registry cannot be the zero address");
+        if (fulfillableRegistry_ == address(0)) {
+            revert InvalidAddress(fulfillableRegistry_);
+        }
         _fulfillableRegistry = fulfillableRegistry_;
         _registryContract = IFulfillableRegistry(fulfillableRegistry_);
         emit FulfillableRegistryUpdated(fulfillableRegistry_);
@@ -234,7 +268,9 @@ contract BandoFulfillableV1 is
         FulFillmentRequest memory fulfillmentRequest,
         uint256 feeAmount
     ) public payable virtual nonReentrant {
-        require(_router == msg.sender, "Caller is not the router");
+        if (_router != msg.sender) {
+            revert InvalidRouter(msg.sender);
+        }
         (Service memory service, ) = _registryContract.getService(serviceID);
         uint256 total_amount = msg.value;
         uint256 depositsAmount = getDepositsFor(
@@ -242,7 +278,9 @@ contract BandoFulfillableV1 is
             serviceID
         );
         (bool success, uint256 result) = total_amount.tryAdd(depositsAmount);
-        require(success, "Overflow while adding deposits");
+        if (!success) {
+            revert DepositOverflow(total_amount, depositsAmount);
+        }
         setDepositsFor(
             fulfillmentRequest.payer,
             serviceID,
@@ -282,12 +320,16 @@ contract BandoFulfillableV1 is
         uint256 serviceID,
         address payable refundee
     ) public virtual nonReentrant returns (bool) {
-        require(_router == msg.sender, "Caller is not the router");
+        if (_router != msg.sender) {
+            revert InvalidRouter(msg.sender);
+        }
         uint256 authorized_refunds = getRefundsFor(
             refundee,
             serviceID
         );
-        require(authorized_refunds > 0, "Address is not allowed any refunds");
+        if (authorized_refunds == 0) {
+            revert NoRefunds(refundee, serviceID);
+        }
         setRefundsFor(refundee, serviceID, 0);
         _withdrawRefund(refundee, authorized_refunds);
         return true;
@@ -359,7 +401,9 @@ contract BandoFulfillableV1 is
         uint256 serviceID,
         FulFillmentResult memory fulfillment
     ) public virtual nonReentrant returns (bool) {
-        require(_manager == msg.sender, "Caller is not the manager");
+        if (_manager != msg.sender) {
+            revert InvalidManager(msg.sender);
+        }
         require(
             _fulfillmentRecords[fulfillment.id].id > 0,
             "Fulfillment record does not exist"
@@ -377,7 +421,7 @@ contract BandoFulfillableV1 is
             _authorizeRefund(serviceID, payer, total_amount);
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
         } else if (fulfillment.status != FulFillmentResultState.SUCCESS) {
-            revert("Unexpected status");
+            revert UnsupportedStatus(fulfillment.status);
         } else {
             (bool asuccess, uint256 addResult) = _accumulatedFees[serviceID].tryAdd(
                 _fulfillmentRecords[fulfillment.id].feeAmount
@@ -402,7 +446,9 @@ contract BandoFulfillableV1 is
     /// @notice Withdraws the beneficiary's available balance to release (fulfilled with success).
     /// @param serviceID The service identifier.
     function beneficiaryWithdraw(uint256 serviceID) public virtual nonReentrant {
-        require(_manager == msg.sender, "Caller is not the manager");
+        if (_manager != msg.sender) {
+            revert InvalidManager(msg.sender);
+        }
         (Service memory service, ) = _registryContract.getService(serviceID);
         require(_releaseablePool[serviceID] > 0, "There is no balance to release.");
         uint256 amount = _releaseablePool[serviceID];
@@ -410,8 +456,12 @@ contract BandoFulfillableV1 is
         service.beneficiary.sendValue(amount);
     }
 
+    /// @notice Withdraws the accumulated fees for a given service ID.
+    /// @param serviceId The service identifier.
     function withdrawAccumulatedFees(uint256 serviceId) external nonReentrant {
-        require(_manager == msg.sender, "Caller is not the manager");
+        if (_manager != msg.sender) {
+            revert InvalidManager(msg.sender);
+        }
         (Service memory service, ) = _registryContract.getService(serviceId);
         uint256 amount = _accumulatedFees[serviceId];
         require(amount > 0, "No fees to withdraw");

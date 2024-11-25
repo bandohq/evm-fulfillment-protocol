@@ -203,9 +203,9 @@ describe('BandoFulfillmentManagerV1', () => {
                 externalID: "012345678912",
                 receiptURI: "https://example.com/receipt",
             };
-            await expect(
-                escrow.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
-            ).to.be.revertedWith('Caller is not the manager');
+            await expect(escrow.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT))
+                .to.be.revertedWithCustomError(escrow, 'InvalidManager')
+                .withArgs(owner.address);
             await expect(
                 manager.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
             ).not.to.be.reverted;
