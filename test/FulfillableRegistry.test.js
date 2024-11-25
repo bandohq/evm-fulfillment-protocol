@@ -59,7 +59,8 @@ describe('FulfillableRegistryV1', () => {
               10, //fulfillmentFeePercentage
               DUMMY_ADDRESS, //Fulfiller
               DUMMY_ADDRESS, //beneficiary
-            )).to.be.revertedWith('Service ID is invalid');
+            )).to.be.revertedWithCustomError(manager, 'InvalidServiceId')
+              .withArgs(serviceID);
         });
 
         it('should revert if the service already exists', async () => {
@@ -82,7 +83,8 @@ describe('FulfillableRegistryV1', () => {
               10, //fulfillmentFeePercentage
               DUMMY_ADDRESS, //Fulfiller
               ZERO_ADDRESS, //beneficiary
-            )).to.be.revertedWith("Beneficiary address is invalid");
+            )).to.be.revertedWithCustomError(manager, 'InvalidAddress')
+              .withArgs(ZERO_ADDRESS);
         });
 
         it('should revert if the fulfiller address is invalid', async () => {
@@ -93,7 +95,8 @@ describe('FulfillableRegistryV1', () => {
               10, //fulfillmentFeePercentage
               ZERO_ADDRESS, //Fulfiller
               DUMMY_ADDRESS, //beneficiary
-            )).to.be.revertedWith("Fulfiller address is invalid");
+            )).to.be.revertedWithCustomError(manager, 'InvalidAddress')
+              .withArgs(ZERO_ADDRESS);
         });
 
         it('should revert if the fee amount is invalid', async () => {

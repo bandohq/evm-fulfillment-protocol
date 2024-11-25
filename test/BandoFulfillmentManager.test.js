@@ -152,7 +152,8 @@ describe('BandoFulfillmentManagerV1', () => {
                 feeAmountBasisPoints,
                 fulfiller.getAddress(), //Fulfiller
                 beneficiary.getAddress(), //beneficiary
-            )).to.be.revertedWith('Service ID is invalid');
+            )).to.be.revertedWithCustomError(manager, 'InvalidServiceId')
+            .withArgs(serviceID);
         });
 
         it('should revert if the service already exists.', async () => {
@@ -202,9 +203,9 @@ describe('BandoFulfillmentManagerV1', () => {
                 externalID: "012345678912",
                 receiptURI: "https://example.com/receipt",
             };
-            await expect(
-                escrow.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
-            ).to.be.revertedWith('Caller is not the manager');
+            await expect(escrow.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT))
+                .to.be.revertedWithCustomError(escrow, 'InvalidManager')
+                .withArgs(owner.address);
             await expect(
                 manager.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
             ).not.to.be.reverted;
@@ -324,7 +325,9 @@ describe('BandoFulfillmentManagerV1', () => {
 
     describe('Beneficiary Withdraws', () => {
         it('should only allow the beneficiary to withdraw', async () => {
-            await expect(manager.beneficiaryWithdraw(1)).to.be.revertedWith("Only the beneficiary can withdraw");
+            await expect(manager.beneficiaryWithdraw(1))
+                .to.be.revertedWithCustomError(manager, 'InvalidBeneficiary')
+                .withArgs(owner.address);
         });
 
         it('should allow the beneficiary to withdraw', async () => {
@@ -335,7 +338,8 @@ describe('BandoFulfillmentManagerV1', () => {
 
         it('should not allow a non-beneficiary to withdraw ERC20', async () => {
             await expect(manager.beneficiaryWithdrawERC20(1, await erc20Test.getAddress()))
-                .to.be.revertedWith("Only the beneficiary can withdraw");
+                .to.be.revertedWithCustomError(manager, 'InvalidBeneficiary')
+                .withArgs(owner.address);
         });
 
         it('should allow the beneficiary to withdraw ERC20', async () => {

@@ -98,9 +98,9 @@ describe("BandoFulfillableV1", () => {
 
   describe("Deposit Specs", () => {
     it("should not allow a payable deposit coming from any random address.", async () => {
-      await expect(
-        escrow.deposit(1, DUMMY_FULFILLMENTREQUEST, 1)
-      ).to.be.revertedWith('Caller is not the router');
+      await expect(escrow.deposit(1, DUMMY_FULFILLMENTREQUEST, 1))
+        .to.be.revertedWithCustomError(escrow, 'InvalidRouter')
+        .withArgs(owner.address);
     });
 
     it("should allow a payable deposit coming from the router.", async () => {
@@ -142,9 +142,9 @@ describe("BandoFulfillableV1", () => {
       SUCCESS_FULFILLMENT_RESULT.id = payerRecordIds[0];
       const fromManager = await escrow.connect(managerEOA);
       await escrow.setManager(managerEOA.address);
-      await expect(
-        fromRouter.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
-      ).to.be.revertedWith('Caller is not the manager');
+      await expect(fromRouter.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT))
+        .to.be.revertedWithCustomError(escrow, 'InvalidManager')
+        .withArgs(router.address);
       await expect(
         fromManager.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
       ).not.to.be.reverted;
@@ -186,12 +186,12 @@ describe("BandoFulfillableV1", () => {
       const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
       expect(postBalance).to.be.equal(101);
     });
-
+ 
     it("should not allow router to withdraw a refund when there is none.", async () => {
       const fromRouter = await escrow.connect(router);
-      await expect(
-        fromRouter.withdrawRefund(1, DUMMY_ADDRESS)
-      ).to.be.revertedWith('Address is not allowed any refunds');
+      await expect(fromRouter.withdrawRefund(1, DUMMY_ADDRESS))
+        .to.be.revertedWithCustomError(escrow, 'NoRefunds')
+        .withArgs(DUMMY_ADDRESS, 1);
     });
 
     it("should not allow to register a fulfillment when it already was registered.", async () => {
@@ -203,7 +203,7 @@ describe("BandoFulfillableV1", () => {
       SUCCESS_FULFILLMENT_RESULT.id = payerRecordIds[0];
       await expect(
         fromManager.registerFulfillment(1, SUCCESS_FULFILLMENT_RESULT)
-      ).to.be.revertedWith('Fulfillment already registered');
+      ).to.be.revertedWithCustomError(escrow, 'FulfillmentAlreadyRegistered');
       await escrow.setManager(await manager.getAddress());
     });
   });
@@ -228,16 +228,16 @@ describe("BandoFulfillableV1", () => {
       await escrow.setManager(managerEOA.address);
       await expect(
         fromManager.beneficiaryWithdraw(1)
-      ).to.be.revertedWith("There is no balance to release.");
+      ).to.be.revertedWithCustomError(escrow, 'NoBalanceToRelease');
       await escrow.setManager(await manager.getAddress());
     });
   });
 
   describe("Withdraw Fees Specs", () => {
     it("should not allow non-manager to withdraw fees", async () => {
-      await expect(
-        escrow.connect(owner).withdrawAccumulatedFees(1)
-      ).to.be.revertedWith("Caller is not the manager");
+      await expect(escrow.connect(owner).withdrawAccumulatedFees(1))
+        .to.be.revertedWithCustomError(escrow, 'InvalidManager')
+        .withArgs(owner.address);
     });
 
     it("should allow manager to withdraw fees", async () => {
