@@ -2,7 +2,8 @@
 
 The Bando Fulfillment Protocol EVM smart contracts suite suite.
 
-[![Run Tests and Coverage](https://github.com/bandohq/evm-fulfillment-protocol/actions/workflows/hardhat-test.yaml/badge.svg)](https://github.com/bandohq/evm-fulfillment-protocol/actions/workflows/hardhat-test.yaml)
+[![Run Tests and Coverage](https://github.com/bandohq/evm-fulfillment-protocol/actions/workflows/ci.yaml/badge.svg)](https://github.com/bandohq/evm-fulfillment-protocol/actions/workflows/ci.yaml)
+[![Build](https://github.com/bandohq/evm-fulfillment-protocol/actions/workflows/build-abis.yml/badge.svg)](https://github.com/bandohq/evm-fulfillment-protocol/actions/workflows/build-abis.yml)
 
 ## Overview 
 For a more detail view of the protocol architecture, security considerations, and product as a whole, please refer to the [Official Docs](https://docs.bando.cool).
