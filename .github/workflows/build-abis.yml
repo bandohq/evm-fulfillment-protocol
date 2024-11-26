@@ -2,6 +2,8 @@ name: Build ABIs
 on:
   push:
     branches: [main]
+    paths:
+      - '**/*.sol'
 jobs:
   build-abis:
     runs-on: ubuntu-latest
@@ -20,7 +22,7 @@ jobs:
         run: |
           yarn
           forge build
-      - name: Checkout contract-abis repo
+      - name: Checkout contract-abis
         uses: actions/checkout@v3
         with:
           repository: bandohq/contract-abis
@@ -33,7 +35,8 @@ jobs:
           git config user.name "bando-bot"
           git config user.email "api@bando.cool"
           git add .
-          git diff --staged --quiet || git commit -m "Update ABIs from main repo"
+          DATE=$(date '+%Y-%m-%d')
+          git diff --staged --quiet || git commit -m "Update ABIs $DATE"
           VERSION=$(date '+%Y%m%d%H%M%S')
           git tag -a "v$VERSION" -m "Release v$VERSION"
           git push origin main --tags
