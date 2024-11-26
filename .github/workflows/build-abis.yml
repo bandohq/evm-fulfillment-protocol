@@ -23,12 +23,11 @@ jobs:
       - name: Checkout contract-abis repo
         uses: actions/checkout@v3
         with:
-          repository: bandohq/contract-abis
+          repository: bandohq/contrac t-abis
           token: ${{ secrets.GH_PAT }}
           path: abis
       - name: Copy and commit ABIs
         run: |
-          mkdir -p abis
           cp -r out/* abis/
           cd abis
           git config user.name "bando-bot"
