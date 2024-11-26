@@ -22,7 +22,7 @@ jobs:
         run: |
           yarn
           forge build
-      - name: Checkout contract-abis repo1
+      - name: Checkout contract-abis
         uses: actions/checkout@v3
         with:
           repository: bandohq/contract-abis
