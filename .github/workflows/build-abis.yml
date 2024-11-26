@@ -1,0 +1,40 @@
+name: Build ABIs
+on:
+  push:
+    branches: [main]
+jobs:
+  build-abis:
+    runs-on: ubuntu-latest
+    name: Build ABIs
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+      - name: Install packages
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      - name: Build ABIs
+        run: |
+          yarn
+          forge build
+      - name: Checkout contract-abis repo
+        uses: actions/checkout@v3
+        with:
+          repository: bandohq/contract-abis
+          token: ${{ secrets.GH_PAT }}
+          path: abis
+      - name: Copy and commit ABIs
+        run: |
+          mkdir -p abis
+          cp -r out/* abis/
+          cd abis
+          git config user.name "bando-bot"
+          git config user.email "api@bando.cool"
+          git add .
+          git diff --staged --quiet || git commit -m "Update ABIs from main repo"
+          VERSION=$(date '+%Y%m%d%H%M%S')
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin main --tags
