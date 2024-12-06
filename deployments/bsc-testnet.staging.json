@@ -1,0 +1,6 @@
+{
+  "FulfillableRegistryProxy": "0xbFfd65600a7D15f1D4e6e2B8eeca583204748E50",
+  "FulfillableRegistry": "0xfCE257357e88BaD8994A02aF021EdFead70C89A0",
+  "ERC20TokenRegistryProxy": "0xbae783a06905F0c5B28450AeA36D075DE5F0b732",
+  "ERC20TokenRegistry": "0x8626AefbDbB23D100Cf4D0D31Ac9200310F3DECC"
+}

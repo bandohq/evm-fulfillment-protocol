@@ -5,12 +5,12 @@ import { ScriptBase } from "./utils/ScriptBase.sol";
 import {console} from "forge-std/console.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import {BandoERC20FulfillableV1} from 'bando/BandoERC20FulfillableV1.sol';
-import {BandoERC20FulfillableProxy} from 'bando/proxy/BandoERC20FulfillableProxy.sol';
+import {BandoFulfillableV1} from 'bando/BandoFulfillableV1.sol';
+import {BandoFulfillableProxy} from 'bando/proxy/BandoFulfillableProxy.sol';
 
-contract DeployBandoERC20Fulfillable is ScriptBase {
+contract DeployBandoFulfillable is ScriptBase {
 
-    constructor() ScriptBase("BandoERC20Fulfillable") {}
+    constructor() ScriptBase("BandoFulfillable") {}
 
     function run() public returns (
         address deployed,
@@ -24,13 +24,13 @@ contract DeployBandoERC20Fulfillable is ScriptBase {
         vm.startBroadcast();
 
         // 1. Deploy implementation using CREATE2
-        bytes memory implementationBytecode = type(BandoERC20FulfillableV1).creationCode;
+        bytes memory implementationBytecode = type(BandoFulfillableV1).creationCode;
         implementation = Create2.deploy(0, salt, implementationBytecode);
         console.log("Implementation deployed at:", implementation);
         // 2. Prepare initialization data
         bytes memory initData = abi.encodeCall(
-          BandoERC20FulfillableV1.initialize,
-          ()
+          BandoFulfillableV1.initialize,
+          (deployer)
         );
         console.log("Init data length:", initData.length);
 
@@ -40,7 +40,7 @@ contract DeployBandoERC20Fulfillable is ScriptBase {
             initData
         );
         bytes memory proxyBytecode = abi.encodePacked(
-            type(BandoERC20FulfillableProxy).creationCode,
+            type(BandoFulfillableProxy).creationCode,
             proxyConstructorArgs
         );
         
@@ -48,7 +48,7 @@ contract DeployBandoERC20Fulfillable is ScriptBase {
         deployed = Create2.deploy(0, proxySalt, proxyBytecode);
         console.log("Proxy deployed at:", deployed);
         // 4. Verify initialization
-        BandoERC20FulfillableV1 proxyContract = BandoERC20FulfillableV1(deployed);
+        BandoFulfillableV1 proxyContract = BandoFulfillableV1(deployed);
         address owner = proxyContract.owner();
         console.log("Owner after initialization:", owner);
         require(owner == deployer, "Initialization failed: wrong owner");

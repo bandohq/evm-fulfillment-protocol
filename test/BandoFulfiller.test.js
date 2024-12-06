@@ -56,7 +56,7 @@ describe("BandoFulfillableV1", () => {
 
     // deploy manager
     const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
-    const m = await upgrades.deployProxy(Manager, []);
+    const m = await upgrades.deployProxy(Manager, [await owner.getAddress()]);
     await m.waitForDeployment();
     manager = await Manager.attach(await m.getAddress());
 
@@ -64,7 +64,7 @@ describe("BandoFulfillableV1", () => {
     const FulfillableV1 = await ethers.getContractFactory('BandoFulfillableV1');
     fulfillableContract = await upgrades.deployProxy(
       FulfillableV1,
-      []
+      [await owner.getAddress()]
     );
     await fulfillableContract.waitForDeployment();
 
@@ -228,7 +228,7 @@ describe("BandoFulfillableV1", () => {
       await escrow.setManager(managerEOA.address);
       await expect(
         fromManager.beneficiaryWithdraw(1)
-      ).to.be.revertedWithCustomError(escrow, 'NoBalanceToRelease');
+       ).to.be.revertedWithCustomError(escrow, 'NoBalanceToRelease');
       await escrow.setManager(await manager.getAddress());
     });
   });

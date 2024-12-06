@@ -143,7 +143,7 @@ deploySingleContract() {
     doNotContinueUnlessGasIsBelowThreshold "$NETWORK"
 
     # try to execute call
-    RAW_RETURN_DATA=$(DEPLOYSALT=$DEPLOYSALT NETWORK=$NETWORK FILE_SUFFIX=$FILE_SUFFIX SOL_PRIVATE_KEY=$SOL_PRIVATE_KEY forge script "$FULL_SCRIPT_PATH" -f $NETWORK --private-key $PRIVATE_KEY -vvvv --json --silent --broadcast --skip-simulation --legacy)
+    RAW_RETURN_DATA=$(DEPLOYSALT=$DEPLOYSALT NETWORK=$NETWORK FILE_SUFFIX=$FILE_SUFFIX SOL_PRIVATE_KEY=$SOL_PRIVATE_KEY forge script "$FULL_SCRIPT_PATH" -f $NETWORK --private-key $PRIVATE_KEY -vvvv --json --broadcast --skip-simulation --legacy)
     RETURN_CODE=$?
     # print return data only if debug mode is activated
     echoDebug "RAW_RETURN_DATA: $RAW_RETURN_DATA"

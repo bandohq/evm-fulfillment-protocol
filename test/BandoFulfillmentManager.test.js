@@ -34,18 +34,18 @@ describe('BandoFulfillmentManagerV1', () => {
          * deploy manager
          */
         const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
-        const m = await upgrades.deployProxy(Manager, []);
+        const m = await upgrades.deployProxy(Manager, [await owner.getAddress()]);
         await m.waitForDeployment();
         manager = await Manager.attach(await m.getAddress());
         /**
          * deploy escrows
          */
         const Escrow = await ethers.getContractFactory('BandoFulfillableV1');
-        const e = await upgrades.deployProxy(Escrow, []);
+        const e = await upgrades.deployProxy(Escrow, [await owner.getAddress()]);
         await e.waitForDeployment();
         escrow = await Escrow.attach(await e.getAddress());
         const ERC20Escrow = await ethers.getContractFactory('BandoERC20FulfillableV1');
-        const erc20 = await upgrades.deployProxy(ERC20Escrow, []);
+        const erc20 = await upgrades.deployProxy(ERC20Escrow, [await owner.getAddress()]);
         await erc20.waitForDeployment();
         erc20_escrow = await ERC20Escrow.attach(await erc20.getAddress());
 

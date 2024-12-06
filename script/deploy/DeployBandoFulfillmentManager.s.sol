@@ -30,7 +30,7 @@ contract DeployBandoFulfillmentManager is ScriptBase {
         // 2. Prepare initialization data
         bytes memory initData = abi.encodeCall(
           BandoFulfillmentManagerV1.initialize,
-          ()
+          (deployer)
         );
         console.log("Init data length:", initData.length);
 
