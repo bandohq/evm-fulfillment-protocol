@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - '**/*.sol'
+      - 'deployments/**'
 jobs:
   build-abis:
     runs-on: ubuntu-latest
@@ -27,16 +28,20 @@ jobs:
         with:
           repository: bandohq/contract-abis
           token: ${{ secrets.GH_PAT }}
-          path: abis
+          path: abis_repo
       - name: Copy and commit ABIs
         run: |
-          cp -r out/* abis/
+          rm -rf abis_repo/
+          mkdir -p abis_repo/abis
+          mkdir -p abis_repo/contracts
+          cp -r out/* abis_repo/abis/
+          cp -r deployments/* abis_repo/contracts/
           cd abis
           git config user.name "bando-bot"
           git config user.email "api@bando.cool"
           git add .
           DATE=$(date '+%Y-%m-%d')
-          git diff --staged --quiet || git commit -m "Update ABIs $DATE"
+          git diff --staged --quiet || git commit -m "Update BFP EVM Contracts $DATE"
           VERSION=$(date '+%Y%m%d%H%M%S')
           git tag -a "v$VERSION" -m "Release v$VERSION"
           git push origin main --tags

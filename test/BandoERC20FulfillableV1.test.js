@@ -64,7 +64,7 @@ describe("BandoERC20FulfillableV1", () => {
 
     // deploy manager
     const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
-    const m = await upgrades.deployProxy(Manager, []);
+    const m = await upgrades.deployProxy(Manager, [await owner.getAddress()]);
     await m.waitForDeployment();
     manager = await Manager.attach(await m.getAddress());
 
@@ -72,7 +72,7 @@ describe("BandoERC20FulfillableV1", () => {
     const FulfillableV1 = await ethers.getContractFactory('BandoERC20FulfillableV1');
     fulfillableContract = await upgrades.deployProxy(
       FulfillableV1,
-      []
+      [await owner.getAddress()]
     );
     await fulfillableContract.waitForDeployment();
     /**

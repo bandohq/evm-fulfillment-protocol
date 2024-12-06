@@ -179,10 +179,10 @@ contract BandoFulfillableV1 is
 
     /// @notice Initializes the contract
     /// @dev set counter to 1 to avoid 0 id
-    function initialize() public virtual initializer {
-        __Ownable_init(msg.sender);
+    function initialize(address initialOwner) public virtual initializer {
         __UUPSUpgradeable_init();
         __ReentrancyGuard_init();
+        __Ownable_init(initialOwner);
         _fulfillmentIdCount = 1;
     }
 

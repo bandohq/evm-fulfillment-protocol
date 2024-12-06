@@ -1,6 +1,6 @@
 {
-  "FulfillableRegistryProxy": "0xbDF303C011b9cBE7A9019D729648e2BA85b334a9",
-  "FulfillableRegistry": "0xbb183D3ED7feBF74ce073E60ca311fd247Df7ced",
-  "BandoRouterProxy": "0xebe730046E55F20bC3E022AD4Fc32D69651BdE5e",
-  "BandoRouter": "0x4d9a66817356f6f44aA878536dF0769C9DcF4BB7"
+  "FulfillableRegistryProxy": "0xbFfd65600a7D15f1D4e6e2B8eeca583204748E50",
+  "FulfillableRegistry": "0xfCE257357e88BaD8994A02aF021EdFead70C89A0",
+  "ERC20TokenRegistryProxy": "0xbae783a06905F0c5B28450AeA36D075DE5F0b732",
+  "ERC20TokenRegistry": "0x8626AefbDbB23D100Cf4D0D31Ac9200310F3DECC"
 }

@@ -83,9 +83,9 @@ contract BandoFulfillmentManagerV1 is OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /// @notice Initializes the contract
-    function initialize() public virtual initializer {
-        __Ownable_init(msg.sender);
+    function initialize(address initialOwner) public virtual initializer {
         __UUPSUpgradeable_init();
+        __Ownable_init(initialOwner);
     }
 
     /// @dev UUPS upgrade authorization
