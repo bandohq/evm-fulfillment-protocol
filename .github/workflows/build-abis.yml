@@ -37,7 +37,15 @@ jobs:
           cd ..
           mkdir -p abis_repo/abis
           mkdir -p abis_repo/contracts
-          cp -r out/* abis_repo/abis/
+          CONTRACT_NAMES=("FulfillableRegistryV1" "ERC20TokenRegistryV1" "BandoFulfillmentManagerV1" "BandoRouterV1" "BandoERC20FulfillableV1" "BandoFulfillableV1")
+          for contract_name in "${CONTRACT_NAMES[@]}"; do
+            abi_file="out/$contract_name.sol/$contract_name.json"
+            if [ -f "$abi_file" ]; then
+              cp "$abi_file" abis_repo/abis/
+            else
+              echo "ABI for $contract_name not found at $abi_file"
+            fi
+          done
           cp -r deployments/* abis_repo/contracts/
           cd abis_repo
           git config user.name "bando-bot"
