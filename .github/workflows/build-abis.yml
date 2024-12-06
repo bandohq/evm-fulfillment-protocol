@@ -36,7 +36,7 @@ jobs:
           mkdir -p abis_repo/contracts
           cp -r out/* abis_repo/abis/
           cp -r deployments/* abis_repo/contracts/
-          cd abis
+          cd abis_repo
           git config user.name "bando-bot"
           git config user.email "api@bando.cool"
           git add .
