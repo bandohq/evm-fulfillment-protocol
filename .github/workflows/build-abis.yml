@@ -32,7 +32,9 @@ jobs:
           path: abis_repo
       - name: Copy and commit ABIs
         run: |
-          rm -rf abis_repo/
+          cd abis_repo
+          git rm -r *
+          cd ..
           mkdir -p abis_repo/abis
           mkdir -p abis_repo/contracts
           cp -r out/* abis_repo/abis/
