@@ -32,6 +32,4 @@ const createConfig = (env) => {
   }
 }
 
-const config = createConfig(process.env.ENVIRONMENT);
-
-module.exports = { config };
+module.exports = createConfig(process.env.ENVIRONMENT);
