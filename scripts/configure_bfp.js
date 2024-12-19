@@ -19,7 +19,7 @@ async function main() {
   const accounts = await hre.ethers.getSigners();
   // get current network data
   const network = await hre.network.name;
-  const protocolOwner = hre.network.config.protocol_owner;
+  const protocolOwner = hre.network.config.protocolOwner;
   /**
    * Setup Contracts from Json file
    */
