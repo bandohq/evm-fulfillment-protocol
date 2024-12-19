@@ -23,8 +23,11 @@ async function main() {
   /**
    * Setup Contracts from Json file
    */
-  const environment = process.env.ENVIRONMENT || "staging";
-  const data = await fs.readFile(`./deployments/${network}.${environment}.json`, 'utf-8');
+  const deploymentPath = process.env.ENVIRONMENT != 'prod' ? 
+    `./deployments/${network}.${environment}.json` :
+    `./deployments/${network}.json`;
+
+  const data = await fs.readFile(deploymentPath, 'utf-8');
   const contracts = JSON.parse(data);
   /**
    * Setup Registry
