@@ -136,6 +136,14 @@ deploySingleContract() {
   # execute script
   attempts=1
 
+  if [[ "$ENVIRONMENT" == "production" ]]; then
+    SOL_PKEY=$SOL_PRIVATE_KEY_PRODUCTION
+    PKEY=$PRIVATE_KEY_PRODUCTION
+  else
+    SOL_PKEY=$SOL_PRIVATE_KEY
+    PKEY=$PRIVATE_KEY
+  fi
+  
   while [ $attempts -le "$MAX_ATTEMPTS_PER_CONTRACT_DEPLOYMENT" ]; do
     echo "[info] trying to deploy $CONTRACT now - attempt ${attempts} (max attempts: $MAX_ATTEMPTS_PER_CONTRACT_DEPLOYMENT) "
 
@@ -143,7 +151,7 @@ deploySingleContract() {
     doNotContinueUnlessGasIsBelowThreshold "$NETWORK"
 
     # try to execute call
-    RAW_RETURN_DATA=$(DEPLOYSALT=$DEPLOYSALT NETWORK=$NETWORK FILE_SUFFIX=$FILE_SUFFIX SOL_PRIVATE_KEY=$SOL_PRIVATE_KEY forge script "$FULL_SCRIPT_PATH" -f $NETWORK --private-key $PRIVATE_KEY -vvvv --json --broadcast --skip-simulation --legacy)
+    RAW_RETURN_DATA=$(DEPLOYSALT=$DEPLOYSALT NETWORK=$NETWORK FILE_SUFFIX=$FILE_SUFFIX SOL_PRIVATE_KEY=$SOL_PKEY forge script "$FULL_SCRIPT_PATH" -f $NETWORK --private-key $PKEY -vvvv --json --broadcast --skip-simulation --legacy)
     RETURN_CODE=$?
     # print return data only if debug mode is activated
     echoDebug "RAW_RETURN_DATA: $RAW_RETURN_DATA"

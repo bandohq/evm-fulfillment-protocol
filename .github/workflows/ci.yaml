@@ -14,7 +14,7 @@ jobs:
       - name: create env file
         run: |
           touch .env
-          echo ENVIRONMENT=test >> .env
+          echo HH_ENVIRONMENT=test >> .env
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
       - name: Install packages

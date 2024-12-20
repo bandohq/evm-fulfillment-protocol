@@ -17,14 +17,16 @@ const fs = require("fs/promises");
  */
 async function main() {
   const accounts = await hre.ethers.getSigners();
+  console.log("Configuring BFP Contracts...");
+  console.log("Account: ", accounts[0].address);
   // get current network data
   const network = await hre.network.name;
   const protocolOwner = hre.network.config.protocolOwner;
   /**
    * Setup Contracts from Json file
    */
-  const deploymentPath = process.env.ENVIRONMENT != 'prod' ? 
-    `./deployments/${network}.${environment}.json` :
+  const deploymentPath = process.env.HH_ENVIRONMENT != 'prod' ? 
+    `./deployments/${network}.${process.env.HH_ENVIRONMENT}.json` :
     `./deployments/${network}.json`;
 
   const data = await fs.readFile(deploymentPath, 'utf-8');
