@@ -1,0 +1,22 @@
+Configuring BFP Contracts...
+Account:  0xD3962D8494c12211b788CBC0d0E2F5C476a1C51f
+Registry - Set Manager: 0xa477bb8db3fbe4d219809172bdc2b70c2720f096c5dd767e35981eb17b5ab182
+ERC20Escrow - Set Fulfillable Registry: 0xed48a17fea13fc47b775046de5a13467fb31c6ec4cfb49c129230b80ac181114
+ERC20Escrow - Set Manager: 0x3f53cdc30b08a1716c148c5550012f8226afc5630e63607092b1246b01b8e451
+ERC20Escrow - Set Router: 0xce10cb4bab9d747b0bfa9f0164cdcd4935d3e8c8667c59e8f0b9e5ca6800a959
+ERC20Escrow - Set Fulfillable Registry: 0x0380ca8ff5d25cc26df70fbccfe6de36acc0a6801d62efff914a0eceb3914510
+ERC20Escrow - Set Manager: 0x237acc66f0d635fcc145feb41ab5ffc224c2e52d048091750411b63b735eee74
+ERC20Escrow - Set Router: 0x00afa5c259730f25804b855473e019c33c909183897f2dffa24c844254298109
+Router - Set erc20 escrow: 0x0dd9db9e9e86d2fb1d8ee19b4829c37018f9e4a950221f7ce920f3ddad71c1f9
+Router - Set escrow: 0xe493f98b46e44f00465d5a8ed858fb14ce172130b2a645acb278ca68d06a4649
+Router - Set Fulfillable Registry: 0xb45c8090c142d25032263e585b9646ced92308f2ca364931b2f11411f9d46e53
+Router - Set Token Registry: 0xcbde890e31947914f27862daa4cd74ecd7197f10bafea8d136417ce7dd02f776
+Manager - Set Service Registry: 0x53943d344635ad5b9ee32397f4e32d81e4bfc8c2413b06f9d71046979c269961
+Manager - Set Escrow: 0x66ff73e5be151807b6f4dac5ec2039bac6f17d43b7376a3ce21ee9a06d25487e
+Manager - Set ERC20 Escrow: 0xd14652f1d085cfba964c244337fa8ffa9b946a516130a58a6e009b63657b7c89
+Registry Ownership Transferred
+ERC20Escrow Ownership Transferred
+Escrow Ownership Transferred
+Router Ownership Transferred
+Manager Ownership Transferred
+Configuration Complete
