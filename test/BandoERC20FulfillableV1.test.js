@@ -42,6 +42,7 @@ let erc20Test;
 let registryAddress;
 let manager;
 let routerContract;
+let stableToken;
 
 
 describe("BandoERC20FulfillableV1", () => {
@@ -50,6 +51,8 @@ describe("BandoERC20FulfillableV1", () => {
     [owner, beneficiary, fulfiller, router, managerEOA] = await ethers.getSigners();
     erc20Test = await ethers.deployContract('DemoToken');
     await erc20Test.waitForDeployment();
+    stableToken = await ethers.deployContract('DemoStableToken');
+    await stableToken.waitForDeployment();
 
     /**
     * deploy registries
@@ -102,6 +105,17 @@ describe("BandoERC20FulfillableV1", () => {
     await manager.setService(1, 100, fulfiller.address, beneficiary.address);
     await manager.setServiceRef(1, DUMMY_FULFILLMENTREQUEST.serviceRef);
     await tokenRegistry.addToken(taddr, 10);
+  });
+
+
+  describe("Upgradeability Specs", async () => {
+    it("should be able to upgrade to v1.1", async () => {
+      const FulfillableV1_1 = await ethers.getContractFactory('BandoERC20FulfillableV1_1');
+      const upgraded = await upgrades.upgradeProxy(await escrow.getAddress(), FulfillableV1_1);
+      escrow = FulfillableV1_1.attach(await upgraded.getAddress());
+      expect(await escrow.getAddress()).to.be.a.properAddress;
+      expect(await escrow._manager()).to.equal(await manager.getAddress());
+    });
   });
 
   describe("Configuration Specs", async () => {
@@ -395,4 +409,48 @@ describe("BandoERC20FulfillableV1", () => {
           expect(accumulatedFees).to.equal(calculatedFee);
       });
   });
+
+  describe("Upgradeability to V1.2 Specs", async () => {
+    it("should be able to upgrade to v1.2", async () => {
+      const FulfillableV1_2 = await ethers.getContractFactory('BandoERC20FulfillableV1_2');
+      const upgraded = await upgrades.upgradeProxy(await escrow.getAddress(), FulfillableV1_2);
+      escrow = FulfillableV1_2.attach(await upgraded.getAddress());
+      expect(await escrow.getAddress()).to.be.a.properAddress;
+      expect(await escrow._manager()).to.equal(await manager.getAddress());
+    });
+  });
+
+
+  describe("Swap Pools Specs", () => {
+    it("should allow a payable deposit coming from the router.", async () => {
+      DUMMY_FULFILLMENTREQUEST.payer = await owner.getAddress();
+      DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits('1000', 18);
+      DUMMY_FULFILLMENTREQUEST.token = await erc20Test.getAddress();
+      const response = await routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST);
+      const BNresponse = await escrow.getERC20DepositsFor(DUMMY_FULFILLMENTREQUEST.token, DUMMY_FULFILLMENTREQUEST.payer, 1);
+      assert.equal(BNresponse.toString(), "1011000000000000000000");
+      const erc20PostBalance = await erc20Test.balanceOf(await escrow.getAddress());
+      expect(erc20PostBalance).to.be.equal("3123000000000000000000");
+    });
+
+    it("should emit a ERC2ODepositReceived event", async () => {
+      DUMMY_FULFILLMENTREQUEST.payer = owner;
+      DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits("100", 18);
+      const fromRouter = await escrow.connect(router);
+      await expect(
+        routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST)
+      ).to.emit(escrow, "ERC20DepositReceived")
+    });
+
+    it("should persist unique fulfillment records on the blockchain", async () => {
+      const payerRecordIds = await escrow.recordsOf(owner);
+      const record1 = await escrow.record(payerRecordIds[payerRecordIds.length - 1]);
+      expect(record1[0]).to.be.equal(payerRecordIds.length); //record ID
+      expect(record1[2]).to.be.equal(await fulfiller.getAddress()); //fulfiller
+      expect(record1[3]).to.be.equal(await erc20Test.getAddress()); //token
+      expect(record1[5]).to.be.equal(owner); //payer address
+      expect(record1[11]).to.be.equal(2); //status. 2 = PENDING
+    });
+  });
+
 });
