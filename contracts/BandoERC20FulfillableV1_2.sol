@@ -3,6 +3,7 @@ pragma solidity 0.8.28;
 
 import { BandoERC20FulfillableV1_1 } from "./BandoERC20FulfillableV1_1.sol";
 import { SwapLib } from "./libraries/SwapLib.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
 /// @title BandoERC20FulfillableV1_2
 /// @author g6s
@@ -19,6 +20,10 @@ contract BandoERC20FulfillableV1_2 is BandoERC20FulfillableV1_1 {
     /// @notice InvalidCaller error message
     error InvalidCaller(address caller);
 
+    /// @notice AggregatorAdded event
+    /// @param aggregator Dex aggregator contract address
+    event AggregatorAdded(address indexed aggregator);
+
     ///@dev Only the manager can call this
     modifier onlyManager() {
         if(msg.sender != _manager) {
@@ -30,7 +35,17 @@ contract BandoERC20FulfillableV1_2 is BandoERC20FulfillableV1_1 {
     /// @dev Adds a Dex aggregator address to the whitelist
     /// @param aggregator The Dex aggregator contract address
     function addAggregator(address aggregator) external onlyManager {
+        if(aggregator == address(0)) {
+            revert InvalidAddress(aggregator);
+        }
         _aggregators[aggregator] = true;
+        emit AggregatorAdded(aggregator);
+    }
+
+    /// @dev Checks if an address is a Dex aggregator
+    /// @param aggregator The Dex aggregator contract address
+    function isAggregator(address aggregator) external view returns (bool) {
+        return _aggregators[aggregator];
     }
   
     /// @dev Swaps both releaseable pool and accumulated fees to stablecoins in a single transaction

@@ -43,6 +43,7 @@ let registryAddress;
 let manager;
 let routerContract;
 let stableToken;
+let testSwapper;
 
 
 describe("BandoERC20FulfillableV1", () => {
@@ -451,6 +452,31 @@ describe("BandoERC20FulfillableV1", () => {
       expect(record1[5]).to.be.equal(owner); //payer address
       expect(record1[11]).to.be.equal(2); //status. 2 = PENDING
     });
+
+    it("should not allow to whitelist the zero address as an aggregator", async () => {
+      await escrow.setManager(managerEOA.address);
+      const fromManager = await escrow.connect(managerEOA);
+      await expect(fromManager.addAggregator(ethers.ZeroAddress))
+        .to.be.revertedWithCustomError(escrow, 'InvalidAddress')
+        .withArgs(ethers.ZeroAddress);
+      await escrow.setManager(await manager.getAddress());
+    });
+
+    it("should allow to whitelist an aggregator", async () => {
+      testSwapper = await ethers.deployContract('TestSwapAggregator');
+      await testSwapper.waitForDeployment();
+      await escrow.setManager(managerEOA.address);
+      const fromManager = await escrow.connect(managerEOA);
+      await expect(fromManager.addAggregator(await testSwapper.getAddress()))
+        .to.emit(escrow, 'AggregatorAdded')
+        .withArgs(await testSwapper.getAddress());
+      await expect(await escrow.isAggregator(await testSwapper.getAddress())).to.be.true;
+      await escrow.setManager(await manager.getAddress());
+    });
+
+    it("should be able to swap token pools for stable tokens", async () => {
+    });
+      
   });
 
 });
