@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
 import { FulfillableRegistryV1 } from "./FulfillableRegistryV1.sol";
