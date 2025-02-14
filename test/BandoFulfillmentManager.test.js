@@ -14,6 +14,7 @@ describe('BandoFulfillmentManagerV1', () => {
     let registry;
     let manager;
     let erc20Test;
+    let testAggregator;
 
     const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
 
@@ -44,7 +45,7 @@ describe('BandoFulfillmentManagerV1', () => {
         const e = await upgrades.deployProxy(Escrow, [await owner.getAddress()]);
         await e.waitForDeployment();
         escrow = await Escrow.attach(await e.getAddress());
-        const ERC20Escrow = await ethers.getContractFactory('BandoERC20FulfillableV1');
+        const ERC20Escrow = await ethers.getContractFactory('BandoERC20FulfillableV1_2');
         const erc20 = await upgrades.deployProxy(ERC20Escrow, [await owner.getAddress()]);
         await erc20.waitForDeployment();
         erc20_escrow = await ERC20Escrow.attach(await erc20.getAddress());
@@ -87,8 +88,8 @@ describe('BandoFulfillmentManagerV1', () => {
     });
 
     describe('Upgradeability', () => {
-        it('should be upgradeable', async () => {
-            const Manager = await ethers.getContractFactory('ManagerUpgradeTest');
+        it('should upgrade to v1.2', async () => {
+            const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1_2');
             const m = await upgrades.upgradeProxy(await manager.getAddress(), Manager);
             manager = await Manager.attach(await m.getAddress());
             expect(await manager._escrow()).to.equal(await escrow.getAddress());
@@ -346,6 +347,62 @@ describe('BandoFulfillmentManagerV1', () => {
             const asBeneficiary = manager.connect(beneficiary);
             const r = await asBeneficiary.beneficiaryWithdrawERC20(1, await erc20Test.getAddress());
             await expect(r).not.to.be.reverted;
+        });
+    });
+
+    describe('Add Aggregators', () => {
+        it('should add an aggregator', async () => {
+            testAggregator = await ethers.deployContract('TestSwapAggregator');
+            await testAggregator.waitForDeployment();
+            await manager.addAggregator(await testAggregator.getAddress());
+            expect(await erc20_escrow.isAggregator(await testAggregator.getAddress())).to.equal(true);
+        });
+
+        it('should not allow a non-owner to add an aggregator', async () => {
+            const a = await ethers.deployContract('TestSwapAggregator');
+            await a.waitForDeployment();
+            const asNonOwner = manager.connect(beneficiary);
+            await expect(asNonOwner.addAggregator(await a.getAddress()))
+                .to.be.revertedWithCustomError(manager, 'OwnableUnauthorizedAccount');
+        });
+    });
+
+    describe('Fulfill ERC20 and Swap', () => {
+        it('should fulfill and swap', async () => {
+            const stableToken = await ethers.deployContract('DemoStableToken');
+            await stableToken.waitForDeployment();
+            await stableToken.transfer(await testAggregator.getAddress(), ethers.parseUnits('100000', 18));
+            const serviceID = 1;
+            const fulfillmentRequest = {
+                payer: await owner.getAddress(),
+                fiatAmount: "1000",
+                serviceRef: "012345678912",
+                tokenAmount: "10000",
+                token: await erc20Test.getAddress(),
+            };
+            await router.requestERC20Service(serviceID, fulfillmentRequest);
+            const payerRecordIds = await erc20_escrow.recordsOf(await owner.getAddress());
+            const SUCCESS_FULFILLMENT_RESULT = {
+                id: payerRecordIds[payerRecordIds.length - 1],
+                status: 1,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            const swapCallData = testAggregator.interface.encodeFunctionData('swapTokens', [
+                await erc20Test.getAddress(),
+                await stableToken.getAddress(),
+                "10000",
+            ]);
+            const swapData = {
+                callTo: await testAggregator.getAddress(),
+                fromToken: await erc20Test.getAddress(),
+                toToken: await stableToken.getAddress(),
+                amount: "10000",
+                callData: swapCallData
+            };
+            expect(
+                await manager.fulfillERC20AndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData)
+            ).to.emit(erc20_escrow, 'PoolsSwappedToStable');
         });
     });
 });

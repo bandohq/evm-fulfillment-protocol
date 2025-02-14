@@ -499,7 +499,7 @@ describe("BandoERC20FulfillableV1", () => {
         fromToken: tokenFrom,
         toToken: tokenTo,
         amount: ethers.parseUnits('100', 18),
-        minReturn: ethers.parseUnits('200', 18)
+        callTo: await testSwapper.getAddress(),
       };
       await escrow.setManager(managerEOA.address);
       await expect(
@@ -507,7 +507,6 @@ describe("BandoERC20FulfillableV1", () => {
           .connect(managerEOA)
           .swapPoolsToStable(
             1,
-            await testSwapper.getAddress(),
             swapData
           )
       ).to.emit(escrow, "PoolsSwappedToStable");

@@ -2,7 +2,8 @@
 pragma solidity 0.8.28;
 
 import { BandoERC20FulfillableV1_1 } from "./BandoERC20FulfillableV1_1.sol";
-import { SwapLib } from "./libraries/SwapLib.sol";
+import { IBandoERC20FulfillableV1_2 } from "./IBandoERC20FulfillableV1_2.sol";
+import { SwapLib, SwapData } from "./libraries/SwapLib.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
 /// @title BandoERC20FulfillableV1_2
@@ -12,8 +13,8 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 /// The swap is done using an off-chain generated Dex aggregator call.
 /// The contract also allows the manager to whitelist Dex aggregator addresses.
 /// @custom:bfp-version 1.2.0
-contract BandoERC20FulfillableV1_2 is BandoERC20FulfillableV1_1 {
-
+contract BandoERC20FulfillableV1_2 is IBandoERC20FulfillableV1_2, BandoERC20FulfillableV1_1 {
+    
     /// @dev Dex aggregator contract addresses
     mapping (address => bool) internal _aggregators;
 
@@ -57,25 +58,22 @@ contract BandoERC20FulfillableV1_2 is BandoERC20FulfillableV1_1 {
     /// - The fromToken must have sufficient combined balance.
     /// 
     /// @param serviceId The service identifier.
-    /// @param aggregator The Dex (or other aggregator) contract address.
     /// @param swapData The struct capturing the aggregator call data, tokens, and amounts.
     function swapPoolsToStable(
         uint256 serviceId,
-        address aggregator,
-        SwapLib.SwapData calldata swapData
+        SwapData calldata swapData
     )
         external
         nonReentrant
         onlyManager
     {
-        if(!_aggregators[aggregator]) {
-            revert InvalidAddress(aggregator);
+        if(!_aggregators[swapData.callTo]) {
+            revert InvalidAddress(swapData.callTo);
         }
         SwapLib.swapERC20ToStable(
             _releaseablePools,
             _accumulatedFees,
             serviceId,
-            aggregator,
             swapData
         );
     }

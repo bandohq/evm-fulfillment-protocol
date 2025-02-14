@@ -6,18 +6,18 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
+struct SwapData {
+    address fromToken;
+    address toToken;
+    uint256 amount;
+    address callTo;
+    bytes callData;
+}
+
 library SwapLib {
     using SafeERC20 for IERC20;
     using Math for uint256;
     using Address for address;
-
-    struct SwapData {
-        address fromToken;
-        address toToken;
-        uint256 amount;
-        uint256 minReturn;
-        bytes callData;
-    }
 
     /// @dev InvalidTokenAddress error message
     error InvalidTokenAddress();
@@ -56,13 +56,11 @@ library SwapLib {
     /// - The fromToken must have sufficient combined balance.
     /// 
     /// @param serviceId The service identifier.
-    /// @param aggregator The Dex (or other aggregator) contract address.
     /// @param swapData The struct capturing the aggregator call data, tokens, and amounts.
     function swapERC20ToStable(
         mapping(uint256 => mapping(address => uint256)) storage _releaseablePools,
         mapping(uint256 => mapping(address => uint256)) storage _accumulatedFees,
         uint256 serviceId,
-        address aggregator,
         SwapData calldata swapData
     )
         internal
@@ -106,7 +104,7 @@ library SwapLib {
         _accumulatedFees[serviceId][swapData.fromToken] = feesAmount - subFees;
 
         // 4. Approve and perform the aggregator call
-        uint256 receivedStable = _callSwap(aggregator, swapData);
+        uint256 receivedStable = _callSwap(swapData.callTo, swapData);
 
         // 5. Distribute the swapped 'toToken' proportionally back into
         //    _releaseablePools and _accumulatedFees, if needed.
@@ -122,7 +120,7 @@ library SwapLib {
 
         emit PoolsSwappedToStable(
             serviceId,
-            aggregator,
+            swapData.callTo,
             swapData.fromToken,
             swapData.toToken,
             releaseableAmount,
