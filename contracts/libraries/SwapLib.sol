@@ -112,4 +112,5 @@ library SwapLib {
             feesAmount,
             receivedStable
         );
-    }}
+    }
+}

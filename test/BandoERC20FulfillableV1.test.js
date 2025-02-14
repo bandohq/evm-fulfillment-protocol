@@ -54,7 +54,6 @@ describe("BandoERC20FulfillableV1", () => {
     await erc20Test.waitForDeployment();
     stableToken = await ethers.deployContract('DemoStableToken');
     await stableToken.waitForDeployment();
-
     /**
     * deploy registries
     */
@@ -475,6 +474,47 @@ describe("BandoERC20FulfillableV1", () => {
     });
 
     it("should be able to swap token pools for stable tokens", async () => {
+      const tokenFrom = await erc20Test.getAddress();
+      const tokenTo = await stableToken.getAddress();
+      const records = await escrow.recordsOf(await owner.getAddress());
+      const recordId = records[records.length - 1];
+      // Transfer tokens to the swapper to mock the swap
+      await stableToken.transfer(await testSwapper.getAddress(), ethers.parseUnits('100000', 18));
+      // Register successful fulfillment
+      const SUCCESS_RESULT = {
+          id: recordId,
+          status: 1, // SUCCESS
+          externalID: uuidv4(),
+          receiptURI: "https://example.com"
+      };
+      await manager.registerERC20Fulfillment(1, SUCCESS_RESULT);
+      // Setup the call data for the swap
+      const CallData = testSwapper.interface.encodeFunctionData("swapTokens", [
+        tokenFrom,
+        tokenTo,
+        ethers.parseUnits('100', 18)
+      ]);
+      const swapData = {
+        callData: CallData,
+        fromToken: tokenFrom,
+        toToken: tokenTo,
+        amount: ethers.parseUnits('100', 18),
+        minReturn: ethers.parseUnits('200', 18)
+      };
+      await escrow.setManager(managerEOA.address);
+      await expect(
+        escrow
+          .connect(managerEOA)
+          .swapPoolsToStable(
+            1,
+            await testSwapper.getAddress(),
+            swapData
+          )
+      ).to.emit(escrow, "PoolsSwappedToStable");
+      await escrow.setManager(await manager.getAddress());
+      expect(await stableToken.balanceOf(
+        await escrow.getAddress())).to.be.equal(ethers.parseUnits('200', 18)
+      );
     });
       
   });
