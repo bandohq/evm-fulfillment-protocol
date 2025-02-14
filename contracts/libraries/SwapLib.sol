@@ -74,31 +74,48 @@ library SwapLib {
             revert InvalidSwapAmount();
         }
 
+        // Current releaseable & fees
         uint256 releaseableAmount = _releaseablePools[serviceId][swapData.fromToken];
         uint256 feesAmount = _accumulatedFees[serviceId][swapData.fromToken];
-        (, uint256 totalAvailable) = releaseableAmount.tryAdd(feesAmount);
+        uint256 totalAvailable = releaseableAmount + feesAmount;
+
         if (totalAvailable < swapData.amount) {
             revert InsufficientCombinedBalance(totalAvailable, swapData.amount);
         }
 
-        /// @dev Clear pools to prevent reentrancy exploits on reverts
-        delete _releaseablePools[serviceId][swapData.fromToken];
-        delete _accumulatedFees[serviceId][swapData.fromToken];
+        // 1. Calculate how much to subtract from each pool proportionally
+        //    Proportional share = (amount * shareOfPool) / totalAvailable.
+        //    For example, half from the releaseable pool and half from the fees
+        //    pool if they have equal sizes.
+        uint256 subReleaseable = (swapData.amount * releaseableAmount) / totalAvailable;
+        uint256 subFees = (swapData.amount * feesAmount) / totalAvailable;
 
-        IERC20(swapData.fromToken).safeIncreaseAllowance(aggregator, swapData.amount);
-
-        (bool success, ) = aggregator.call(swapData.callData);
-        if(!success) {
-            revert AggregatorCallFailed();
+        // 2. Handle potential rounding shortfall
+        //    Because these divisions floor results, subReleaseable + subFees 
+        //    can be less than swapData.amount by a small "leftover."
+        uint256 totalSub = subReleaseable + subFees;
+        if (totalSub < swapData.amount) {
+            uint256 leftover = swapData.amount - totalSub;
+            subReleaseable += leftover;
         }
 
-        IERC20(swapData.fromToken).safeDecreaseAllowance(aggregator, 0);
+        // 3. Subtract from both pools
+        //    Because we did totalAvailable >= swapData.amount, these subtractions
+        //    should not underflow.
+        _releaseablePools[serviceId][swapData.fromToken] = releaseableAmount - subReleaseable;
+        _accumulatedFees[serviceId][swapData.fromToken] = feesAmount - subFees;
 
-        uint256 receivedStable = IERC20(swapData.toToken).balanceOf(address(this));
+        // 4. Approve and perform the aggregator call
+        uint256 receivedStable = _callSwap(aggregator, swapData);
+
+        // 5. Distribute the swapped 'toToken' proportionally back into
+        //    _releaseablePools and _accumulatedFees, if needed.
         if (totalAvailable > 0) {
-            (, uint256 multResult) = receivedStable.tryMul(releaseableAmount);
-            (, uint256 releaseableShare) = multResult.tryDiv(totalAvailable);
-            (, uint256 feesShare) = receivedStable.trySub(releaseableShare);            
+            (uint256 releaseableShare, uint256 feesShare) = _distributeStableAmounts(
+                totalAvailable,
+                swapData.amount,
+                receivedStable
+            );          
             _releaseablePools[serviceId][swapData.toToken] += releaseableShare;
             _accumulatedFees[serviceId][swapData.toToken] += feesShare;
         }
@@ -112,5 +129,37 @@ library SwapLib {
             feesAmount,
             receivedStable
         );
+    }
+
+    function _callSwap(
+        address aggregator,
+        SwapData calldata swapData
+    )
+        internal 
+        returns (uint256 receivedStable)
+    {
+        uint256 initialStableBalance = IERC20(swapData.toToken).balanceOf(address(this));
+        IERC20(swapData.fromToken).safeIncreaseAllowance(aggregator, swapData.amount);
+        (bool success, ) = aggregator.call(swapData.callData);
+        if(!success) {
+            revert AggregatorCallFailed();
+        }
+        IERC20(swapData.fromToken).safeDecreaseAllowance(aggregator, 0);
+        uint256 finalStableBalance = IERC20(swapData.toToken).balanceOf(address(this));
+        receivedStable = finalStableBalance - initialStableBalance;
+    }
+
+    function _distributeStableAmounts(
+        uint256 totalAvailable,
+        uint256 releaseableAmount,
+        uint256 receivedStable
+    )
+        internal
+        pure
+        returns (uint256 releaseableShare, uint256 feesShare)
+    {
+        (, uint256 multResult) = receivedStable.tryMul(releaseableAmount);
+        (, releaseableShare) = multResult.tryDiv(totalAvailable);
+        (, feesShare) = receivedStable.trySub(releaseableShare);
     }
 }
