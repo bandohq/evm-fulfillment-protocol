@@ -1,8 +1,6 @@
 const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
-const eth = require('ethers');
 const { setupRegistry } = require('./utils/registryUtils');
-const BN = require('bn.js')
 
 describe('BandoFulfillmentManagerV1', () => {
     let owner;
