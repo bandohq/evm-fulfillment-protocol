@@ -1,23 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
-import { BandoERC20FulfillableV1_1 } from "./BandoERC20FulfillableV1_1.sol";
-import { IBandoERC20FulfillableV1_2 } from "./IBandoERC20FulfillableV1_2.sol";
-import { SwapLib, SwapData } from "./libraries/SwapLib.sol";
+import { BandoFulfillableV1 } from "./BandoFulfillableV1.sol";
+import { IBandoFulfillableV1_2 } from "./IBandoFulfillableV1_2.sol";
+import { SwapNativeLib, SwapNativeData } from "./libraries/SwapLib.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-/// @title BandoERC20FulfillableV1_2
+/// @title BandoFulfillableV1_2
 /// @author g6s
-/// @notice BandoERC20FulfillableV1_2 is a contract that extends BandoERC20FulfillableV1_1.
+/// @notice BandoFulfillableV1_2 is a contract that extends BandoFulfillableV1.
 /// @dev Supports the ability to swap both releaseable pool and accumulated fees to stablecoins in a single transaction.
 /// The swap is done using an off-chain generated Dex aggregator call.
 /// The contract also allows the manager to whitelist Dex aggregator addresses.
 /// @custom:bfp-version 1.2.0
-contract BandoERC20FulfillableV1_2 is IBandoERC20FulfillableV1_2, BandoERC20FulfillableV1_1 {
+contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1 {
+
+    mapping(uint256 => mapping(address => uint256)) internal _stableReleasePools;
+
+    mapping(uint256 => mapping(address => uint256)) internal _stableAccumulatedFees;
 
     /// @notice InvalidCaller error message
     error InvalidCaller(address caller);
-    
+
     ///@dev Only the manager can call this
     modifier onlyManager() {
         if(msg.sender != _manager) {
@@ -38,14 +42,16 @@ contract BandoERC20FulfillableV1_2 is IBandoERC20FulfillableV1_2, BandoERC20Fulf
     /// @param swapData The struct capturing the aggregator call data, tokens, and amounts.
     function swapPoolsToStable(
         uint256 serviceId,
-        SwapData calldata swapData
+        SwapNativeData calldata swapData
     )
         external
         nonReentrant
         onlyManager
     {
-        SwapLib.swapERC20ToStable(
-            _releaseablePools,
+        SwapNativeLib.swapNativeToStable(
+            _stableReleasePools,
+            _stableAccumulatedFees,
+            _releaseablePool,
             _accumulatedFees,
             serviceId,
             swapData

@@ -353,7 +353,7 @@ describe('BandoFulfillmentManagerV1', () => {
             testAggregator = await ethers.deployContract('TestSwapAggregator');
             await testAggregator.waitForDeployment();
             await manager.addAggregator(await testAggregator.getAddress());
-            expect(await erc20_escrow.isAggregator(await testAggregator.getAddress())).to.equal(true);
+            expect(await manager.isAggregator(await testAggregator.getAddress())).to.equal(true);
         });
 
         it('should not allow a non-owner to add an aggregator', async () => {

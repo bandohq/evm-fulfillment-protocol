@@ -66,7 +66,7 @@ describe("BandoERC20FulfillableV1", () => {
     tokenRegistry = await tokenRegistry.attach(await tokenRegistryInstance.getAddress());
 
     // deploy manager
-    const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
+    const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1_2');
     const m = await upgrades.deployProxy(Manager, [await owner.getAddress()]);
     await m.waitForDeployment();
     manager = await Manager.attach(await m.getAddress());
@@ -454,8 +454,7 @@ describe("BandoERC20FulfillableV1", () => {
 
     it("should not allow to whitelist the zero address as an aggregator", async () => {
       await escrow.setManager(managerEOA.address);
-      const fromManager = await escrow.connect(managerEOA);
-      await expect(fromManager.addAggregator(ethers.ZeroAddress))
+      await expect(manager.addAggregator(ethers.ZeroAddress))
         .to.be.revertedWithCustomError(escrow, 'InvalidAddress')
         .withArgs(ethers.ZeroAddress);
       await escrow.setManager(await manager.getAddress());
@@ -465,11 +464,10 @@ describe("BandoERC20FulfillableV1", () => {
       testSwapper = await ethers.deployContract('TestSwapAggregator');
       await testSwapper.waitForDeployment();
       await escrow.setManager(managerEOA.address);
-      const fromManager = await escrow.connect(managerEOA);
-      await expect(fromManager.addAggregator(await testSwapper.getAddress()))
-        .to.emit(escrow, 'AggregatorAdded')
+      await expect(manager.addAggregator(await testSwapper.getAddress()))
+        .to.emit(manager, 'AggregatorAdded')
         .withArgs(await testSwapper.getAddress());
-      await expect(await escrow.isAggregator(await testSwapper.getAddress())).to.be.true;
+      await expect(await manager.isAggregator(await testSwapper.getAddress())).to.be.true;
       await escrow.setManager(await manager.getAddress());
     });
 

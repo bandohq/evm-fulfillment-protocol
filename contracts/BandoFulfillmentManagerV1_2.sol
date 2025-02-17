@@ -12,16 +12,33 @@ import { SwapData } from "./libraries/SwapLib.sol";
 /// @custom:bfp-version 1.2.0
 contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1 {
 
+    /// @dev Dex aggregator contract addresses
+    mapping (address => bool) internal _aggregators;
+
     /// @dev Emitted when the caller is not the fulfiller
     /// @param status The FulFillmentResultState
     error InvalidFulfillmentResult(FulFillmentResultState status);
 
+    /// @notice AggregatorAdded event
+    /// @param aggregator Dex aggregator contract address
+    event AggregatorAdded(address indexed aggregator);
+
     /// @dev Adds a Dex aggregator address to the whitelist
     /// @param aggregator The Dex aggregator contract address
-    function addAggregator(address aggregator) public onlyOwner {
-        IBandoERC20FulfillableV1_2(_erc20_escrow).addAggregator(aggregator);
+    function addAggregator(address aggregator) external onlyOwner {
+        if(aggregator == address(0)) {
+            revert InvalidAddress(aggregator);
+        }
+        _aggregators[aggregator] = true;
+        emit AggregatorAdded(aggregator);
     }
 
+    /// @dev Checks if an address is a Dex aggregator
+    /// @param aggregator The Dex aggregator contract address
+    function isAggregator(address aggregator) external view returns (bool) {
+        return _aggregators[aggregator];
+    }
+  
     /// @dev Registers a fulfillment result and swaps
     /// both releaseable pool and accumulated fees to stablecoins in a single transaction.
     /// The swap is done using an off-chain generated Dex aggregator call.
@@ -39,6 +56,9 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1 {
         }
         if(result.status != FulFillmentResultState.SUCCESS) {
             revert InvalidFulfillmentResult(result.status);
+        }
+        if(!_aggregators[swapData.callTo]) {
+            revert InvalidAddress(swapData.callTo);
         }
         IBandoERC20Fulfillable(_erc20_escrow).registerFulfillment(serviceID, result);
         IBandoERC20FulfillableV1_2(_erc20_escrow).swapPoolsToStable(serviceID, swapData);
