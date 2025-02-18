@@ -24,5 +24,5 @@ interface IBandoFulfillableV1_2 {
     function swapPoolsToStable(
         uint256 serviceId,
         SwapNativeData calldata swapData
-    ) external;
+    ) external payable;
 }

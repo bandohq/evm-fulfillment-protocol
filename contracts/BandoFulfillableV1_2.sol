@@ -45,6 +45,7 @@ contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1 {
         SwapNativeData calldata swapData
     )
         external
+        payable
         nonReentrant
         onlyManager
     {
