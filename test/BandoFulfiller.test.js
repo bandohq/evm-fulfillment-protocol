@@ -294,7 +294,7 @@ describe("BandoFulfillableV1", () => {
       const SUCCESS_RESULT = {
         id: recordId,
         status: 1, // SUCCESS
-        externalID: uuidv4(),
+        externalID: uuidv4(), 
         receiptURI: "https://example.com"
       };
       const fromManager = await escrow.connect(managerEOA);
@@ -311,7 +311,7 @@ describe("BandoFulfillableV1", () => {
       };
       await expect(escrow
         .connect(managerEOA)
-        .swapPoolsToStable(1, swapData, { value: ethers.parseUnits('101', 'wei')})
+        .swapPoolsToStable(1, swapData)
       ).to.emit(escrow, "PoolsSwappedToStable");
       await escrow.setManager(await manager.getAddress());
     });

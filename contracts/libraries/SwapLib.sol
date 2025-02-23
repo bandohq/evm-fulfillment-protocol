@@ -290,7 +290,7 @@ library SwapNativeLib {
         returns (uint256 receivedStable)
     {
         uint256 initialStableBalance = IERC20(swapData.toToken).balanceOf(address(this));
-        (bool success, ) = aggregator.call{value: msg.value}(swapData.callData);
+        (bool success, ) = aggregator.call{value: swapData.amount}(swapData.callData);
         if(!success) {
             revert AggregatorCallFailed();
         }

@@ -6,7 +6,7 @@ import { FulFillmentResult } from "./FulfillmentTypes.sol";
 import { SwapNativeData } from "./libraries/SwapLib.sol";
 
 /// @title IBandoFulfillableV1_2
-/// @dev The Bando Fulfillment Manager interface for Natvie Currency V1.2
+/// @dev The Bando Fulfillment Manager interface for Native Currency V1.2
 /// @dev Adds support for swapping pools to stablecoins using Dex aggregators
 interface IBandoFulfillableV1_2 {
 

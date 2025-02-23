@@ -3,7 +3,8 @@ pragma solidity >=0.8.28;
 
 import "./BandoFulfillmentManagerV1.sol";
 import { IBandoERC20FulfillableV1_2 } from "./IBandoERC20FulfillableV1_2.sol";
-import { SwapData } from "./libraries/SwapLib.sol";
+import { IBandoFulfillableV1_2 } from "./IBandoFulfillableV1_2.sol";
+import { SwapNativeData, SwapData } from "./libraries/SwapLib.sol";
 
 /// @title BandoFulfillmentManagerV1_2
 /// @author g6s
@@ -62,5 +63,30 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1 {
         }
         IBandoERC20Fulfillable(_erc20_escrow).registerFulfillment(serviceID, result);
         IBandoERC20FulfillableV1_2(_erc20_escrow).swapPoolsToStable(serviceID, swapData);
+    }
+
+    /// @dev Registers a fulfillment result and swaps from native currency
+    /// both releaseable pool and accumulated fees to stablecoins in a single transaction.
+    /// The swap is done using an off-chain generated Dex aggregator call.
+    /// @param serviceID The service identifier.
+    /// @param result The FulFillmentResult
+    /// @param swapData The struct capturing the aggregator call data, tokens, and amounts.
+    function fulfillAndSwap(
+        uint256 serviceID,
+        FulFillmentResult memory result,
+        SwapNativeData memory swapData
+    ) public payable onlyOwner {
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
+        if (msg.sender != service.fulfiller && msg.sender != owner()) {
+            revert InvalidFulfiller(msg.sender);
+        }
+        if(result.status != FulFillmentResultState.SUCCESS) {
+            revert InvalidFulfillmentResult(result.status);
+        }
+        if(!_aggregators[swapData.callTo]) {
+            revert InvalidAddress(swapData.callTo);
+        }
+        IBandoFulfillable(_escrow).registerFulfillment(serviceID, result);
+        IBandoFulfillableV1_2(_escrow).swapPoolsToStable(serviceID, swapData);
     }
 }

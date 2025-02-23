@@ -3,9 +3,10 @@ pragma solidity 0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "hardhat/console.sol";
+
 contract TestNativeSwapAggregator {
     function swapNative(address stableToken, uint256 amount) external payable {
-        console.log("swapNative", stableToken, amount);
+        console.log("swapNative", stableToken, amount, msg.value);
         require(msg.value == amount, "Invalid amount");
         // Transfer the stable token to the sender
         // double the amount to mock the swap

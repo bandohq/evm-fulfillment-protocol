@@ -5,6 +5,7 @@ import { BandoFulfillableV1 } from "./BandoFulfillableV1.sol";
 import { IBandoFulfillableV1_2 } from "./IBandoFulfillableV1_2.sol";
 import { SwapNativeLib, SwapNativeData } from "./libraries/SwapLib.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { FulFillmentResult } from "./FulfillmentTypes.sol";
 
 /// @title BandoFulfillableV1_2
 /// @author g6s

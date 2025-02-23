@@ -13,6 +13,7 @@ describe('BandoFulfillmentManagerV1', () => {
     let manager;
     let erc20Test;
     let testAggregator;
+    let testNativeAggregator;
 
     const DUMMY_ADDRESS = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
 
@@ -39,7 +40,7 @@ describe('BandoFulfillmentManagerV1', () => {
         /**
          * deploy escrows
          */
-        const Escrow = await ethers.getContractFactory('BandoFulfillableV1');
+        const Escrow = await ethers.getContractFactory('BandoFulfillableV1_2');
         const e = await upgrades.deployProxy(Escrow, [await owner.getAddress()]);
         await e.waitForDeployment();
         escrow = await Escrow.attach(await e.getAddress());
@@ -356,6 +357,13 @@ describe('BandoFulfillmentManagerV1', () => {
             expect(await manager.isAggregator(await testAggregator.getAddress())).to.equal(true);
         });
 
+        it('should add a native aggregator', async () => {
+            testNativeAggregator = await ethers.deployContract('TestNativeSwapAggregator');
+            await testNativeAggregator.waitForDeployment();
+            await manager.addAggregator(await testNativeAggregator.getAddress());
+            expect(await manager.isAggregator(await testNativeAggregator.getAddress())).to.equal(true);
+        });
+
         it('should not allow a non-owner to add an aggregator', async () => {
             const a = await ethers.deployContract('TestSwapAggregator');
             await a.waitForDeployment();
@@ -401,6 +409,62 @@ describe('BandoFulfillmentManagerV1', () => {
             expect(
                 await manager.fulfillERC20AndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData)
             ).to.emit(erc20_escrow, 'PoolsSwappedToStable');
+        });
+    });
+
+    describe('Fulfill Native and Swap', () => {
+        it('should fulfill and swap', async () => {
+            await stableToken.transfer(await testNativeAggregator.getAddress(), ethers.parseUnits('100000', 18));
+            const serviceID = 1;
+            const fulfillmentRequest = {
+                payer: await owner.getAddress(),
+                fiatAmount: "1000",
+                serviceRef: "012345678912",
+                weiAmount: ethers.parseUnits('1000', 'wei'),
+            };
+            await router.requestService(serviceID, fulfillmentRequest, { value: ethers.parseUnits('1011', 'wei') });
+            const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
+            const SUCCESS_FULFILLMENT_RESULT = {
+                id: payerRecordIds[payerRecordIds.length - 1],
+                status: 1,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            const swapCallData = testNativeAggregator.interface.encodeFunctionData('swapNative', [
+                await stableToken.getAddress(),
+                ethers.parseUnits('1011', 'wei'),
+            ]);
+            const swapData = {
+                callTo: await testNativeAggregator.getAddress(),
+                toToken: await stableToken.getAddress(),
+                amount: ethers.parseUnits('1011', 'wei'),
+                callData: swapCallData
+            };
+            expect(
+                await manager.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData)
+            ).to.emit(escrow, 'PoolsSwappedToStable');
+        });
+
+        it('should not allow a non-owner to fulfill and swap', async () => {
+            const asNonOwner = manager.connect(beneficiary);
+            const SUCCESS_FULFILLMENT_RESULT = {
+                id: 1,
+                status: 1,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            const swapCallData = testNativeAggregator.interface.encodeFunctionData('swapNative', [
+                await stableToken.getAddress(),
+                ethers.parseUnits('1011', 'wei'),
+            ]);
+            const swapData = {
+                callTo: await testNativeAggregator.getAddress(),
+                toToken: await stableToken.getAddress(),
+                amount: ethers.parseUnits('1011', 'wei'),
+                callData: swapCallData
+            };
+            await expect(asNonOwner.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData))
+                .to.be.revertedWithCustomError(manager, 'OwnableUnauthorizedAccount');
         });
     });
 });
