@@ -75,7 +75,7 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1 {
         uint256 serviceID,
         FulFillmentResult memory result,
         SwapNativeData memory swapData
-    ) public payable onlyOwner {
+    ) public onlyOwner {
         (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller && msg.sender != owner()) {
             revert InvalidFulfiller(msg.sender);
