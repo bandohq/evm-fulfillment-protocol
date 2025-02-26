@@ -108,16 +108,6 @@ describe("BandoERC20FulfillableV1", () => {
   });
 
 
-  describe("Upgradeability Specs", async () => {
-    it("should be able to upgrade to v1.1", async () => {
-      const FulfillableV1_1 = await ethers.getContractFactory('BandoERC20FulfillableV1_1');
-      const upgraded = await upgrades.upgradeProxy(await escrow.getAddress(), FulfillableV1_1);
-      escrow = FulfillableV1_1.attach(await upgraded.getAddress());
-      expect(await escrow.getAddress()).to.be.a.properAddress;
-      expect(await escrow._manager()).to.equal(await manager.getAddress());
-    });
-  });
-
   describe("Configuration Specs", async () => {
     it("should set the serviceRegistry correctly", async () => {
       const b = await escrow._fulfillableRegistry();
@@ -410,7 +400,15 @@ describe("BandoERC20FulfillableV1", () => {
       });
   });
 
-  describe("Upgradeability to V1.2 Specs", async () => {
+  describe("Upgradeability Specs", async () => {
+    it("should be able to upgrade to v1.1", async () => {
+      const FulfillableV1_1 = await ethers.getContractFactory('BandoERC20FulfillableV1_1');
+      const upgraded = await upgrades.upgradeProxy(await escrow.getAddress(), FulfillableV1_1);
+      escrow = FulfillableV1_1.attach(await upgraded.getAddress());
+      expect(await escrow.getAddress()).to.be.a.properAddress;
+      expect(await escrow._manager()).to.equal(await manager.getAddress());
+    });
+
     it("should be able to upgrade to v1.2", async () => {
       const FulfillableV1_2 = await ethers.getContractFactory('BandoERC20FulfillableV1_2');
       const upgraded = await upgrades.upgradeProxy(await escrow.getAddress(), FulfillableV1_2);
@@ -419,7 +417,6 @@ describe("BandoERC20FulfillableV1", () => {
       expect(await escrow._manager()).to.equal(await manager.getAddress());
     });
   });
-
 
   describe("Swap Pools Specs", () => {
     it("should allow a payable deposit coming from the router.", async () => {
