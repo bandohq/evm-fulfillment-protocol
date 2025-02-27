@@ -470,5 +470,23 @@
         ]
       }
     }
+  },
+  "BandoERC20FulfillableV1_2": {
+    "arbitrum": {
+      "staging": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xa1D9F667b369D436c559dE5Ae07058DCf1877BAe",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-02-25 14:49:53",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1_2"
+          }
+        ]
+      }
+    }
   }
 }
