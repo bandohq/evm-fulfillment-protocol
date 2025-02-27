@@ -3,6 +3,13 @@ pragma solidity 0.8.28;
 
 import { FulfillableRegistryV1 } from "./FulfillableRegistryV1.sol";
 
+/// @title FulfillableRegistryV1_1
+/// @author g6s
+/// @notice This contract extends the FulfillableRegistryV1 contract with additional functionality.
+/// @dev It allows to update the beneficiary and the fulfiller of a service.
+/// @dev It also allows to update the fulfillment fee basis points of a service.
+/// @dev It also allows to withdraw the accumulated fees of a service.
+/// @custom:bfp-version 1.1
 contract FulfillableRegistryV1_1 is FulfillableRegistryV1 {
 
     /// @notice InvalidCaller error message
@@ -15,12 +22,6 @@ contract FulfillableRegistryV1_1 is FulfillableRegistryV1 {
             revert InvalidCaller(msg.sender);
         }
         _;
-    }
-
-    /// @notice Version
-    /// @dev Returns the version of the contract
-    function version() external pure returns (string memory) {
-        return "1.1";
     }
 
     /// @notice updateServiceBeneficiaryV1_1
