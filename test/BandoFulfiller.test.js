@@ -39,6 +39,7 @@ const FAILED_FULFILLMENT_RESULT = {
 
 let escrow;
 let fulfillableContract;
+let testSwapper;
 let owner;
 let beneficiary;
 let fulfiller;
@@ -49,13 +50,14 @@ describe("BandoFulfillableV1", () => {
   
   before(async () => {
     [owner, beneficiary, fulfiller, router, managerEOA] = await ethers.getSigners();
-
+    stableToken = await ethers.deployContract('DemoStableToken');
+    await stableToken.waitForDeployment();
     // deploy the service registry
     const registryInstance = await setupRegistry(await owner.getAddress());
     registryAddress = await registryInstance.getAddress();
 
     // deploy manager
-    const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
+    const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1_2');
     const m = await upgrades.deployProxy(Manager, [await owner.getAddress()]);
     await m.waitForDeployment();
     manager = await Manager.attach(await m.getAddress());
@@ -76,7 +78,15 @@ describe("BandoFulfillableV1", () => {
     await manager.setServiceRegistry(registryAddress);
     await manager.setEscrow(await escrow.getAddress());
     await manager.setERC20Escrow(DUMMY_ADDRESS);
-    const service = await manager.setService(1, 100, fulfiller.address, beneficiary.address);
+    await manager.setService(1, 100, fulfiller.address, beneficiary.address);
+    testSwapper = await ethers.deployContract('TestNativeSwapAggregator');
+    await testSwapper.waitForDeployment();
+    await escrow.setManager(managerEOA.address);
+    await expect(manager.addAggregator(await testSwapper.getAddress()))
+      .to.emit(manager, 'AggregatorAdded')
+      .withArgs(await testSwapper.getAddress());
+    await expect(await manager.isAggregator(await testSwapper.getAddress())).to.be.true;
+    await escrow.setManager(await manager.getAddress());
   });
 
   describe("Configuration Specs", async () => {
@@ -251,6 +261,58 @@ describe("BandoFulfillableV1", () => {
       expect(fees).to.be.equal(ethers.parseUnits("1", "wei"));
       const r = await fromManager.withdrawAccumulatedFees(1);
       await expect(r).not.to.be.reverted;
+      await escrow.setManager(await manager.getAddress());
+    });
+  });
+
+  describe("Upgradeability", async () => {
+    it("should be able to upgrade to v1.2", async () => {
+      const FulfillableV1_2 = await ethers.getContractFactory('BandoFulfillableV1_2');
+      const newFulfillable = await upgrades.upgradeProxy(await fulfillableContract.getAddress(), FulfillableV1_2);
+      escrow = FulfillableV1_2.attach(await newFulfillable.getAddress());
+      const b = await escrow._manager();
+      expect(b).to.be.equal(await manager.getAddress());
+    });
+  });
+
+  describe("Swap to stablecoin specs", () => {
+    it("should allow a payable deposit coming from the router", async () => {
+      DUMMY_FULFILLMENTREQUEST.payer = DUMMY_ADDRESS;
+      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("100", "wei");
+      const fromRouter = await escrow.connect(router);
+      await expect(fromRouter.deposit(1, DUMMY_FULFILLMENTREQUEST, 1, { value: ethers.parseUnits("101", "wei")}))
+        .to.emit(escrow, "DepositReceived")
+    });
+
+    it("should allow to swap to stablecoin", async () => {
+      // Transfer tokens to the swapper to mock the swap
+      await stableToken.transfer(await testSwapper.getAddress(), ethers.parseUnits('100000', 18));
+      await escrow.setManager(managerEOA.address);
+      const records = await escrow.recordsOf(DUMMY_ADDRESS);
+      const recordId = records[records.length - 1];
+      // Register successful fulfillment
+      const SUCCESS_RESULT = {
+        id: recordId,
+        status: 1, // SUCCESS
+        externalID: uuidv4(), 
+        receiptURI: "https://example.com"
+      };
+      const fromManager = await escrow.connect(managerEOA);
+      await fromManager.registerFulfillment(1, SUCCESS_RESULT);
+      const CallData = testSwapper.interface.encodeFunctionData("swapNative", [
+        await stableToken.getAddress(),
+        ethers.parseUnits('101', 'wei')
+      ]);
+      const swapData = {
+        callData: CallData,
+        toToken: await stableToken.getAddress(),
+        amount: ethers.parseUnits('101', 'wei'),
+        callTo: await testSwapper.getAddress(),
+      };
+      await expect(escrow
+        .connect(managerEOA)
+        .swapPoolsToStable(1, swapData)
+      ).to.emit(escrow, "PoolsSwappedToStable");
       await escrow.setManager(await manager.getAddress());
     });
   });

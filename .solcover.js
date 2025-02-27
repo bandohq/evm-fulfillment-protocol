@@ -3,5 +3,7 @@ module.exports = {
     'test/ManagerUpgradeTest.sol',
     'test/RouterUpgradeTester.sol',
     'test/TestERC20.sol',
+    'test/TestSwapAggregator.sol',
+    'test/TestNativeSwapAggregator.sol',
   ]
 };
