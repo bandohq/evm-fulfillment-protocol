@@ -374,7 +374,7 @@ describe('BandoFulfillmentManagerV1', () => {
     });
 
     describe('Fulfill ERC20 and Swap', () => {
-        it('should fulfill and swap', async () => {
+        it('should fulfill and swap as fulfiller', async () => {
             const stableToken = await ethers.deployContract('DemoStableToken');
             await stableToken.waitForDeployment();
             await stableToken.transfer(await testAggregator.getAddress(), ethers.parseUnits('100000', 18));
@@ -406,14 +406,40 @@ describe('BandoFulfillmentManagerV1', () => {
                 amount: "10000",
                 callData: swapCallData
             };
+            const asFulfiller = manager.connect(fulfiller);
             expect(
-                await manager.fulfillERC20AndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData)
+                await asFulfiller.fulfillERC20AndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData)
             ).to.emit(erc20_escrow, 'PoolsSwappedToStable');
+        });
+
+        it('should not allow a non-fulfiller to fulfill and swap', async () => {
+            const asNonFulfiller = manager.connect(beneficiary);
+            const SUCCESS_FULFILLMENT_RESULT = {
+                id: 1,
+                status: 1,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            const swapCallData = testAggregator.interface.encodeFunctionData('swapTokens', [
+                await erc20Test.getAddress(),
+                await stableToken.getAddress(),
+                "10000",
+            ]);
+            const swapData = {
+                callTo: await testAggregator.getAddress(),
+                fromToken: await erc20Test.getAddress(),
+                toToken: await stableToken.getAddress(),
+                amount: "10000",
+                callData: swapCallData
+            };
+            await expect(asNonFulfiller.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData))
+                .to.be.revertedWithCustomError(manager, 'InvalidFulfiller')
+                .withArgs(beneficiary.address);
         });
     });
 
     describe('Fulfill Native and Swap', () => {
-        it('should fulfill and swap', async () => {
+        it('should fulfill and swap as fulfiller', async () => {
             await stableToken.transfer(await testNativeAggregator.getAddress(), ethers.parseUnits('100000', 18));
             const serviceID = 1;
             const fulfillmentRequest = {
@@ -440,12 +466,13 @@ describe('BandoFulfillmentManagerV1', () => {
                 amount: ethers.parseUnits('1011', 'wei'),
                 callData: swapCallData
             };
+            const asFulfiller = manager.connect(fulfiller);
             expect(
-                await manager.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData)
+                await asFulfiller.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData)
             ).to.emit(escrow, 'PoolsSwappedToStable');
         });
 
-        it('should not allow a non-owner to fulfill and swap', async () => {
+        it('should only allow a fulfiller to fulfill and swap', async () => {
             const asNonOwner = manager.connect(beneficiary);
             const SUCCESS_FULFILLMENT_RESULT = {
                 id: 1,
@@ -464,7 +491,8 @@ describe('BandoFulfillmentManagerV1', () => {
                 callData: swapCallData
             };
             await expect(asNonOwner.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData))
-                .to.be.revertedWithCustomError(manager, 'OwnableUnauthorizedAccount');
+                .to.be.revertedWithCustomError(manager, 'InvalidFulfiller')
+                .withArgs(beneficiary.address);
         });
     });
 });
