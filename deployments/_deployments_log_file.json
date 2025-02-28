@@ -530,11 +530,11 @@
       "staging": {
         "1.2.0": [
           {
-            "ADDRESS": "0x094A6FC6E1Dd972bCcC8ed32a18d128575b3E263",
+            "ADDRESS": "0x31Ee4E37239e3E21A4455EEC19CBD6A68581aab4",
             "OPTIMIZER_RUNS": "1000000",
-            "TIMESTAMP": "2025-02-27 17:19:17",
+            "TIMESTAMP": "2025-02-27 23:34:54",
             "CONSTRUCTOR_ARGS": "0x",
-            "SALT": "27182818284590452353602874713556",
+            "SALT": "27182818284590452353602874713557",
             "VERIFIED": "true",
             "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1_2.sol",
             "CONTRACT_NAME": "BandoFulfillmentManagerV1_2"
