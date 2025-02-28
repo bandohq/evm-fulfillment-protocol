@@ -147,4 +147,41 @@ describe('FulfillableRegistryV1', () => {
           .withArgs(ZERO_ADDRESS);
       });
     });
+
+    describe("Upgradeability", () => {
+      it("should allow to upgrade the contract", async () => {
+        const FulfillableRegistryV1_1 = await ethers.getContractFactory('FulfillableRegistryV1_1');
+        const fulfillableRegistryV1_1 = await upgrades.upgradeProxy(await registry.getAddress(), FulfillableRegistryV1_1);
+        registry = await FulfillableRegistryV1_1.attach(await fulfillableRegistryV1_1.getAddress());
+      });
+    });
+
+    describe("updateServiceBeneficiaryV1_1", () => {
+      it("should allow to update the beneficiary of a service", async () => {
+        const serviceID = 1;
+        const newBeneficiary = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
+        await registry.updateServiceBeneficiaryV1_1(serviceID, newBeneficiary);
+        const [service, ] = await registry.getService(serviceID);
+        expect(service.beneficiary).to.equal(newBeneficiary);
+      });
+    });
+
+    describe("updateServiceFulfillerV1_1", () => {
+      it("should allow to update the fulfiller of a service", async () => {
+        const serviceID = 1;
+        const newFulfiller = "0x5981Bfc1A21978E82E8AF7C76b770CE42C777c3A";
+        await registry.updateServiceFulfillerV1_1(serviceID, newFulfiller);
+        const [service, ] = await registry.getService(serviceID);
+        expect(service.fulfiller).to.equal(newFulfiller);
+      });
+    });
+
+    describe("updateServicefeeAmountBasisPointsV1_1", () => {
+      it("should allow to update the fulfillment fee basis points of a service", async () => {
+        const serviceID = 1;
+        const newFeeAmount = 20;
+        await registry.updateServicefeeAmountBasisPointsV1_1(serviceID, newFeeAmount);
+        expect(await registry._serviceFulfillmentFeeBasisPoints(serviceID)).to.equal(newFeeAmount);
+      });
+    });
 });

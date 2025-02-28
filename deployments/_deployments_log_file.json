@@ -488,5 +488,59 @@
         ]
       }
     }
+  },
+  "FulfillableRegistryV1_1": {
+    "arbitrum": {
+      "staging": {
+        "1.1": [
+          {
+            "ADDRESS": "0x3c2440988AC5fd623a7E693b6B8B102Fc4F8C029",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-02-27 17:17:43",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1_1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1_1"
+          }
+        ]
+      }
+    }
+  },
+  "BandoFulfillableV1_2": {
+    "arbitrum": {
+      "staging": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0x7fA7FB3350C801998aAd415A9357eEA1a1E4bbCC",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-02-27 17:18:28",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1_2"
+          }
+        ]
+      }
+    }
+  },
+  "BandoFulfillmentManagerV1_2": {
+    "arbitrum": {
+      "staging": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0x094A6FC6E1Dd972bCcC8ed32a18d128575b3E263",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-02-27 17:19:17",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1_2"
+          }
+        ]
+      }
+    }
   }
 }
