@@ -499,7 +499,7 @@
             "TIMESTAMP": "2025-02-27 17:17:43",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
-            "VERIFIED": "false",
+            "VERIFIED": "true",
             "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1_1.sol",
             "CONTRACT_NAME": "FulfillableRegistryV1_1"
           }
@@ -517,7 +517,7 @@
             "TIMESTAMP": "2025-02-27 17:18:28",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
-            "VERIFIED": "false",
+            "VERIFIED": "true",
             "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1_2.sol",
             "CONTRACT_NAME": "BandoFulfillableV1_2"
           }
@@ -535,7 +535,7 @@
             "TIMESTAMP": "2025-02-27 17:19:17",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
-            "VERIFIED": "false",
+            "VERIFIED": "true",
             "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1_2.sol",
             "CONTRACT_NAME": "BandoFulfillmentManagerV1_2"
           }

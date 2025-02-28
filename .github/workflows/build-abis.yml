@@ -37,7 +37,7 @@ jobs:
           cd ..
           mkdir -p abis_repo/abis
           mkdir -p abis_repo/contracts
-          CONTRACT_NAMES=("FulfillableRegistryV1" "ERC20TokenRegistryV1" "BandoFulfillmentManagerV1" "BandoRouterV1" "BandoERC20FulfillableV1" "BandoFulfillableV1")
+          CONTRACT_NAMES=("FulfillableRegistryV1" "ERC20TokenRegistryV1" "BandoFulfillmentManagerV1" "BandoRouterV1" "BandoERC20FulfillableV1" "BandoFulfillableV1" "FulfillableRegistryV1_1" "BandoERC20FulfillableV1_2" "BandoFulfillableV1_2" "BandoFulfillmentManagerV1_2")
           for contract_name in "${CONTRACT_NAMES[@]}"; do
             abi_file="out/$contract_name.sol/$contract_name.json"
             if [ -f "$abi_file" ]; then
