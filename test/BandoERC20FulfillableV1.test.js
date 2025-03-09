@@ -442,10 +442,13 @@ describe("BandoERC20FulfillableV1", () => {
     it("should persist unique fulfillment records on the blockchain", async () => {
       const payerRecordIds = await escrow.recordsOf(owner);
       const record1 = await escrow.record(payerRecordIds[payerRecordIds.length - 1]);
+      console.log(record1);
       expect(record1[0]).to.be.equal(payerRecordIds.length); //record ID
       expect(record1[2]).to.be.equal(await fulfiller.getAddress()); //fulfiller
       expect(record1[3]).to.be.equal(await erc20Test.getAddress()); //token
       expect(record1[5]).to.be.equal(owner); //payer address
+      expect(record1[6]).to.be.equal(ethers.parseUnits('100', 18)); //amount
+      expect(record1[7]).to.be.equal(ethers.parseUnits('1.1', 18)); //fee amount
       expect(record1[11]).to.be.equal(2); //status. 2 = PENDING
     });
 
@@ -487,13 +490,14 @@ describe("BandoERC20FulfillableV1", () => {
       const CallData = testSwapper.interface.encodeFunctionData("swapTokens", [
         tokenFrom,
         tokenTo,
-        ethers.parseUnits('100', 18)
+        ethers.parseUnits('101.1', 18)
       ]);
       const swapData = {
         callData: CallData,
         fromToken: tokenFrom,
         toToken: tokenTo,
-        amount: ethers.parseUnits('100', 18),
+        amount: ethers.parseUnits('101.1', 18),
+        feeAmount: ethers.parseUnits('1.1', 18),
         callTo: await testSwapper.getAddress(),
       };
       await escrow.setManager(managerEOA.address);
@@ -507,7 +511,7 @@ describe("BandoERC20FulfillableV1", () => {
       ).to.emit(escrow, "PoolsSwappedToStable");
       await escrow.setManager(await manager.getAddress());
       expect(await stableToken.balanceOf(
-        await escrow.getAddress())).to.be.equal(ethers.parseUnits('200', 18)
+        await escrow.getAddress())).to.be.equal(ethers.parseUnits('202.2', 18)
       );
     });
       

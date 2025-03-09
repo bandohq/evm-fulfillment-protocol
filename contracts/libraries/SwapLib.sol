@@ -10,6 +10,7 @@ struct SwapData {
     address fromToken;
     address toToken;
     uint256 amount;
+    uint256 feeAmount;
     address callTo;
     bytes callData;
 }
@@ -17,6 +18,7 @@ struct SwapData {
 struct SwapNativeData {
     address toToken;
     uint256 amount;
+    uint256 feeAmount;
     address payable callTo;
     bytes callData;
 }
@@ -88,42 +90,25 @@ library SwapLib {
             revert InsufficientCombinedBalance(totalAvailable, swapData.amount);
         }
 
-        // 1. Calculate how much to subtract from each pool proportionally
-        //    Proportional share = (amount * shareOfPool) / totalAvailable.
-        //    For example, half from the releaseable pool and half from the fees
-        //    pool if they have equal sizes.
-        uint256 subReleaseable = (swapData.amount * releaseableAmount) / totalAvailable;
-        uint256 subFees = (swapData.amount * feesAmount) / totalAvailable;
+        uint256 subReleaseable = swapData.amount - swapData.feeAmount;
+        uint256 subFees = swapData.feeAmount;
 
-        // 2. Handle potential rounding shortfall
-        //    Because these divisions floor results, subReleaseable + subFees 
-        //    can be less than swapData.amount by a small "leftover."
-        uint256 totalSub = subReleaseable + subFees;
-        if (totalSub < swapData.amount) {
-            uint256 leftover = swapData.amount - totalSub;
-            subReleaseable += leftover;
-        }
+        // Subtract from both pools
+        // these subtractions should not underflow.
+        _releaseablePools[serviceId][swapData.fromToken] = releaseableAmount - Math.min(releaseableAmount, subReleaseable);
+        _accumulatedFees[serviceId][swapData.fromToken] = feesAmount - Math.min(feesAmount, subFees);
 
-        // 3. Subtract from both pools
-        //    Because we did totalAvailable >= swapData.amount, these subtractions
-        //    should not underflow.
-        _releaseablePools[serviceId][swapData.fromToken] = releaseableAmount - subReleaseable;
-        _accumulatedFees[serviceId][swapData.fromToken] = feesAmount - subFees;
-
-        // 4. Approve and perform the aggregator call
+        // Approve and perform the aggregator call
         uint256 receivedStable = _callSwap(swapData.callTo, swapData);
-
-        // 5. Distribute the swapped 'toToken' proportionally back into
-        //    _releaseablePools and _accumulatedFees, if needed.
-        if (totalAvailable > 0) {
-            (uint256 releaseableShare, uint256 feesShare) = _distributeStableAmounts(
-                totalAvailable,
-                swapData.amount,
-                receivedStable
-            );          
-            _releaseablePools[serviceId][swapData.toToken] += releaseableShare;
-            _accumulatedFees[serviceId][swapData.toToken] += feesShare;
-        }
+        // Distribute the swapped 'toToken' proportionally back into
+        // _releaseablePools and _accumulatedFees, if needed.
+        (uint256 releaseableShare, uint256 feesShare) = _distributeStableAmounts(
+            swapData.amount,
+            subReleaseable,
+            receivedStable
+        );          
+        _releaseablePools[serviceId][swapData.toToken] += releaseableShare;
+        _accumulatedFees[serviceId][swapData.toToken] += feesShare;
 
         emit PoolsSwappedToStable(
             serviceId,
@@ -154,17 +139,29 @@ library SwapLib {
         receivedStable = finalStableBalance - initialStableBalance;
     }
 
+    /// @dev Distributes the stable amount proportionally between the releaseable and fees pools
+    /// @notice This function is used to distribute the stable amount proportionally between the releaseable and fees pools
+    /// @dev Calculation: (receivedStable * fromReleaseableAmount) / totalSwapAmount
+    /// @dev Calculation: receivedStable - releaseableShare
+    /// @dev eg: receivedStable = 2022, fromReleaseableAmount = 1000, totalSwapAmount = 1011
+    /// @dev releaseableShare = (2022 * 1000) / 1011 = 2000
+    /// @dev feesShare = 2022 - 2000 = 22
+    /// @param totalSwapAmount The total amount of the swap
+    /// @param fromReleaseableAmount The amount of the releaseable pool
+    /// @param receivedStable The amount of stable received from the swap
+    /// @return releaseableShare The amount of the releaseable pool to distribute
+    /// @return feesShare The amount of the fees pool to distribute
     function _distributeStableAmounts(
-        uint256 totalAvailable,
-        uint256 releaseableAmount,
+        uint256 totalSwapAmount,
+        uint256 fromReleaseableAmount,
         uint256 receivedStable
     )
         internal
         pure
         returns (uint256 releaseableShare, uint256 feesShare)
     {
-        (, uint256 multResult) = receivedStable.tryMul(releaseableAmount);
-        (, releaseableShare) = multResult.tryDiv(totalAvailable);
+        (, uint256 multResult) = receivedStable.tryMul(fromReleaseableAmount);
+        (, releaseableShare) = multResult.tryDiv(totalSwapAmount);
         (, feesShare) = receivedStable.trySub(releaseableShare);
     }
 }
@@ -233,44 +230,30 @@ library SwapNativeLib {
 
         if (totalAvailable < swapData.amount) {
             revert InsufficientCombinedBalance(totalAvailable, swapData.amount);
-        }
+        }   
 
-        // 1. Calculate how much to subtract from each pool proportionally
-        //    Proportional share = (amount * shareOfPool) / totalAvailable.
-        //    For example, half from the releaseable pool and half from the fees
-        //    pool if they have equal sizes.
-        uint256 subReleaseable = (swapData.amount * releaseableAmount) / totalAvailable;
-        uint256 subFees = (swapData.amount * feesAmount) / totalAvailable;
+        // Subtract amounts from both pools
+        uint256 subReleaseable = swapData.amount - swapData.feeAmount;
+        uint256 subFees = swapData.feeAmount;
 
-        // 2. Handle potential rounding shortfall
-        //    Because these divisions floor results, subReleaseable + subFees 
-        //    can be less than swapData.amount by a small "leftover."
-        uint256 totalSub = subReleaseable + subFees;
-        if (totalSub < swapData.amount) {
-            uint256 leftover = swapData.amount - totalSub;
-            subReleaseable += leftover;
-        }
+        // Subtract from both pools
+        // these subtractions should not underflow.
+        _releaseablePool[serviceId] = releaseableAmount - Math.min(releaseableAmount, subReleaseable);
+        _accumulatedFees[serviceId] = feesAmount - Math.min(feesAmount, subFees);
 
-        // 3. Subtract from both pools
-        //    Because we did totalAvailable >= swapData.amount, these subtractions
-        //    should not underflow.
-        _releaseablePool[serviceId] = releaseableAmount - subReleaseable;
-        _accumulatedFees[serviceId] = feesAmount - subFees;
-
-        // 4. Approve and perform the aggregator call
+        // Approve and perform the aggregator call
         uint256 receivedStable = _callSwap(swapData.callTo, swapData);
-
-        // 5. Distribute the swapped 'toToken' proportionally back into
+        
+        // Distribute the swapped 'toToken' proportionally back into
         //    _releaseablePools and _accumulatedFees, if needed.
-        if (totalAvailable > 0) {
-            (uint256 releaseableShare, uint256 feesShare) = _distributeStableAmounts(
-                totalAvailable,
-                swapData.amount,
-                receivedStable
-            );          
-            stablePool[serviceId][swapData.toToken] += releaseableShare;
-            stableFees[serviceId][swapData.toToken] += feesShare;
-        }
+        (uint256 releaseableShare, uint256 feesShare) = _distributeStableAmounts(
+            swapData.amount,
+            subReleaseable,
+            receivedStable
+        );
+
+        stablePool[serviceId][swapData.toToken] += releaseableShare;
+        stableFees[serviceId][swapData.toToken] += feesShare;
 
         emit PoolsSwappedToStable(
             serviceId,
@@ -298,17 +281,28 @@ library SwapNativeLib {
         receivedStable = finalStableBalance - initialStableBalance;
     }
 
+    /// @dev Distributes the stable amount proportionally between the releaseable and fees pools
+    /// @notice This function is used to distribute the stable amount proportionally between the releaseable and fees pools
+    /// @dev Calculation: (receivedStable * fromReleaseableAmount) / totalSwapAmount
+    /// @dev Calculation: receivedStable - releaseableShare
+    /// @dev eg: receivedStable = 2022, fromReleaseableAmount = 1000, totalSwapAmount = 1011
+    /// @dev releaseableShare = (2022 * 1000) / 1011 = 2000
+    /// @param totalSwapAmount The total amount of the swap
+    /// @param fromReleaseableAmount The amount of the releaseable pool
+    /// @param receivedStable The amount of stable received from the swap
+    /// @return releaseableShare The amount of the releaseable pool to distribute
+    /// @return feesShare The amount of the fees pool to distribute
     function _distributeStableAmounts(
-        uint256 totalAvailable,
-        uint256 releaseableAmount,
+        uint256 totalSwapAmount,
+        uint256 fromReleaseableAmount,
         uint256 receivedStable
     )
         internal
         pure
         returns (uint256 releaseableShare, uint256 feesShare)
     {
-        (, uint256 multResult) = receivedStable.tryMul(releaseableAmount);
-        (, releaseableShare) = multResult.tryDiv(totalAvailable);
+        (, uint256 multResult) = receivedStable.tryMul(fromReleaseableAmount);
+        (, releaseableShare) = multResult.tryDiv(totalSwapAmount);
         (, feesShare) = receivedStable.trySub(releaseableShare);
     }
 }
