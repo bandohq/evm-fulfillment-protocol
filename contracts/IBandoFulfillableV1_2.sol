@@ -24,5 +24,25 @@ interface IBandoFulfillableV1_2 {
     function swapPoolsToStable(
         uint256 serviceId,
         SwapNativeData calldata swapData
-    ) external payable;
+    ) external;
+
+    /// @notice beneficiaryWithdrawStable
+    /// @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
+    /// Only the manager can withdraw the releaseable pool.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function beneficiaryWithdrawStable(
+        uint256 serviceId,
+        address token
+    ) external;
+
+    /// @notice withdrawAccumulatedFeesStable
+    /// @dev Withdraws the accumulated fees for a given service ID.
+    /// Only the manager can withdraw the accumulated fees.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function withdrawAccumulatedFeesStable(
+        uint256 serviceId,
+        address token
+    ) external;
 }

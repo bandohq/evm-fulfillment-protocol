@@ -266,6 +266,14 @@ describe("BandoFulfillableV1", () => {
   });
 
   describe("Upgradeability", async () => {
+    it("should be able to upgrade to v1.1", async () => {
+      const FulfillableV1_1 = await ethers.getContractFactory('BandoFulfillableV1_1');
+      const newFulfillable = await upgrades.upgradeProxy(await fulfillableContract.getAddress(), FulfillableV1_1);
+      escrow = FulfillableV1_1.attach(await newFulfillable.getAddress());
+      const b = await escrow._manager();
+      expect(b).to.be.equal(await manager.getAddress());
+    });
+
     it("should be able to upgrade to v1.2", async () => {
       const FulfillableV1_2 = await ethers.getContractFactory('BandoFulfillableV1_2');
       const newFulfillable = await upgrades.upgradeProxy(await fulfillableContract.getAddress(), FulfillableV1_2);
@@ -307,12 +315,60 @@ describe("BandoFulfillableV1", () => {
         callData: CallData,
         toToken: await stableToken.getAddress(),
         amount: ethers.parseUnits('101', 'wei'),
+        feeAmount: ethers.parseUnits('1', 'wei'),
         callTo: await testSwapper.getAddress(),
       };
       await expect(escrow
         .connect(managerEOA)
         .swapPoolsToStable(1, swapData)
       ).to.emit(escrow, "PoolsSwappedToStable");
+      expect(await escrow.getNativeFeesFor(1)).to.be.equal(0);
+      expect(await escrow._stableAccumulatedFees(1, await stableToken.getAddress())).to.be.equal(2);
+      await escrow.setManager(await manager.getAddress());
+    });
+  });
+
+  describe("Beneficiary Withdraw Stable Specs", () => {
+    it("should allow manager to withdraw the beneficiary's available balance to release (fulfilled with success)", async () => {
+      const fromManager = await escrow.connect(managerEOA);
+      await escrow.setManager(managerEOA.address);
+      const preBalance = await stableToken.balanceOf(await escrow.getAddress());
+      expect(preBalance).to.be.equal(202); // double the amount per the swap test contract
+      await fromManager.beneficiaryWithdrawStable(1, await stableToken.getAddress());
+      const stableBalance = await stableToken.balanceOf(await escrow.getAddress());
+      expect(stableBalance).to.be.equal(2);
+      await escrow.setManager(await manager.getAddress());
+    });
+
+    it("should revert if there is no balance to release", async () => {
+      const fromManager = await escrow.connect(managerEOA);
+      await escrow.setManager(managerEOA.address);
+      await expect(fromManager.beneficiaryWithdrawStable(1, await stableToken.getAddress()))
+        .to.be.revertedWithCustomError(escrow, 'NoBalanceToRelease');
+      await escrow.setManager(await manager.getAddress());
+    });
+
+    it("should not allow to withdraw the beneficiary's available balance to release (fulfilled with success) if the fulfiller is not the manager", async () => {
+      await expect(escrow.beneficiaryWithdrawStable(1, await stableToken.getAddress()))
+        .to.be.revertedWithCustomError(escrow, 'InvalidCaller');
+      await escrow.setManager(await manager.getAddress());
+    });
+  });
+
+  describe("Withdraw Accumulated Fees Stable Specs", () => {
+    it("should not allow non-manager to withdraw the accumulated fees", async () => {
+      await expect(escrow.connect(owner).withdrawAccumulatedFeesStable(1, await stableToken.getAddress()))
+        .to.be.revertedWithCustomError(escrow, 'InvalidCaller');
+    });
+
+    it("should allow manager to withdraw the accumulated fees", async () => {
+      const fromManager = await escrow.connect(managerEOA);
+      await escrow.setManager(managerEOA.address);
+      const preBalance = await stableToken.balanceOf(await escrow.getAddress());
+      expect(preBalance).to.be.equal(2);
+      await fromManager.withdrawAccumulatedFeesStable(1, await stableToken.getAddress())
+      const postBalance = await stableToken.balanceOf(await escrow.getAddress());
+      expect(postBalance).to.be.equal(0);
       await escrow.setManager(await manager.getAddress());
     });
   });

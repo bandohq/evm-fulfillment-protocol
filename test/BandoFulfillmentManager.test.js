@@ -404,6 +404,7 @@ describe('BandoFulfillmentManagerV1', () => {
                 fromToken: await erc20Test.getAddress(),
                 toToken: await stableToken.getAddress(),
                 amount: "10000",
+                feeAmount: "100",
                 callData: swapCallData
             };
             const asFulfiller = manager.connect(fulfiller);
@@ -430,6 +431,7 @@ describe('BandoFulfillmentManagerV1', () => {
                 fromToken: await erc20Test.getAddress(),
                 toToken: await stableToken.getAddress(),
                 amount: "10000",
+                feeAmount: "100",
                 callData: swapCallData
             };
             await expect(asNonFulfiller.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData))
@@ -450,6 +452,10 @@ describe('BandoFulfillmentManagerV1', () => {
             };
             await router.requestService(serviceID, fulfillmentRequest, { value: ethers.parseUnits('1011', 'wei') });
             const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
+            const record = await escrow.record(payerRecordIds[payerRecordIds.length - 1]);
+            console.log(record);
+            const deposits = await escrow.getDepositsFor(await owner.getAddress(), 1);
+            console.log(deposits);
             const SUCCESS_FULFILLMENT_RESULT = {
                 id: payerRecordIds[payerRecordIds.length - 1],
                 status: 1,
@@ -464,6 +470,7 @@ describe('BandoFulfillmentManagerV1', () => {
                 callTo: await testNativeAggregator.getAddress(),
                 toToken: await stableToken.getAddress(),
                 amount: ethers.parseUnits('1011', 'wei'),
+                feeAmount: ethers.parseUnits('11', 'wei'),
                 callData: swapCallData
             };
             const asFulfiller = manager.connect(fulfiller);
@@ -488,6 +495,7 @@ describe('BandoFulfillmentManagerV1', () => {
                 callTo: await testNativeAggregator.getAddress(),
                 toToken: await stableToken.getAddress(),
                 amount: ethers.parseUnits('1011', 'wei'),
+                feeAmount: ethers.parseUnits('11', 'wei'),
                 callData: swapCallData
             };
             await expect(asNonOwner.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData))

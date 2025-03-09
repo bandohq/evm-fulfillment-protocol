@@ -89,4 +89,28 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1 {
         IBandoFulfillable(_escrow).registerFulfillment(serviceID, result);
         IBandoFulfillableV1_2(_escrow).swapPoolsToStable(serviceID, swapData);
     }
+
+    /// @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
+    /// Only the owner can withdraw the releaseable pool.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function beneficiaryWithdrawStable(uint256 serviceId, address token) public virtual {
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceId);
+        if (msg.sender != service.fulfiller && msg.sender != owner()) {
+            revert InvalidFulfiller(msg.sender);
+        }
+        IBandoFulfillableV1_2(_escrow).beneficiaryWithdrawStable(serviceId, token);
+    }
+
+    /// @dev Withdraws the accumulated fees for a given service ID.
+    /// Only the manager can withdraw the accumulated fees.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function withdrawAccumulatedFeesStable(uint256 serviceId, address token) public virtual {
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceId);
+        if (msg.sender != service.fulfiller && msg.sender != owner()) {
+            revert InvalidFulfiller(msg.sender);
+        }
+        IBandoFulfillableV1_2(_escrow).withdrawAccumulatedFeesStable(serviceId, token);
+    }
 }
