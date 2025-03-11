@@ -357,7 +357,8 @@ describe("BandoERC20FulfillableV1", () => {
           const beneficiary = service.beneficiary;
           const initialBalance = await erc20Test.balanceOf(beneficiary);
           // Withdraw fees
-          const tx = await manager.withdrawERC20Fees(1, erc20Test);
+          const asFulfiller = manager.connect(fulfiller);
+          const tx = await asFulfiller.withdrawERC20Fees(1, erc20Test);
           
           // Verify event emission
           await expect(tx)

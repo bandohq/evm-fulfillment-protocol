@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
 const { setupRegistry } = require('./utils/registryUtils');
 
-describe('BandoFulfillmentManagerV1', () => {
+describe('BandoFulfillmentManagerV1_2', () => {
     let owner;
     let escrow;
     let erc20_escrow;
@@ -87,8 +87,8 @@ describe('BandoFulfillmentManagerV1', () => {
     });
 
     describe('Upgradeability', () => {
-        it('should upgrade', async () => {
-            const Manager = await ethers.getContractFactory('ManagerUpgradeTest');
+        it('should upgrade to v1.1', async () => {
+            const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1_1');
             const m = await upgrades.upgradeProxy(await manager.getAddress(), Manager);
             manager = await Manager.attach(await m.getAddress());
             expect(await manager._escrow()).to.equal(await escrow.getAddress());
@@ -324,44 +324,237 @@ describe('BandoFulfillmentManagerV1', () => {
     });
 
     describe('Beneficiary Withdraws', () => {
-        it('should only allow the beneficiary to withdraw', async () => {
+        it('should only allow the fulfiller to withdraw', async () => {
             await expect(manager.beneficiaryWithdraw(1))
-                .to.be.revertedWithCustomError(manager, 'InvalidBeneficiary')
+                .to.be.revertedWithCustomError(manager, 'InvalidFulfiller')
                 .withArgs(owner.address);
         });
 
         it('should allow the beneficiary to withdraw', async () => {
-            const asBeneficiary = manager.connect(beneficiary);
-            const r = await asBeneficiary.beneficiaryWithdraw(1);
+            const asFulfiller = manager.connect(fulfiller);
+            const r = await asFulfiller.beneficiaryWithdraw(1);
             await expect(r).not.to.be.reverted;
         });
 
-        it('should not allow a non-beneficiary to withdraw ERC20', async () => {
+        it('should not allow a non-fulfiller to withdraw ERC20', async () => {
             await expect(manager.beneficiaryWithdrawERC20(1, await erc20Test.getAddress()))
-                .to.be.revertedWithCustomError(manager, 'InvalidBeneficiary')
+                .to.be.revertedWithCustomError(manager, 'InvalidFulfiller')
                 .withArgs(owner.address);
         });
 
-        it('should allow the beneficiary to withdraw ERC20', async () => {
-            const asBeneficiary = manager.connect(beneficiary);
-            const r = await asBeneficiary.beneficiaryWithdrawERC20(1, await erc20Test.getAddress());
+        it('should allow the fulfiller to withdraw ERC20', async () => {
+            const asFulfiller = manager.connect(fulfiller);
+            const r = await asFulfiller.beneficiaryWithdrawERC20(1, await erc20Test.getAddress());
             await expect(r).not.to.be.reverted;
         });
     });
 
     describe('Withdraw ERC20 Fees', () => {
+        it('should only allow the fulfiller to withdraw ERC20 fees', async () => {
+            await expect(manager.withdrawERC20Fees(1, await erc20Test.getAddress()))
+                .to.be.revertedWithCustomError(manager, 'InvalidFulfiller')
+                .withArgs(owner.address);
+        });
 
         it('should allow the fulfiller to withdraw ERC20 fees', async () => {
-            const r = await manager.withdrawERC20Fees(1, await erc20Test.getAddress());
+            const asFulfiller = manager.connect(fulfiller);
+            const r = await asFulfiller.withdrawERC20Fees(1, await erc20Test.getAddress());
             await expect(r).not.to.be.reverted;
         });
     });
 
     describe('Withdraw Native Fees', () => {
+        it('should only allow the fulfiller to withdraw native fees', async () => {
+            await expect(manager.withdrawNativeFees(1))
+                .to.be.revertedWithCustomError(manager, 'InvalidFulfiller')
+                .withArgs(owner.address);
+        });
 
         it('should allow the fulfiller to withdraw native fees', async () => {
-            const r = await manager.withdrawNativeFees(1);
+            const asFulfiller = manager.connect(fulfiller);
+            const r = await asFulfiller.withdrawNativeFees(1);
             await expect(r).not.to.be.reverted;
+        });
+    });
+
+    describe('Upgrade to v1.2', () => {
+        it('should upgrade to v1.2', async () => {
+            const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1_2');
+            const m = await upgrades.upgradeProxy(await manager.getAddress(), Manager);
+            manager = await Manager.attach(await m.getAddress());
+        });
+    });
+
+    describe('Add Aggregators', () => {
+        it('should add an aggregator', async () => {
+            testAggregator = await ethers.deployContract('TestSwapAggregator');
+            await testAggregator.waitForDeployment();
+            await manager.addAggregator(await testAggregator.getAddress());
+            expect(await manager.isAggregator(await testAggregator.getAddress())).to.equal(true);
+        });
+
+        it('should add a native aggregator', async () => {
+            testNativeAggregator = await ethers.deployContract('TestNativeSwapAggregator');
+            await testNativeAggregator.waitForDeployment();
+            await manager.addAggregator(await testNativeAggregator.getAddress());
+            expect(await manager.isAggregator(await testNativeAggregator.getAddress())).to.equal(true);
+        });
+
+        it('should not allow a non-owner to add an aggregator', async () => {
+            const a = await ethers.deployContract('TestSwapAggregator');
+            await a.waitForDeployment();
+            const asNonOwner = manager.connect(beneficiary);
+            await expect(asNonOwner.addAggregator(await a.getAddress()))
+                .to.be.revertedWithCustomError(manager, 'OwnableUnauthorizedAccount');
+        });
+    });
+
+    describe('Fulfill ERC20 and Swap', () => {
+        it('should fulfill and swap as fulfiller', async () => {
+            const stableToken = await ethers.deployContract('DemoStableToken');
+            await stableToken.waitForDeployment();
+            await stableToken.transfer(await testAggregator.getAddress(), ethers.parseUnits('100000', 18));
+            const serviceID = 1;
+            const fulfillmentRequest = {
+                payer: await owner.getAddress(),
+                fiatAmount: "1000",
+                serviceRef: "012345678912",
+                tokenAmount: "10000",
+                token: await erc20Test.getAddress(),
+            };
+            await router.requestERC20Service(serviceID, fulfillmentRequest);
+            const payerRecordIds = await erc20_escrow.recordsOf(await owner.getAddress());
+            const SUCCESS_FULFILLMENT_RESULT = {
+                id: payerRecordIds[payerRecordIds.length - 1],
+                status: 1,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            const swapCallData = testAggregator.interface.encodeFunctionData('swapTokens', [
+                await erc20Test.getAddress(),
+                await stableToken.getAddress(),
+                "10100",
+            ]);
+            const swapData = {
+                callTo: await testAggregator.getAddress(),
+                fromToken: await erc20Test.getAddress(),
+                toToken: await stableToken.getAddress(),
+                amount: "10100",
+                feeAmount: "100",
+                callData: swapCallData
+            };
+            const asFulfiller = manager.connect(fulfiller);
+            expect(
+                await asFulfiller.fulfillERC20AndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData)
+            ).to.emit(erc20_escrow, 'PoolsSwappedToStable');
+            expect(await stableToken.balanceOf(await erc20_escrow.getAddress())).to.equal(ethers.parseUnits('20200', 'wei'));
+        });
+
+        it('should not allow a non-fulfiller to fulfill and swap', async () => {
+            const asNonFulfiller = manager.connect(beneficiary);
+            const SUCCESS_FULFILLMENT_RESULT = {
+                id: 1,
+                status: 1,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            const swapCallData = testAggregator.interface.encodeFunctionData('swapTokens', [
+                await erc20Test.getAddress(),
+                await stableToken.getAddress(),
+                "10000",
+            ]);
+            const swapData = {
+                callTo: await testAggregator.getAddress(),
+                fromToken: await erc20Test.getAddress(),
+                toToken: await stableToken.getAddress(),
+                amount: "10000",
+                feeAmount: "100",
+                callData: swapCallData
+            };
+            await expect(asNonFulfiller.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData))
+                .to.be.revertedWithCustomError(manager, 'InvalidFulfiller')
+                .withArgs(beneficiary.address);
+        });
+    });
+
+    describe('Fulfill Native and Swap', () => {
+        it('should fulfill and swap as fulfiller', async () => {
+            await stableToken.transfer(await testNativeAggregator.getAddress(), ethers.parseUnits('100000', 18));
+            const serviceID = 1;
+            const fulfillmentRequest = {
+                payer: await owner.getAddress(),
+                fiatAmount: "1000",
+                serviceRef: "012345678912",
+                weiAmount: ethers.parseUnits('1000', 'wei'),
+            };
+            await router.requestService(serviceID, fulfillmentRequest, { value: ethers.parseUnits('1011', 'wei') });
+            const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
+            const record = await escrow.record(payerRecordIds[payerRecordIds.length - 1]);
+            console.log(record);
+            const deposits = await escrow.getDepositsFor(await owner.getAddress(), 1);
+            console.log(deposits);
+            const SUCCESS_FULFILLMENT_RESULT = {
+                id: payerRecordIds[payerRecordIds.length - 1],
+                status: 1,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            const swapCallData = testNativeAggregator.interface.encodeFunctionData('swapNative', [
+                await stableToken.getAddress(),
+                ethers.parseUnits('1011', 'wei'),
+            ]);
+            const swapData = {
+                callTo: await testNativeAggregator.getAddress(),
+                toToken: await stableToken.getAddress(),
+                amount: ethers.parseUnits('1011', 'wei'),
+                feeAmount: ethers.parseUnits('11', 'wei'),
+                callData: swapCallData
+            };
+            const asFulfiller = manager.connect(fulfiller);
+            expect(
+                await asFulfiller.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData)
+            ).to.emit(escrow, 'PoolsSwappedToStable');
+        });
+
+        it('should only allow a fulfiller to fulfill and swap', async () => {
+            const asNonOwner = manager.connect(beneficiary);
+            const SUCCESS_FULFILLMENT_RESULT = {
+                id: 1,
+                status: 1,
+                externalID: "012345678912",
+                receiptURI: "https://example.com/receipt",
+            };
+            const swapCallData = testNativeAggregator.interface.encodeFunctionData('swapNative', [
+                await stableToken.getAddress(),
+                ethers.parseUnits('1011', 'wei'),
+            ]);
+            const swapData = {
+                callTo: await testNativeAggregator.getAddress(),
+                toToken: await stableToken.getAddress(),
+                amount: ethers.parseUnits('1011', 'wei'),
+                feeAmount: ethers.parseUnits('11', 'wei'),
+                callData: swapCallData
+            };
+            await expect(asNonOwner.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData))
+                .to.be.revertedWithCustomError(manager, 'InvalidFulfiller')
+                .withArgs(beneficiary.address);
+        });
+    });
+
+    describe('Beneficiary Withdraw Stable', () => {
+        it('should allow the fulfiller to withdraw stable', async () => {
+            const asFulfiller = manager.connect(fulfiller);
+            const r = await asFulfiller.beneficiaryWithdrawStable(1, await stableToken.getAddress());
+            await expect(r).not.to.be.reverted;
+            const beneficiaryBalance = await stableToken.balanceOf(beneficiary.address);
+            expect(beneficiaryBalance).to.equal(ethers.parseUnits('2000', 'wei'));
+        });
+
+        it('should not allow a non-fulfiller to withdraw stable', async () => {
+            const asNonFulfiller = manager.connect(beneficiary);
+            await expect(asNonFulfiller.beneficiaryWithdrawStable(1, await stableToken.getAddress()))
+                .to.be.revertedWithCustomError(manager, 'InvalidFulfiller')
+                .withArgs(beneficiary.address);
         });
     });
 });
