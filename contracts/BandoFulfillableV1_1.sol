@@ -7,7 +7,7 @@ import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { UUPSUpgradeable } from '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import { IBandoFulfillable } from "./IBandoFulfillable.sol";
+import { IBandoFulfillableV1_1 } from "./IBandoFulfillableV1_1.sol";
 import { FulfillmentRequestLib } from "./libraries/FulfillmentRequestLib.sol";
 import { IFulfillableRegistry, Service } from "./periphery/registry/IFulfillableRegistry.sol";
 import {
@@ -16,7 +16,6 @@ import {
     FulFillmentResultState,
     FulFillmentResult
 } from "./FulfillmentTypes.sol";
-import "hardhat/console.sol";
 
 /// @title BandoFulfillableV1_1
 /// @author g6s
@@ -31,7 +30,7 @@ import "hardhat/console.sol";
 /// The contract that uses the escrow as its payment method 
 /// should provide public methods redirecting to the escrow's deposit and withdraw.
 contract BandoFulfillableV1_1 is
-    IBandoFulfillable,
+    IBandoFulfillableV1_1,
     UUPSUpgradeable,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable {
@@ -49,7 +48,8 @@ contract BandoFulfillableV1_1 is
     /// @notice Event emitted when a refund is withdrawn.
     /// @param payee Refundee address
     /// @param weiAmount Wei amount to refund
-    event RefundWithdrawn(address indexed payee, uint256 weiAmount);
+    /// @param recordId The fulfillment record ID
+    event RefundWithdrawn(address indexed payee, uint256 weiAmount, uint256 recordId);
 
     /// @notice Event emitted when a refund is authorized.
     /// @param payee Refundee address
@@ -332,8 +332,23 @@ contract BandoFulfillableV1_1 is
     /// @param refundee The address whose funds will be withdrawn and transferred to.
     function withdrawRefund(
         uint256 serviceID,
-        address payable refundee
+        address payable refundee,
+        uint256 recordId
     ) public virtual nonReentrant returns (bool) {
+        _withdrawRefund(serviceID, refundee, recordId);
+        return true;
+    }
+
+    /// @notice Internal function to withdraw.
+    /// Should only be called when previously authorized.
+    /// Will emit a RefundWithdrawn event on success.
+    /// @param serviceID The service identifier.
+    /// @param refundee The address to send the value to.
+    function _withdrawRefund(
+        uint256 serviceID,
+        address payable refundee,
+        uint256 recordId
+    ) internal {
         if (_router != msg.sender) {
             revert InvalidRouter(msg.sender);
         }
@@ -344,22 +359,16 @@ contract BandoFulfillableV1_1 is
         if (authorized_refunds == 0) {
             revert NoRefunds(refundee, serviceID);
         }
-        setRefundsFor(refundee, serviceID, 0);
-        _withdrawRefund(refundee, authorized_refunds);
-        return true;
-    }
-
-    /// @notice Internal function to withdraw.
-    /// Should only be called when previously authorized.
-    /// Will emit a RefundWithdrawn event on success.
-    /// @param refundee The address to send the value to.
-    /// @param amount The amount to be withdrawn.
-    function _withdrawRefund(
-        address payable refundee,
-        uint256 amount
-    ) internal {
+        FulFillmentRecord memory fulfillmentRecord = _fulfillmentRecords[recordId];
+        (, uint256 amount) = fulfillmentRecord.weiAmount.tryAdd(fulfillmentRecord.feeAmount);
+        if (amount > authorized_refunds) {
+            revert RefundsTooBig();
+        }
+        (, uint256 subResult) = authorized_refunds.trySub(amount);
+        setRefundsFor(refundee, serviceID, subResult);
+        fulfillmentRecord.status = FulFillmentResultState.REFUNDED;
         refundee.sendValue(amount);
-        emit RefundWithdrawn(refundee, amount);
+        emit RefundWithdrawn(refundee, amount, fulfillmentRecord.id);
     }
 
     /// @notice Authorizes a refund for a given refundee.
@@ -385,16 +394,12 @@ contract BandoFulfillableV1_1 is
         if(!asuccess) {
             revert Overflow(1);
         }
-        uint256 total_refunds = addResult;
-        if(deposits < total_refunds) {
+        if(deposits < weiAmount) {
             revert RefundsTooBig();
         }
-        (bool ssuccess, uint256 subResult) = deposits.trySub(weiAmount);
-        if(!ssuccess) {
-            revert Overflow(2);
-        }
+        (, uint256 subResult) = deposits.trySub(weiAmount);
         setDepositsFor(refundee, serviceID, subResult);
-        setRefundsFor(refundee, serviceID, total_refunds);
+        setRefundsFor(refundee, serviceID, addResult);
         emit RefundAuthorized(refundee, weiAmount);
     }
 
@@ -455,11 +460,9 @@ contract BandoFulfillableV1_1 is
             }
             _releaseablePool[serviceID] = releaseResult;
             setDepositsFor(payer, serviceID, subResult);
-            _fulfillmentRecords[fulfillment.id].receiptURI = fulfillment
-                .receiptURI;
+            _fulfillmentRecords[fulfillment.id].receiptURI = fulfillment.receiptURI;
             _fulfillmentRecords[fulfillment.id].status = fulfillment.status;
-            _fulfillmentRecords[fulfillment.id].externalID = fulfillment
-                .externalID;
+            _fulfillmentRecords[fulfillment.id].externalID = fulfillment.externalID;
         }
         return true;
     }

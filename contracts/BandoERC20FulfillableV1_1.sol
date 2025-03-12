@@ -5,7 +5,7 @@ import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { IBandoERC20Fulfillable } from "./IBandoERC20Fulfillable.sol";
+import { IBandoERC20FulfillableV1_1 } from "./IBandoERC20FulfillableV1_1.sol";
 import { OwnableUpgradeable } from '@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol';
 import { UUPSUpgradeable } from '@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol';
 import { ReentrancyGuardUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
@@ -30,7 +30,7 @@ import {
 /// the `Escrow` rules, and there is no need to check for payable functions or
 /// transfers in the inheritance tree.
 contract BandoERC20FulfillableV1_1 is
-    IBandoERC20Fulfillable,
+    IBandoERC20FulfillableV1_1,
     UUPSUpgradeable,
     OwnableUpgradeable,
     ReentrancyGuardUpgradeable {
@@ -85,7 +85,13 @@ contract BandoERC20FulfillableV1_1 is
     /// @param token The address of the token.
     /// @param payee The address of the payee.
     /// @param weiAmount The amount of wei to refund.
-    event ERC20RefundWithdrawn(address token, address indexed payee, uint256 weiAmount);
+    /// @param recordId The id of the fulfillment record.
+    event ERC20RefundWithdrawn(
+        address indexed token,
+        address indexed payee,
+        uint256 weiAmount,
+        uint256 recordId
+    );
 
     /// @notice Event emitted when a refund is authorized.
     /// @param payee The address of the payee.
@@ -342,20 +348,13 @@ contract BandoERC20FulfillableV1_1 is
     /// @param serviceID The identifier of the service.
     /// @param token The address of the ERC20 token.
     /// @param refundee The address whose funds will be withdrawn and transferred to.
-    function withdrawERC20Refund(uint256 serviceID, address token, address refundee) public virtual nonReentrant returns (bool) {
-        if(msg.sender != _router) {
-            revert InvalidAddress(msg.sender);
-        }
-        uint256 authorized_refunds = getERC20RefundsFor(
-            token,
-            refundee,
-            serviceID
-        );
-        if(authorized_refunds == 0) {
-            revert NoRefunds(refundee);
-        }
-        _withdrawRefund(token, refundee, authorized_refunds);
-        setERC20RefundsFor(token, refundee, serviceID, 0);
+    function withdrawERC20Refund(
+        uint256 serviceID,
+        address token,
+        address refundee,
+        uint256 recordId
+    ) public virtual nonReentrant returns (bool) {
+        _withdrawRefund(serviceID, token, refundee, recordId);
         return true;
     }
     
@@ -366,9 +365,32 @@ contract BandoERC20FulfillableV1_1 is
     ///
     /// @param token The address of the token.
     /// @param refundee The address to send the value to.
-    function _withdrawRefund(address token, address refundee, uint256 amount) internal {
-        IERC20(token).safeTransfer(refundee, amount);
-        emit ERC20RefundWithdrawn(token, refundee, amount);
+    function _withdrawRefund(
+        uint256 serviceID,
+        address token,
+        address refundee,
+        uint256 recordId
+    ) internal {
+        if(msg.sender != _router) {
+            revert InvalidAddress(msg.sender);
+        }
+        if(_fulfillmentRecords[recordId].id == 0) {
+            revert FulfillmentRecordDoesNotExist();
+        }
+        uint256 authorized_refunds = getERC20RefundsFor(
+            token,
+            refundee,
+            serviceID
+        );
+        (, uint256 refundAmount) = _fulfillmentRecords[recordId].tokenAmount.tryAdd(_fulfillmentRecords[recordId].feeAmount);
+        if(refundAmount > authorized_refunds) {
+            revert RefundsTooBig();
+        }
+        (, uint256 remaining_refunds) = authorized_refunds.trySub(refundAmount);
+        setERC20RefundsFor(token, refundee, serviceID, remaining_refunds);
+        _fulfillmentRecords[recordId].status = FulFillmentResultState.REFUNDED;
+        IERC20(token).safeTransfer(refundee, refundAmount);
+        emit ERC20RefundWithdrawn(token, refundee, refundAmount, recordId);
     }
 
     /// @dev Allows for refunds to take place.
@@ -379,19 +401,21 @@ contract BandoERC20FulfillableV1_1 is
     /// @param refundee the record to be
     /// @param amount the amount to be authorized.
     function _authorizeRefund(Service memory service, address token, address refundee, uint256 amount) internal {
-        (bool asuccess, uint256 addResult) = getERC20RefundsFor(token, refundee, service.serviceId).tryAdd(amount);
+        uint256 refundsAmount = getERC20RefundsFor(token, refundee, service.serviceId);
         uint256 depositsAmount = getERC20DepositsFor(
             token,
             refundee,
             service.serviceId
         );
+        if (amount > depositsAmount) {
+            revert RefundsTooBig();
+        }
+
+        (bool asuccess, uint256 total_refunds) = refundsAmount.tryAdd(amount);
         if (!asuccess) {
             revert Overflow(1);
         }
-        uint256 total_refunds = addResult;
-        if (depositsAmount < total_refunds) {
-            revert RefundsTooBig();
-        }
+
         (bool ssuccess, uint256 subResult) = depositsAmount.trySub(amount);
         if (!ssuccess) {
             revert Overflow(2);

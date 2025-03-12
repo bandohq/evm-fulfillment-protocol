@@ -171,7 +171,6 @@ describe("BandoERC20FulfillableV1", () => {
     it("should emit a ERC2ODepositReceived event", async () => {
       DUMMY_FULFILLMENTREQUEST.payer = owner;
       DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits("100", 18);
-      const fromRouter = await escrow.connect(router);
       await expect(
         routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST)
       ).to.emit(escrow, "ERC20DepositReceived")
@@ -401,7 +400,7 @@ describe("BandoERC20FulfillableV1", () => {
       });
   });
 
-  describe("Upgradeability Specs", async () => {
+  describe("V1.1 Specs", async () => {
     it("should be able to upgrade to v1.1", async () => {
       const FulfillableV1_1 = await ethers.getContractFactory('BandoERC20FulfillableV1_1');
       const upgraded = await upgrades.upgradeProxy(await escrow.getAddress(), FulfillableV1_1);
@@ -410,6 +409,62 @@ describe("BandoERC20FulfillableV1", () => {
       expect(await escrow._manager()).to.equal(await manager.getAddress());
     });
 
+    it("should allow the user to withdraw a refund for an independent amount", async () => {
+      // 1. Create N depposits and mark them as failed.
+      // 2. Register fulfillment should authorize a refund for the amount of a single deposit
+      // 3. Withdraw each refund for the independent amount
+      await escrow.setManager(managerEOA.address);
+      const fromManager = await escrow.connect(managerEOA);
+      DUMMY_FULFILLMENTREQUEST.payer = owner;
+      DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits("100", 18);
+      await expect(
+        routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST)
+      ).to.emit(escrow, "ERC20DepositReceived")
+      // Register fulfillment should authorize a refund for the amount of a single deposit
+      let records = await escrow.recordsOf(owner);
+      FAILED_FULFILLMENT_RESULT.id = records[records.length - 1];
+      const r = fromManager.registerFulfillment(1, FAILED_FULFILLMENT_RESULT);
+      await expect(r).to.emit(escrow, 'ERC20RefundAuthorized').withArgs(owner, ethers.parseUnits('101.1', 18));
+
+      DUMMY_FULFILLMENTREQUEST.payer = owner;
+      DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits("200", 18);
+      await expect(
+        routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST)
+      ).to.emit(escrow, "ERC20DepositReceived")
+      records = await escrow.recordsOf(owner);
+      FAILED_FULFILLMENT_RESULT.id = records[records.length - 1];
+      const r2 = fromManager.registerFulfillment(1, FAILED_FULFILLMENT_RESULT);
+      await expect(r2).to.emit(escrow, 'ERC20RefundAuthorized').withArgs(owner, ethers.parseUnits('202.2', 18));
+
+      DUMMY_FULFILLMENTREQUEST.payer = owner;
+      DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits("300", 18);
+      await expect(
+        routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST)
+      ).to.emit(escrow, "ERC20DepositReceived")
+
+      records = await escrow.recordsOf(owner);
+      FAILED_FULFILLMENT_RESULT.id = records[records.length - 1];
+      const r3 = fromManager.registerFulfillment(1, FAILED_FULFILLMENT_RESULT);
+      await expect(r3).to.emit(escrow, 'ERC20RefundAuthorized').withArgs(owner, ethers.parseUnits('303.3', 18));
+      await escrow.setManager(await manager.getAddress());
+
+      await escrow.setRouter(router.address);
+      const fromRouter = await escrow.connect(router);
+      const r4 = await fromRouter.withdrawERC20Refund(1, await erc20Test.getAddress(), owner, records[records.length - 3]);
+      await expect(r4).to.emit(escrow, 'ERC20RefundWithdrawn').withArgs(await erc20Test.getAddress(), owner, ethers.parseUnits('101.1', 18), records[records.length - 3]);
+
+      const r5 = await fromRouter.withdrawERC20Refund(1, await erc20Test.getAddress(), owner, records[records.length - 2]);
+      await expect(r5).to.emit(escrow, 'ERC20RefundWithdrawn').withArgs(await erc20Test.getAddress(), owner, ethers.parseUnits('202.2', 18), records[records.length - 2]);
+
+      const r6 = await fromRouter.withdrawERC20Refund(1, await erc20Test.getAddress(), owner, records[records.length - 1]);
+      await expect(r6).to.emit(escrow, 'ERC20RefundWithdrawn').withArgs(await erc20Test.getAddress(), owner, ethers.parseUnits('303.3', 18), records[records.length - 1]);
+
+      await escrow.setRouter(await routerContract.getAddress());
+      //await expect(await escrow.getERC20RefundsFor(await erc20Test.getAddress(), owner, 1)).to.equal(0);
+    });
+  });
+
+  describe("V1.2 Specs", async () => {
     it("should be able to upgrade to v1.2", async () => {
       const FulfillableV1_2 = await ethers.getContractFactory('BandoERC20FulfillableV1_2');
       const upgraded = await upgrades.upgradeProxy(await escrow.getAddress(), FulfillableV1_2);
@@ -434,7 +489,6 @@ describe("BandoERC20FulfillableV1", () => {
     it("should emit a ERC2ODepositReceived event", async () => {
       DUMMY_FULFILLMENTREQUEST.payer = owner;
       DUMMY_FULFILLMENTREQUEST.tokenAmount = ethers.parseUnits("100", 18);
-      const fromRouter = await escrow.connect(router);
       await expect(
         routerContract.requestERC20Service(1, DUMMY_FULFILLMENTREQUEST)
       ).to.emit(escrow, "ERC20DepositReceived")
@@ -443,7 +497,6 @@ describe("BandoERC20FulfillableV1", () => {
     it("should persist unique fulfillment records on the blockchain", async () => {
       const payerRecordIds = await escrow.recordsOf(owner);
       const record1 = await escrow.record(payerRecordIds[payerRecordIds.length - 1]);
-      console.log(record1);
       expect(record1[0]).to.be.equal(payerRecordIds.length); //record ID
       expect(record1[2]).to.be.equal(await fulfiller.getAddress()); //fulfiller
       expect(record1[3]).to.be.equal(await erc20Test.getAddress()); //token
