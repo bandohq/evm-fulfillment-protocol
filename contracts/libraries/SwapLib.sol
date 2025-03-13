@@ -5,20 +5,11 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { ERC20FulFillmentRecord, FulFillmentRecord } from "../FulfillmentTypes.sol";
 
 struct SwapData {
-    address fromToken;
     address toToken;
     uint256 amount;
-    uint256 feeAmount;
-    address callTo;
-    bytes callData;
-}
-
-struct SwapNativeData {
-    address toToken;
-    uint256 amount;
-    uint256 feeAmount;
     address payable callTo;
     bytes callData;
 }
@@ -70,41 +61,41 @@ library SwapLib {
         mapping(uint256 => mapping(address => uint256)) storage _releaseablePools,
         mapping(uint256 => mapping(address => uint256)) storage _accumulatedFees,
         uint256 serviceId,
-        SwapData calldata swapData
+        SwapData calldata swapData,
+        ERC20FulFillmentRecord memory fulfillmentRecord
     )
         internal
     {
-        if (swapData.fromToken == address(0) || swapData.toToken == address(0)) {
+
+        if (fulfillmentRecord.token == address(0) || swapData.toToken == address(0)) {
             revert InvalidTokenAddress();
         }
+
         if (swapData.amount == 0) {
             revert InvalidSwapAmount();
         }
 
         // Current releaseable & fees
-        uint256 releaseableAmount = _releaseablePools[serviceId][swapData.fromToken];
-        uint256 feesAmount = _accumulatedFees[serviceId][swapData.fromToken];
+        uint256 releaseableAmount = _releaseablePools[serviceId][fulfillmentRecord.token];
+        uint256 feesAmount = _accumulatedFees[serviceId][fulfillmentRecord.token];
         uint256 totalAvailable = releaseableAmount + feesAmount;
 
         if (totalAvailable < swapData.amount) {
             revert InsufficientCombinedBalance(totalAvailable, swapData.amount);
         }
 
-        uint256 subReleaseable = swapData.amount - swapData.feeAmount;
-        uint256 subFees = swapData.feeAmount;
-
         // Subtract from both pools
         // these subtractions should not underflow.
-        _releaseablePools[serviceId][swapData.fromToken] = releaseableAmount - Math.min(releaseableAmount, subReleaseable);
-        _accumulatedFees[serviceId][swapData.fromToken] = feesAmount - Math.min(feesAmount, subFees);
+        _releaseablePools[serviceId][fulfillmentRecord.token] = releaseableAmount - Math.min(releaseableAmount, fulfillmentRecord.tokenAmount);
+        _accumulatedFees[serviceId][fulfillmentRecord.token] = feesAmount - Math.min(feesAmount, fulfillmentRecord.feeAmount);
 
         // Approve and perform the aggregator call
-        uint256 receivedStable = _callSwap(swapData.callTo, swapData);
+        uint256 receivedStable = _callSwap(swapData.callTo, fulfillmentRecord.token, swapData);
         // Distribute the swapped 'toToken' proportionally back into
         // _releaseablePools and _accumulatedFees, if needed.
         (uint256 releaseableShare, uint256 feesShare) = _distributeStableAmounts(
             swapData.amount,
-            subReleaseable,
+            fulfillmentRecord.tokenAmount,
             receivedStable
         );          
         _releaseablePools[serviceId][swapData.toToken] += releaseableShare;
@@ -113,7 +104,7 @@ library SwapLib {
         emit PoolsSwappedToStable(
             serviceId,
             swapData.callTo,
-            swapData.fromToken,
+            fulfillmentRecord.token,
             swapData.toToken,
             releaseableAmount,
             feesAmount,
@@ -123,18 +114,19 @@ library SwapLib {
 
     function _callSwap(
         address aggregator,
+        address token,
         SwapData calldata swapData
     )
         internal 
         returns (uint256 receivedStable)
     {
         uint256 initialStableBalance = IERC20(swapData.toToken).balanceOf(address(this));
-        IERC20(swapData.fromToken).safeIncreaseAllowance(aggregator, swapData.amount);
+        IERC20(token).safeIncreaseAllowance(aggregator, swapData.amount);
         (bool success, ) = aggregator.call(swapData.callData);
         if(!success) {
             revert AggregatorCallFailed();
         }
-        IERC20(swapData.fromToken).safeDecreaseAllowance(aggregator, 0);
+        IERC20(token).safeDecreaseAllowance(aggregator, 0);
         uint256 finalStableBalance = IERC20(swapData.toToken).balanceOf(address(this));
         receivedStable = finalStableBalance - initialStableBalance;
     }
@@ -143,7 +135,7 @@ library SwapLib {
     /// @notice This function is used to distribute the stable amount proportionally between the releaseable and fees pools
     /// @dev Calculation: (receivedStable * fromReleaseableAmount) / totalSwapAmount
     /// @dev Calculation: receivedStable - releaseableShare
-    /// @dev eg: receivedStable = 2022, fromReleaseableAmount = 1000, totalSwapAmount = 1011
+    /// @dev eg: receivedStable = 2022, tokenAmount = 1000, totalSwapAmount = 1011
     /// @dev releaseableShare = (2022 * 1000) / 1011 = 2000
     /// @dev feesShare = 2022 - 2000 = 22
     /// @param totalSwapAmount The total amount of the swap
@@ -212,7 +204,8 @@ library SwapNativeLib {
         mapping (uint256 => uint256) storage _releaseablePool,
         mapping (uint256 => uint256) storage _accumulatedFees,
         uint256 serviceId,
-        SwapNativeData calldata swapData
+        SwapData calldata swapData,
+        FulFillmentRecord memory fulfillmentRecord
     )
         internal
     {
@@ -232,14 +225,10 @@ library SwapNativeLib {
             revert InsufficientCombinedBalance(totalAvailable, swapData.amount);
         }   
 
-        // Subtract amounts from both pools
-        uint256 subReleaseable = swapData.amount - swapData.feeAmount;
-        uint256 subFees = swapData.feeAmount;
-
         // Subtract from both pools
         // these subtractions should not underflow.
-        _releaseablePool[serviceId] = releaseableAmount - Math.min(releaseableAmount, subReleaseable);
-        _accumulatedFees[serviceId] = feesAmount - Math.min(feesAmount, subFees);
+        _releaseablePool[serviceId] = releaseableAmount - Math.min(releaseableAmount, fulfillmentRecord.weiAmount);
+        _accumulatedFees[serviceId] = feesAmount - Math.min(feesAmount, fulfillmentRecord.feeAmount);
 
         // Approve and perform the aggregator call
         uint256 receivedStable = _callSwap(swapData.callTo, swapData);
@@ -248,7 +237,7 @@ library SwapNativeLib {
         //    _releaseablePools and _accumulatedFees, if needed.
         (uint256 releaseableShare, uint256 feesShare) = _distributeStableAmounts(
             swapData.amount,
-            subReleaseable,
+            fulfillmentRecord.weiAmount,
             receivedStable
         );
 
@@ -267,7 +256,7 @@ library SwapNativeLib {
 
     function _callSwap(
         address payable aggregator,
-        SwapNativeData calldata swapData
+        SwapData calldata swapData
     )
         internal 
         returns (uint256 receivedStable)
@@ -283,25 +272,25 @@ library SwapNativeLib {
 
     /// @dev Distributes the stable amount proportionally between the releaseable and fees pools
     /// @notice This function is used to distribute the stable amount proportionally between the releaseable and fees pools
-    /// @dev Calculation: (receivedStable * fromReleaseableAmount) / totalSwapAmount
+    /// @dev Calculation: (receivedStable * weiAmount) / totalSwapAmount
     /// @dev Calculation: receivedStable - releaseableShare
-    /// @dev eg: receivedStable = 2022, fromReleaseableAmount = 1000, totalSwapAmount = 1011
+    /// @dev eg: receivedStable = 2022, weiAmount = 1000, totalSwapAmount = 1011
     /// @dev releaseableShare = (2022 * 1000) / 1011 = 2000
     /// @param totalSwapAmount The total amount of the swap
-    /// @param fromReleaseableAmount The amount of the releaseable pool
+    /// @param weiAmount The amount of the wei
     /// @param receivedStable The amount of stable received from the swap
     /// @return releaseableShare The amount of the releaseable pool to distribute
     /// @return feesShare The amount of the fees pool to distribute
     function _distributeStableAmounts(
         uint256 totalSwapAmount,
-        uint256 fromReleaseableAmount,
+        uint256 weiAmount,
         uint256 receivedStable
     )
         internal
         pure
         returns (uint256 releaseableShare, uint256 feesShare)
     {
-        (, uint256 multResult) = receivedStable.tryMul(fromReleaseableAmount);
+        (, uint256 multResult) = receivedStable.tryMul(weiAmount);
         (, releaseableShare) = multResult.tryDiv(totalSwapAmount);
         (, feesShare) = receivedStable.trySub(releaseableShare);
     }

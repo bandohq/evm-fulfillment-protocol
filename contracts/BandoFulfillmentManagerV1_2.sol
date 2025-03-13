@@ -4,7 +4,7 @@ pragma solidity >=0.8.28;
 import "./BandoFulfillmentManagerV1_1.sol";
 import { IBandoERC20FulfillableV1_2 } from "./IBandoERC20FulfillableV1_2.sol";
 import { IBandoFulfillableV1_2 } from "./IBandoFulfillableV1_2.sol";
-import { SwapNativeData, SwapData } from "./libraries/SwapLib.sol";
+import { SwapData } from "./libraries/SwapLib.sol";
 
 /// @title BandoFulfillmentManagerV1_2
 /// @author g6s
@@ -62,7 +62,7 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1_1 {
             revert InvalidAddress(swapData.callTo);
         }
         IBandoERC20Fulfillable(_erc20_escrow).registerFulfillment(serviceID, result);
-        IBandoERC20FulfillableV1_2(_erc20_escrow).swapPoolsToStable(serviceID, swapData);
+        IBandoERC20FulfillableV1_2(_erc20_escrow).swapPoolsToStable(serviceID, result.id, swapData);
         emit ERC20FulfillmentRegistered(serviceID, result);
     }
 
@@ -75,7 +75,7 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1_1 {
     function fulfillAndSwap(
         uint256 serviceID,
         FulFillmentResult memory result,
-        SwapNativeData memory swapData
+        SwapData memory swapData
     ) public virtual {
         (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller && msg.sender != owner()) {
@@ -88,7 +88,7 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1_1 {
             revert InvalidAddress(swapData.callTo);
         }
         IBandoFulfillable(_escrow).registerFulfillment(serviceID, result);
-        IBandoFulfillableV1_2(_escrow).swapPoolsToStable(serviceID, swapData);
+        IBandoFulfillableV1_2(_escrow).swapPoolsToStable(serviceID, result.id, swapData);
         emit FulfillmentRegistered(serviceID, result);
     }
 

@@ -437,10 +437,8 @@ describe('BandoFulfillmentManagerV1_2', () => {
             ]);
             const swapData = {
                 callTo: await testAggregator.getAddress(),
-                fromToken: await erc20Test.getAddress(),
                 toToken: await stableToken.getAddress(),
                 amount: "10100",
-                feeAmount: "100",
                 callData: swapCallData
             };
             const asFulfiller = manager.connect(fulfiller);
@@ -465,10 +463,8 @@ describe('BandoFulfillmentManagerV1_2', () => {
             ]);
             const swapData = {
                 callTo: await testAggregator.getAddress(),
-                fromToken: await erc20Test.getAddress(),
                 toToken: await stableToken.getAddress(),
                 amount: "10000",
-                feeAmount: "100",
                 callData: swapCallData
             };
             await expect(asNonFulfiller.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData))
@@ -507,7 +503,6 @@ describe('BandoFulfillmentManagerV1_2', () => {
                 callTo: await testNativeAggregator.getAddress(),
                 toToken: await stableToken.getAddress(),
                 amount: ethers.parseUnits('1011', 'wei'),
-                feeAmount: ethers.parseUnits('11', 'wei'),
                 callData: swapCallData
             };
             const asFulfiller = manager.connect(fulfiller);
@@ -532,7 +527,6 @@ describe('BandoFulfillmentManagerV1_2', () => {
                 callTo: await testNativeAggregator.getAddress(),
                 toToken: await stableToken.getAddress(),
                 amount: ethers.parseUnits('1011', 'wei'),
-                feeAmount: ethers.parseUnits('11', 'wei'),
                 callData: swapCallData
             };
             await expect(asNonOwner.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData))

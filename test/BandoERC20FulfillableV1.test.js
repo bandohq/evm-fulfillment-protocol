@@ -556,10 +556,8 @@ describe("BandoERC20FulfillableV1", () => {
       ]);
       const swapData = {
         callData: CallData,
-        fromToken: tokenFrom,
         toToken: tokenTo,
         amount: ethers.parseUnits('101.1', 18),
-        feeAmount: ethers.parseUnits('1.1', 18),
         callTo: await testSwapper.getAddress(),
       };
       await escrow.setManager(managerEOA.address);
@@ -568,6 +566,7 @@ describe("BandoERC20FulfillableV1", () => {
           .connect(managerEOA)
           .swapPoolsToStable(
             1,
+            recordId,
             swapData
           )
       ).to.emit(escrow, "PoolsSwappedToStable");

@@ -3,7 +3,7 @@ pragma solidity >=0.8.28;
 
 import { FulFillmentResult } from "./FulfillmentTypes.sol";
 
-import { SwapNativeData } from "./libraries/SwapLib.sol";
+import { SwapData } from "./libraries/SwapLib.sol";
 
 /// @title IBandoFulfillableV1_2
 /// @dev The Bando Fulfillment Manager interface for Native Currency V1.2
@@ -20,10 +20,12 @@ interface IBandoFulfillableV1_2 {
     /// - The fromToken must have sufficient combined balance.
     ///
     /// @param serviceId The service identifier.
+    /// @param recordId The fulfillment record identifier.
     /// @param swapData The struct capturing the aggregator call data, tokens, and amounts.
     function swapPoolsToStable(
         uint256 serviceId,
-        SwapNativeData calldata swapData
+        uint256 recordId,
+        SwapData calldata swapData
     ) external;
 
     /// @notice beneficiaryWithdrawStable

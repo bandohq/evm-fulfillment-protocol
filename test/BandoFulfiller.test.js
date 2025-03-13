@@ -353,12 +353,11 @@ describe("BandoFulfillableV1", () => {
         callData: CallData,
         toToken: await stableToken.getAddress(),
         amount: ethers.parseUnits('101', 'wei'),
-        feeAmount: ethers.parseUnits('1', 'wei'),
         callTo: await testSwapper.getAddress(),
       };
       await expect(escrow
         .connect(managerEOA)
-        .swapPoolsToStable(1, swapData)
+        .swapPoolsToStable(1, recordId, swapData)
       ).to.emit(escrow, "PoolsSwappedToStable");
       expect(await escrow.getNativeFeesFor(1)).to.be.equal(0);
       expect(await escrow._stableAccumulatedFees(1, await stableToken.getAddress())).to.be.equal(2);

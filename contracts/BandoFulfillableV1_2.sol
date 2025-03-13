@@ -3,12 +3,13 @@ pragma solidity 0.8.28;
 
 import { BandoFulfillableV1_1 } from "./BandoFulfillableV1_1.sol";
 import { IBandoFulfillableV1_2 } from "./IBandoFulfillableV1_2.sol";
-import { SwapNativeLib, SwapNativeData } from "./libraries/SwapLib.sol";
+import { SwapNativeLib, SwapData } from "./libraries/SwapLib.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { FulFillmentResult } from "./FulfillmentTypes.sol";
 import { Service } from "./periphery/registry/IFulfillableRegistry.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { FulFillmentRecord } from "./FulfillmentTypes.sol";
 
 /// @title BandoFulfillableV1_2
 /// @author g6s
@@ -52,19 +53,22 @@ contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1_1 {
     /// @param swapData The struct capturing the aggregator call data, tokens, and amounts.
     function swapPoolsToStable(
         uint256 serviceId,
-        SwapNativeData calldata swapData
+        uint256 recordId,
+        SwapData calldata swapData
     )
         external
         nonReentrant
         onlyManager
     {
+        FulFillmentRecord memory fulfillmentRecord = _fulfillmentRecords[recordId];
         SwapNativeLib.swapNativeToStable(
             _stableReleasePools,
             _stableAccumulatedFees,
             _releaseablePool,
             _accumulatedFees,
             serviceId,
-            swapData
+            swapData,
+            fulfillmentRecord
         );
     }
 
