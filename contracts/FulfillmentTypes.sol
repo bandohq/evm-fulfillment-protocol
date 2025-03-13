@@ -6,7 +6,8 @@ pragma solidity >=0.8.28;
 enum FulFillmentResultState {
     FAILED,
     SUCCESS,
-    PENDING
+    PENDING,
+    REFUNDED
 }
 
 /// @notice The fulfiller will accept FulfillmentResults submitted to it,

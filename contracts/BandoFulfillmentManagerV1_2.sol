@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.28;
 
-import "./BandoFulfillmentManagerV1.sol";
+import "./BandoFulfillmentManagerV1_1.sol";
 import { IBandoERC20FulfillableV1_2 } from "./IBandoERC20FulfillableV1_2.sol";
 import { IBandoFulfillableV1_2 } from "./IBandoFulfillableV1_2.sol";
-import { SwapNativeData, SwapData } from "./libraries/SwapLib.sol";
+import { SwapData } from "./libraries/SwapLib.sol";
 
 /// @title BandoFulfillmentManagerV1_2
 /// @author g6s
 /// @notice The Bando Fulfillment Manager V1.2
 /// @dev Adds support for swapping pools to stablecoins using Dex aggregators
 /// @custom:bfp-version 1.2.0
-contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1 {
+contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1_1 {
 
     /// @dev Dex aggregator contract addresses
     mapping (address => bool) internal _aggregators;
@@ -62,7 +62,8 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1 {
             revert InvalidAddress(swapData.callTo);
         }
         IBandoERC20Fulfillable(_erc20_escrow).registerFulfillment(serviceID, result);
-        IBandoERC20FulfillableV1_2(_erc20_escrow).swapPoolsToStable(serviceID, swapData);
+        IBandoERC20FulfillableV1_2(_erc20_escrow).swapPoolsToStable(serviceID, result.id, swapData);
+        emit ERC20FulfillmentRegistered(serviceID, result);
     }
 
     /// @dev Registers a fulfillment result and swaps from native currency
@@ -74,7 +75,7 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1 {
     function fulfillAndSwap(
         uint256 serviceID,
         FulFillmentResult memory result,
-        SwapNativeData memory swapData
+        SwapData memory swapData
     ) public virtual {
         (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller && msg.sender != owner()) {
@@ -87,6 +88,33 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1 {
             revert InvalidAddress(swapData.callTo);
         }
         IBandoFulfillable(_escrow).registerFulfillment(serviceID, result);
-        IBandoFulfillableV1_2(_escrow).swapPoolsToStable(serviceID, swapData);
+        IBandoFulfillableV1_2(_escrow).swapPoolsToStable(serviceID, result.id, swapData);
+        emit FulfillmentRegistered(serviceID, result);
+    }
+
+    /// @dev Withdraws the beneficiary's available balance to release (fulfilled with success).
+    /// Only the fulfiller can withdraw the releaseable pool.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function beneficiaryWithdrawStable(uint256 serviceId, address token) public virtual {
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceId);
+        if (msg.sender != service.fulfiller) {
+            revert InvalidFulfiller(msg.sender);
+        }
+        IBandoFulfillableV1_2(_escrow).beneficiaryWithdrawStable(serviceId, token);
+        emit WithdrawnToBeneficiary(serviceId, service.beneficiary);
+    }
+
+    /// @dev Withdraws the accumulated fees for a given service ID.
+    /// Only the fulfiller can withdraw the accumulated fees.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function withdrawAccumulatedFeesStable(uint256 serviceId, address token) public virtual {
+        (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceId);
+        if (msg.sender != service.fulfiller) {
+            revert InvalidFulfiller(msg.sender);
+        }
+        IBandoFulfillableV1_2(_escrow).withdrawAccumulatedFeesStable(serviceId, token);
+        emit WithdrawnToBeneficiary(serviceId, service.beneficiary);
     }
 }

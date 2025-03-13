@@ -24,9 +24,19 @@ interface IBandoERC20FulfillableV1_2 {
     /// - The fromToken must have sufficient combined balance.
     ///
     /// @param serviceId The service identifier.
+    /// @param recordId The fulfillment record identifier.
     /// @param swapData The struct capturing the aggregator call data, tokens, and amounts.
     function swapPoolsToStable(
         uint256 serviceId,
+        uint256 recordId,
         SwapData calldata swapData
     ) external;
+
+    /// @notice getReleaseablePools
+    /// @dev Returns the releaseable pools for a given service and token.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    /// @return The releaseable pools.
+    function getReleaseablePools(uint256 serviceId, address token) external view returns (uint256);
+
 }

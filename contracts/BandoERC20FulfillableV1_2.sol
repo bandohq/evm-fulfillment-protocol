@@ -5,6 +5,7 @@ import { BandoERC20FulfillableV1_1 } from "./BandoERC20FulfillableV1_1.sol";
 import { IBandoERC20FulfillableV1_2 } from "./IBandoERC20FulfillableV1_2.sol";
 import { SwapLib, SwapData } from "./libraries/SwapLib.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import { ERC20FulFillmentRecord } from "./FulfillmentTypes.sol";
 
 /// @title BandoERC20FulfillableV1_2
 /// @author g6s
@@ -33,22 +34,35 @@ contract BandoERC20FulfillableV1_2 is IBandoERC20FulfillableV1_2, BandoERC20Fulf
     /// - Only the manager can call this.
     /// - A Dex aggregator address must be whitelisted.
     /// - The fromToken must have sufficient combined balance.
+    /// - The fulfillment record must exist.
     /// 
     /// @param serviceId The service identifier.
+    /// @param recordId The fulfillment record identifier.
     /// @param swapData The struct capturing the aggregator call data, tokens, and amounts.
     function swapPoolsToStable(
         uint256 serviceId,
+        uint256 recordId,
         SwapData calldata swapData
     )
         external
         nonReentrant
         onlyManager
     {
+        ERC20FulFillmentRecord memory fulfillmentRecord = record(recordId);
         SwapLib.swapERC20ToStable(
             _releaseablePools,
             _accumulatedFees,
             serviceId,
-            swapData
+            swapData,
+            fulfillmentRecord
         );
+    }
+
+    /// @dev Returns the releaseable pools for a given service and token.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    /// @return The releaseable pools.
+    function getReleaseablePools(uint256 serviceId, address token) external view returns (uint256) {
+        return _releaseablePools[serviceId][token];
     }
 }
