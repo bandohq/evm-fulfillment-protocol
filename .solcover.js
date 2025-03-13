@@ -5,5 +5,6 @@ module.exports = {
     'test/TestERC20.sol',
     'test/TestSwapAggregator.sol',
     'test/TestNativeSwapAggregator.sol',
+    'test/RouterUpgradeTesterV1_1.sol',
   ]
 };
