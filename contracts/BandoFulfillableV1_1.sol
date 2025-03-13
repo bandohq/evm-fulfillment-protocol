@@ -329,13 +329,12 @@ contract BandoFulfillableV1_1 is
     /// Make sure you trust the recipient, or are either following the
     /// checks-effects-interactions pattern or using {ReentrancyGuard}.
     /// @param serviceID The service identifier.
-    /// @param refundee The address whose funds will be withdrawn and transferred to.
+    /// @param recordId The record id.
     function withdrawRefund(
         uint256 serviceID,
-        address payable refundee,
         uint256 recordId
     ) public virtual nonReentrant returns (bool) {
-        _withdrawRefund(serviceID, refundee, recordId);
+        _withdrawRefund(serviceID, recordId);
         return true;
     }
 
@@ -343,32 +342,31 @@ contract BandoFulfillableV1_1 is
     /// Should only be called when previously authorized.
     /// Will emit a RefundWithdrawn event on success.
     /// @param serviceID The service identifier.
-    /// @param refundee The address to send the value to.
+    /// @param recordId The record id.
     function _withdrawRefund(
         uint256 serviceID,
-        address payable refundee,
         uint256 recordId
     ) internal {
         if (_router != msg.sender) {
             revert InvalidRouter(msg.sender);
         }
+        FulFillmentRecord memory fulfillmentRecord = _fulfillmentRecords[recordId];
         uint256 authorized_refunds = getRefundsFor(
-            refundee,
+            fulfillmentRecord.payer,
             serviceID
         );
         if (authorized_refunds == 0) {
-            revert NoRefunds(refundee, serviceID);
+            revert NoRefunds(fulfillmentRecord.payer, serviceID);
         }
-        FulFillmentRecord memory fulfillmentRecord = _fulfillmentRecords[recordId];
         (, uint256 amount) = fulfillmentRecord.weiAmount.tryAdd(fulfillmentRecord.feeAmount);
         if (amount > authorized_refunds) {
             revert RefundsTooBig();
         }
         (, uint256 subResult) = authorized_refunds.trySub(amount);
-        setRefundsFor(refundee, serviceID, subResult);
+        setRefundsFor(fulfillmentRecord.payer, serviceID, subResult);
         fulfillmentRecord.status = FulFillmentResultState.REFUNDED;
-        refundee.sendValue(amount);
-        emit RefundWithdrawn(refundee, amount, fulfillmentRecord.id);
+        payable(fulfillmentRecord.payer).sendValue(amount);
+        emit RefundWithdrawn(fulfillmentRecord.payer, amount, fulfillmentRecord.id);
     }
 
     /// @notice Authorizes a refund for a given refundee.

@@ -346,15 +346,9 @@ contract BandoERC20FulfillableV1_1 is
     /// Make sure you trust the recipient, or are either following the
     /// checks-effects-interactions pattern or using {ReentrancyGuard}.
     /// @param serviceID The identifier of the service.
-    /// @param token The address of the ERC20 token.
-    /// @param refundee The address whose funds will be withdrawn and transferred to.
-    function withdrawERC20Refund(
-        uint256 serviceID,
-        address token,
-        address refundee,
-        uint256 recordId
-    ) public virtual nonReentrant returns (bool) {
-        _withdrawRefund(serviceID, token, refundee, recordId);
+    /// @param recordId The ID of the record.
+    function withdrawERC20Refund(uint256 serviceID, uint256 recordId) public virtual nonReentrant returns (bool) {
+        _withdrawRefund(serviceID, recordId);
         return true;
     }
     
@@ -363,34 +357,30 @@ contract BandoERC20FulfillableV1_1 is
     ///
     /// Will emit a RefundWithdrawn event on success.
     ///
-    /// @param token The address of the token.
-    /// @param refundee The address to send the value to.
-    function _withdrawRefund(
-        uint256 serviceID,
-        address token,
-        address refundee,
-        uint256 recordId
-    ) internal {
+    /// @param serviceID The identifier of the service.
+    /// @param recordId The ID of the record.
+    function _withdrawRefund(uint256 serviceID, uint256 recordId) internal {
         if(msg.sender != _router) {
             revert InvalidAddress(msg.sender);
         }
-        if(_fulfillmentRecords[recordId].id == 0) {
+        ERC20FulFillmentRecord memory fulfillmentRecord = _fulfillmentRecords[recordId];
+        if(fulfillmentRecord.id == 0) {
             revert FulfillmentRecordDoesNotExist();
         }
         uint256 authorized_refunds = getERC20RefundsFor(
-            token,
-            refundee,
+            fulfillmentRecord.token,
+            fulfillmentRecord.payer,
             serviceID
         );
-        (, uint256 refundAmount) = _fulfillmentRecords[recordId].tokenAmount.tryAdd(_fulfillmentRecords[recordId].feeAmount);
+        (, uint256 refundAmount) = fulfillmentRecord.tokenAmount.tryAdd(fulfillmentRecord.feeAmount);
         if(refundAmount > authorized_refunds) {
             revert RefundsTooBig();
         }
         (, uint256 remaining_refunds) = authorized_refunds.trySub(refundAmount);
-        setERC20RefundsFor(token, refundee, serviceID, remaining_refunds);
+        setERC20RefundsFor(fulfillmentRecord.token, fulfillmentRecord.payer, serviceID, remaining_refunds);
         _fulfillmentRecords[recordId].status = FulFillmentResultState.REFUNDED;
-        IERC20(token).safeTransfer(refundee, refundAmount);
-        emit ERC20RefundWithdrawn(token, refundee, refundAmount, recordId);
+        IERC20(fulfillmentRecord.token).safeTransfer(fulfillmentRecord.payer, refundAmount);
+        emit ERC20RefundWithdrawn(fulfillmentRecord.token, fulfillmentRecord.payer, refundAmount, recordId);
     }
 
     /// @dev Allows for refunds to take place.

@@ -29,4 +29,12 @@ interface IBandoERC20FulfillableV1_2 {
         uint256 serviceId,
         SwapData calldata swapData
     ) external;
+
+    /// @notice getReleaseablePools
+    /// @dev Returns the releaseable pools for a given service and token.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    /// @return The releaseable pools.
+    function getReleaseablePools(uint256 serviceId, address token) external view returns (uint256);
+
 }

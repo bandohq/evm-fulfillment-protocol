@@ -450,17 +450,16 @@ describe("BandoERC20FulfillableV1", () => {
 
       await escrow.setRouter(router.address);
       const fromRouter = await escrow.connect(router);
-      const r4 = await fromRouter.withdrawERC20Refund(1, await erc20Test.getAddress(), owner, records[records.length - 3]);
+      const r4 = await fromRouter.withdrawERC20Refund(1, records[records.length - 3]);
       await expect(r4).to.emit(escrow, 'ERC20RefundWithdrawn').withArgs(await erc20Test.getAddress(), owner, ethers.parseUnits('101.1', 18), records[records.length - 3]);
 
-      const r5 = await fromRouter.withdrawERC20Refund(1, await erc20Test.getAddress(), owner, records[records.length - 2]);
+      const r5 = await fromRouter.withdrawERC20Refund(1, records[records.length - 2]);
       await expect(r5).to.emit(escrow, 'ERC20RefundWithdrawn').withArgs(await erc20Test.getAddress(), owner, ethers.parseUnits('202.2', 18), records[records.length - 2]);
 
-      const r6 = await fromRouter.withdrawERC20Refund(1, await erc20Test.getAddress(), owner, records[records.length - 1]);
+      const r6 = await fromRouter.withdrawERC20Refund(1, records[records.length - 1]);
       await expect(r6).to.emit(escrow, 'ERC20RefundWithdrawn').withArgs(await erc20Test.getAddress(), owner, ethers.parseUnits('303.3', 18), records[records.length - 1]);
 
       await escrow.setRouter(await routerContract.getAddress());
-      //await expect(await escrow.getERC20RefundsFor(await erc20Test.getAddress(), owner, 1)).to.equal(0);
     });
   });
 
@@ -504,6 +503,15 @@ describe("BandoERC20FulfillableV1", () => {
       expect(record1[6]).to.be.equal(ethers.parseUnits('100', 18)); //amount
       expect(record1[7]).to.be.equal(ethers.parseUnits('1.1', 18)); //fee amount
       expect(record1[11]).to.be.equal(2); //status. 2 = PENDING
+
+      const record2 = await escrow.record(payerRecordIds[payerRecordIds.length - 2]);
+      expect(record2[0]).to.be.equal(payerRecordIds.length - 1); //record ID
+      expect(record2[2]).to.be.equal(await fulfiller.getAddress()); //fulfiller
+      expect(record2[3]).to.be.equal(await erc20Test.getAddress()); //token
+      expect(record2[5]).to.be.equal(owner); //payer address
+      expect(record2[6]).to.be.equal(ethers.parseUnits('1000', 18)); //amount
+      expect(record2[7]).to.be.equal(ethers.parseUnits('11', 18)); //fee amount
+      expect(record2[11]).to.be.equal(2); //status. 2 = PENDING
     });
 
     it("should not allow to whitelist the zero address as an aggregator", async () => {
@@ -567,6 +575,14 @@ describe("BandoERC20FulfillableV1", () => {
       expect(await stableToken.balanceOf(
         await escrow.getAddress())).to.be.equal(ethers.parseUnits('202.2', 18)
       );
+      const releaseablePools = await escrow.getReleaseablePools(1, await erc20Test.getAddress());
+      expect(releaseablePools).to.be.equal(ethers.parseUnits('100', 18));
+      const accumulatedFees = await escrow.getERC20FeesFor(await erc20Test.getAddress(), 1);
+      expect(accumulatedFees).to.be.equal(0);
+      const releaseablePools2 = await escrow.getReleaseablePools(1, await stableToken.getAddress());
+      expect(releaseablePools2).to.be.equal(ethers.parseUnits('200', 18));
+      const accumulatedFees2 = await escrow.getERC20FeesFor(await stableToken.getAddress(), 1);
+      expect(accumulatedFees2).to.be.equal(ethers.parseUnits('2.2', 18));
     });
       
   });

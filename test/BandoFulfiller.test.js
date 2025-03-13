@@ -265,7 +265,7 @@ describe("BandoFulfillableV1", () => {
     });
   });
 
-  describe("Upgradeability", async () => {
+  describe("V1.1 Specs", () => {
     it("should be able to upgrade to v1.1", async () => {
       const FulfillableV1_1 = await ethers.getContractFactory('BandoFulfillableV1_1');
       const newFulfillable = await upgrades.upgradeProxy(await fulfillableContract.getAddress(), FulfillableV1_1);
@@ -273,6 +273,44 @@ describe("BandoFulfillableV1", () => {
       const b = await escrow._manager();
       expect(b).to.be.equal(await manager.getAddress());
     });
+
+    it("should allow the user to withdraw a refund for an independent amount", async () => {
+      const fromManager = await escrow.connect(managerEOA);
+      await escrow.setManager(managerEOA.address);
+      const fromRouter = await escrow.connect(router);
+      DUMMY_FULFILLMENTREQUEST.payer = owner;
+      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("100", "wei");
+      await expect(
+        fromRouter.deposit(1, DUMMY_FULFILLMENTREQUEST, 1, { value: ethers.parseUnits("101", "wei")})
+      ).to.emit(escrow, "DepositReceived")
+      let records = await escrow.recordsOf(owner);
+      FAILED_FULFILLMENT_RESULT.id = records[records.length - 1];
+      const r = fromManager.registerFulfillment(1, FAILED_FULFILLMENT_RESULT);
+      await expect(r).to.emit(escrow, 'RefundAuthorized').withArgs(owner, ethers.parseUnits('101', 'wei'));
+      const refund = await escrow.getRefundsFor(owner, 1);
+      expect(refund).to.be.equal(ethers.parseUnits('101', 'wei'));
+
+      DUMMY_FULFILLMENTREQUEST.payer = owner;
+      DUMMY_FULFILLMENTREQUEST.weiAmount = ethers.parseUnits("100", "wei");
+      await expect(
+        fromRouter.deposit(1, DUMMY_FULFILLMENTREQUEST, 1, { value: ethers.parseUnits("101", "wei")})
+      ).to.emit(escrow, "DepositReceived")
+      records = await escrow.recordsOf(owner);
+      FAILED_FULFILLMENT_RESULT.id = records[records.length - 1];
+      const r2 = fromManager.registerFulfillment(1, FAILED_FULFILLMENT_RESULT);
+      await expect(r2).to.emit(escrow, 'RefundAuthorized').withArgs(owner, ethers.parseUnits('101', 'wei'));
+      
+      const r3 = await fromRouter.withdrawRefund(1, records[records.length - 1]);
+      await expect(r3).to.emit(escrow, 'RefundWithdrawn').withArgs(owner, ethers.parseUnits('101', 'wei'), records[records.length - 1]);
+      
+      const r4 = await fromRouter.withdrawRefund(1, records[records.length - 2]);
+      await expect(r4).to.emit(escrow, 'RefundWithdrawn').withArgs(owner, ethers.parseUnits('101', 'wei'), records[records.length - 2]);
+      
+      await escrow.setManager(await manager.getAddress());
+    });
+  });
+
+  describe("Upgradeability", async () => {
 
     it("should be able to upgrade to v1.2", async () => {
       const FulfillableV1_2 = await ethers.getContractFactory('BandoFulfillableV1_2');

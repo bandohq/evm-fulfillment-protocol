@@ -43,13 +43,9 @@ interface IBandoFulfillableV1_1 {
 
     /// @notice Withdraws a refund for a service
     /// @param serviceID The ID of the service
-    /// @param refundee The address to receive the refund
+    /// @param recordId The ID of the record
     /// @return bool Indicating if the withdrawal was successful
-    function withdrawRefund(
-        uint256 serviceID,
-        address payable refundee,
-        uint256 recordId
-    ) external returns (bool);
+    function withdrawRefund( uint256 serviceID,uint256 recordId) external returns (bool);
 
     /// @notice Withdraws the beneficiary's available balance to release (fulfilled with success).
     /// @param serviceID The service identifier
