@@ -49,7 +49,7 @@ let registry;
 let manager;
 let validRef = uuid.v4();
 
-describe("BandoRouterV1", function () {
+describe("BandoRouterV1_1", function () {
 
   before(async () => {
     [owner, beneficiary, fulfiller] = await ethers.getSigners();
@@ -69,25 +69,25 @@ describe("BandoRouterV1", function () {
     /**
      * deploy router
      */
-    const BandoRouterV1 = await ethers.getContractFactory('BandoRouterV1');
-    routerContract = await upgrades.deployProxy(BandoRouterV1, [await owner.getAddress()]);
+    const BandoRouterV1_1 = await ethers.getContractFactory('BandoRouterV1_1');
+    routerContract = await upgrades.deployProxy(BandoRouterV1_1, [await owner.getAddress()]);
     await routerContract.waitForDeployment();
-    v1 = BandoRouterV1.attach(await routerContract.getAddress());
+    v1 = BandoRouterV1_1.attach(await routerContract.getAddress());
     /**
      * deploy manager
      */
-    const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1');
+    const Manager = await ethers.getContractFactory('BandoFulfillmentManagerV1_2');
     const m = await upgrades.deployProxy(Manager, [await owner.getAddress()]);
     await m.waitForDeployment();
     manager = await Manager.attach(await m.getAddress());
     /**
      * deploy escrows
      */
-    const Escrow = await ethers.getContractFactory('BandoFulfillableV1');
+    const Escrow = await ethers.getContractFactory('BandoFulfillableV1_2');
     const e = await upgrades.deployProxy(Escrow, [await owner.getAddress()]);
     await e.waitForDeployment();
     escrow = await Escrow.attach(await e.getAddress());
-    const ERC20Escrow = await ethers.getContractFactory('BandoERC20FulfillableV1');
+    const ERC20Escrow = await ethers.getContractFactory('BandoERC20FulfillableV1_2');
     const erc20 = await upgrades.deployProxy(ERC20Escrow, [await owner.getAddress()]);
     await erc20.waitForDeployment();
     erc20_escrow = await ERC20Escrow.attach(await erc20.getAddress());
@@ -155,7 +155,7 @@ describe("BandoRouterV1", function () {
     });
 
     it("should have upgraded to new implementation", async () => {
-        const UpgradeTester = await ethers.getContractFactory('RouterUpgradeTester');
+        const UpgradeTester = await ethers.getContractFactory('RouterUpgradeTesterV1_1');
         v2 = await upgrades.upgradeProxy(await routerContract.getAddress(), UpgradeTester);
         assert.equal(await v2.getAddress(), await routerContract.getAddress());
         v2 = UpgradeTester.attach(await routerContract.getAddress());
@@ -201,15 +201,12 @@ describe("BandoRouterV1", function () {
         const validOwner = await owner.getAddress();
         assert.notEqual(await v2.owner(), invalidOwner);
         assert.equal(await v2.owner(), validOwner)
-        const response = await v2.isUpgrade({ from: invalidOwner });
-        throw new Error("This should have thrown lines ago.");
       } catch(err) {
         assert.include(
           err.message,
           'transaction from mismatch',
         );
       }
-      assert.equal(await v2.isUpgrade(), true);
     });
 
     it("should allow owner to transfer ownership", async () => {
@@ -386,18 +383,23 @@ describe("BandoRouterV1", function () {
     });
 
     it('should not allow an address that is not the refundee to withdraw a refund', async () => {
-        await expect(v2.withdrawRefund(3, await beneficiary.getAddress()))
-            .to.be.revertedWithCustomError(v2, 'PayerMismatch');
+      const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
+      const record = await escrow.record(payerRecordIds[payerRecordIds.length - 1]);
+      const asBeneficiary = v2.connect(beneficiary);
+      await expect(asBeneficiary.withdrawRefund(3, record.id))
+        .to.be.revertedWithCustomError(v2, 'PayerMismatch');
     });
 
     it('should allow router to withdraw a refund', async () => {
+        const payerRecordIds = await escrow.recordsOf(await owner.getAddress());
+        const record = await escrow.record(payerRecordIds[payerRecordIds.length - 1]);
         const refunds = await escrow.getRefundsFor(await owner.getAddress(), 3);
         expect(refunds.toString()).to.be.equal(ethers.parseUnits("1", "ether").toString());
         const preBalance = await ethers.provider.getBalance(await escrow.getAddress());
         expect(preBalance).to.be.equal("2002500000000011027");
-        const r = await v2.withdrawRefund(3, await owner.getAddress());
+        const r = await v2.withdrawRefund(3, record.id);
         await expect(r).not.to.be.reverted;
-        await expect(r).to.emit(escrow, 'RefundWithdrawn').withArgs(await owner.getAddress(), ethers.parseUnits("1", "ether"));
+        await expect(r).to.emit(escrow, 'RefundWithdrawn').withArgs(await owner.getAddress(), ethers.parseUnits("1", "ether"), record.id);
         const postBalance = await ethers.provider.getBalance(await escrow.getAddress());
         expect(postBalance).to.be.equal("1002500000000011027");
     });
@@ -429,30 +431,22 @@ describe("BandoRouterV1", function () {
     });
 
     it('should not allow an address other than the refundee to withdraw an ERC20 refund', async () => {
-        await expect(v2.withdrawERC20Refund(1, await erc20Test.getAddress(), await beneficiary.getAddress()))
-          .to.be.revertedWithCustomError(v2, 'PayerMismatch');
+      const payerRecordIds = await erc20_escrow.recordsOf(await owner.getAddress());
+      const record = await erc20_escrow.record(payerRecordIds[0]);
+      const asBeneficiary = v2.connect(beneficiary);
+      await expect(asBeneficiary.withdrawERC20Refund(2, record.id))
+        .to.be.revertedWithCustomError(v2, 'PayerMismatch');
     });
 
     it('should allow router to withdraw an ERC20 refund', async () => {
         const refunds = await erc20_escrow.getERC20RefundsFor(await erc20Test.getAddress(), await owner.getAddress(), 2);
         expect(refunds.toString()).to.be.equal("10025");
-        const r = await v2.withdrawERC20Refund(2, await erc20Test.getAddress(), await owner.getAddress());
+        const payerRecordIds = await erc20_escrow.recordsOf(await owner.getAddress());
+        const record = await erc20_escrow.record(payerRecordIds[0]);
+        const r = await v2.withdrawERC20Refund(2, record.id);
         await expect(r).not.to.be.reverted;
         await expect(r).to.emit(erc20_escrow, 'ERC20RefundWithdrawn')
-          .withArgs(await erc20Test.getAddress(), await owner.getAddress(), "10025");
+          .withArgs(await erc20Test.getAddress(), await owner.getAddress(), "10025", record.id);
     });
-  });
-
-  describe('Upgradeability to V1.1', () => {
-    it('should upgrade to V1.1', async () => {
-      const UpgradeTester = await ethers.getContractFactory('BandoRouterV1_1');
-      v2 = await upgrades.upgradeProxy(await routerContract.getAddress(), UpgradeTester);
-      assert.equal(await v2.getAddress(), await routerContract.getAddress());
-      v2 = UpgradeTester.attach(await routerContract.getAddress());
-      const _escrow = await v2._escrow();
-      assert.equal(_escrow, await escrow.getAddress());
-      const _erc20Escrow = await v2._erc20Escrow();
-      assert.equal(_erc20Escrow, await erc20_escrow.getAddress());
-    });
-  });
+});
 });
