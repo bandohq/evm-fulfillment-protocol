@@ -441,5 +441,18 @@ describe("BandoRouterV1", function () {
         await expect(r).to.emit(erc20_escrow, 'ERC20RefundWithdrawn')
           .withArgs(await erc20Test.getAddress(), await owner.getAddress(), "10025");
     });
-});
+  });
+
+  describe('Upgradeability to V1.1', () => {
+    it('should upgrade to V1.1', async () => {
+      const UpgradeTester = await ethers.getContractFactory('BandoRouterV1_1');
+      v2 = await upgrades.upgradeProxy(await routerContract.getAddress(), UpgradeTester);
+      assert.equal(await v2.getAddress(), await routerContract.getAddress());
+      v2 = UpgradeTester.attach(await routerContract.getAddress());
+      const _escrow = await v2._escrow();
+      assert.equal(_escrow, await escrow.getAddress());
+      const _erc20Escrow = await v2._erc20Escrow();
+      assert.equal(_erc20Escrow, await erc20_escrow.getAddress());
+    });
+  });
 });
