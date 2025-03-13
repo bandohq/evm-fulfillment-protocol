@@ -551,4 +551,19 @@ describe('BandoFulfillmentManagerV1_2', () => {
                 .withArgs(beneficiary.address);
         });
     });
+
+    describe('Withdraw ERC20 Fees Stable', () => {
+        it('should withdraw ERC20 fees stable', async () => {
+            const asFulfiller = manager.connect(fulfiller);
+            const r = await asFulfiller.withdrawAccumulatedFeesStable(1, await stableToken.getAddress());
+            await expect(r).not.to.be.reverted;
+        });
+
+        it('should not allow a non-fulfiller to withdraw ERC20 fees stable', async () => {
+            const asNonFulfiller = manager.connect(beneficiary);
+            await expect(asNonFulfiller.withdrawAccumulatedFeesStable(1, await stableToken.getAddress()))
+                .to.be.revertedWithCustomError(manager, 'InvalidFulfiller')
+                .withArgs(beneficiary.address);
+        });
+    });
 });
