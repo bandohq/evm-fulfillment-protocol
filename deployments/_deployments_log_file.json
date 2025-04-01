@@ -471,24 +471,6 @@
       }
     }
   },
-  "BandoERC20FulfillableV1_2": {
-    "arbitrum": {
-      "staging": {
-        "1.2.0": [
-          {
-            "ADDRESS": "0xa1D9F667b369D436c559dE5Ae07058DCf1877BAe",
-            "OPTIMIZER_RUNS": "1000000",
-            "TIMESTAMP": "2025-02-25 14:49:53",
-            "CONSTRUCTOR_ARGS": "0x",
-            "SALT": "27182818284590452353602874713556",
-            "VERIFIED": "true",
-            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1_2.sol",
-            "CONTRACT_NAME": "BandoERC20FulfillableV1_2"
-          }
-        ]
-      }
-    }
-  },
   "FulfillableRegistryV1_1": {
     "arbitrum": {
       "staging": {
@@ -505,6 +487,56 @@
           }
         ]
       }
+    },
+    "celo": {
+      "production": {
+        "1.1": [
+          {
+            "ADDRESS": "0x3c2440988AC5fd623a7E693b6B8B102Fc4F8C029",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-03-14 19:03:17",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1_1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1_1"
+          }
+        ]
+      }
+    }
+  },
+  "BandoERC20FulfillableV1_2": {
+    "arbitrum": {
+      "staging": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xEA22c42722910748794F25Be3941AC491535D1b2",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-03-13 00:46:45",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1_2"
+          }
+        ]
+      }
+    },
+    "celo": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xEA22c42722910748794F25Be3941AC491535D1b2",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-03-14 19:00:53",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1_2"
+          }
+        ]
+      }
     }
   },
   "BandoFulfillableV1_2": {
@@ -512,9 +544,25 @@
       "staging": {
         "1.2.0": [
           {
-            "ADDRESS": "0x7fA7FB3350C801998aAd415A9357eEA1a1E4bbCC",
+            "ADDRESS": "0xD54272f989f937126942723B11659b82b4d654a4",
             "OPTIMIZER_RUNS": "1000000",
-            "TIMESTAMP": "2025-02-27 17:18:28",
+            "TIMESTAMP": "2025-03-13 00:48:48",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1_2"
+          }
+        ]
+      }
+    },
+    "celo": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xD54272f989f937126942723B11659b82b4d654a4",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-03-14 19:02:04",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -530,14 +578,64 @@
       "staging": {
         "1.2.0": [
           {
-            "ADDRESS": "0x31Ee4E37239e3E21A4455EEC19CBD6A68581aab4",
+            "ADDRESS": "0xDe0dC2823F7584bE1975d1280A012C126E94E9a4",
             "OPTIMIZER_RUNS": "1000000",
-            "TIMESTAMP": "2025-02-27 23:34:54",
+            "TIMESTAMP": "2025-03-13 00:49:40",
             "CONSTRUCTOR_ARGS": "0x",
-            "SALT": "27182818284590452353602874713557",
+            "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
             "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1_2.sol",
             "CONTRACT_NAME": "BandoFulfillmentManagerV1_2"
+          }
+        ]
+      }
+    },
+    "celo": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xDe0dC2823F7584bE1975d1280A012C126E94E9a4",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-03-14 19:04:42",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1_2"
+          }
+        ]
+      }
+    }
+  },
+  "BandoRouterV1_1": {
+    "arbitrum": {
+      "staging": {
+        "1.1.0": [
+          {
+            "ADDRESS": "0x5Bea76d2a62c0605dCAd8A911D06ef624400ef01",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-03-13 00:50:13",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1_1.sol",
+            "CONTRACT_NAME": "BandoRouterV1_1"
+          }
+        ]
+      }
+    },
+    "celo": {
+      "production": {
+        "1.1.0": [
+          {
+            "ADDRESS": "0x5Bea76d2a62c0605dCAd8A911D06ef624400ef01",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-03-14 19:05:33",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1_1.sol",
+            "CONTRACT_NAME": "BandoRouterV1_1"
           }
         ]
       }
