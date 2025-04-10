@@ -24,6 +24,13 @@ const createConfig = (env) => {
           protocolOwner: process.env.PROTOCOL_OWNER,
           managerOwner: process.env.MANAGER_OWNER,
           tokenRegistryOwner: process.env.TOKEN_REGISTRY_OWNER,
+        },
+        base: {
+          url: process.env.ETH_NODE_URI_BASE,
+          accounts: [privateKey],
+          protocolOwner: process.env.PROTOCOL_OWNER,
+          managerOwner: process.env.MANAGER_OWNER,
+          tokenRegistryOwner: process.env.TOKEN_REGISTRY_OWNER,
         }
         // Add more networks here
       }
