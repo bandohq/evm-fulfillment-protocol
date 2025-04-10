@@ -9,11 +9,12 @@ const fs = require("fs/promises");
 /**
  * Confgure the BFP contract
  * 
- * 1. Configure necessary state variables on Registry
- * 2. Configure necessary state variables on ERC20Registry
- * 3. Configure necessary state variables on Escrows
- * 4. Configure necessary state variables on Router
- * 5. Configure necessary state variables on Manager
+ * 1. Upgrade Contracts
+ * 2. Configure necessary state variables on Registry
+ * 3. Configure necessary state variables on ERC20Registry
+ * 4. Configure necessary state variables on Escrows
+ * 5. Configure necessary state variables on Router
+ * 6. Configure necessary state variables on Manager
  */
 async function main() {
   const accounts = await hre.ethers.getSigners();
@@ -31,6 +32,11 @@ async function main() {
 
   const data = await fs.readFile(deploymentPath, 'utf-8');
   const contracts = JSON.parse(data);
+
+  /**
+   * Upgrade Contracts
+   */
+  await upgradeAllContracts(contracts);
   /**
    * Setup Registry
    */
@@ -70,6 +76,42 @@ async function main() {
   await manager.transferOwnership(hre.network.config.managerOwner); //mpc
   console.log("Manager Ownership Transferred");
   console.log("Configuration Complete");
+}
+
+const upgradeContract = async (contracts, contractName, proxyName, implementationName) => {
+  try {
+    const implementationAddress = contracts[implementationName];
+    if (!implementationAddress) {
+      console.log(`Implementation address for ${implementationName} not found in contracts`);
+      return null;
+    }
+    
+    const Contract = await hre.ethers.getContractFactory(contractName);
+    const proxyAddress = contracts[proxyName];
+    if (!proxyAddress) {
+      console.log(`Proxy address for ${proxyName} not found in contracts`);
+      return null;
+    }
+    
+    const contract = Contract.attach(proxyAddress);
+    console.log(`Upgrading ${contractName} at ${proxyAddress} to ${implementationAddress}`);
+    
+    const txn = await contract.upgradeToAndCall(implementationAddress, "0x", { gasLimit: 1000000 });
+    await txn.wait();
+    console.log(`${contractName} Upgraded: ${txn.hash}`);
+    return contract;
+  } catch (error) {
+    console.error(`Error upgrading ${contractName}:`, error.message);
+    throw error;
+  }
+}
+
+const upgradeAllContracts = async (contracts) => {
+  await upgradeContract(contracts, "FulfillableRegistryV1", "FulfillableRegistryProxy", "FulfillableRegistryV1_1");
+  await upgradeContract(contracts, "BandoERC20FulfillableV1", "BandoERC20FulfillableProxy", "BandoERC20FulfillableV1_2");
+  await upgradeContract(contracts, "BandoFulfillableV1", "BandoFulfillableProxy", "BandoFulfillableV1_2");
+  await upgradeContract(contracts, "BandoRouterV1", "BandoRouterProxy", "BandoRouterV1_1");
+  await upgradeContract(contracts, "BandoFulfillmentManagerV1", "BandoFulfillmentManagerProxy", "BandoFulfillmentManagerV1_2");
 }
 
 const configureRegistry = async (contracts) => {

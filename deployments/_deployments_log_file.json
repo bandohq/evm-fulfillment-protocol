@@ -47,6 +47,22 @@
           }
         ]
       }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xebf6296daDeCAD3c57a1909A14DA8a00Ccc8f6d5",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:12:06",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000004940fcae36a85d74070689de78f1218f4152864700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de80000000000000000000000004c244916a0f0b4a54aa8377655b156d48f083aa500000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/FulfillableRegistryProxy.sol",
+            "CONTRACT_NAME": "FulfillableRegistryProxy"
+          }
+        ]
+      }
     }
   },
   "FulfillableRegistry": {
@@ -89,6 +105,22 @@
             "ADDRESS": "0x4940FcAe36a85D74070689dE78F1218f41528647",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2024-12-20 12:01:25",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1"
+          }
+        ]
+      }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x4940FcAe36a85D74070689dE78F1218f41528647",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:12:06",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -147,6 +179,22 @@
           }
         ]
       }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x4ded9945D27372035dAA5aA48aC6A84ED942fcBa",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:16:58",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000002e2d7cd0979620dadae5c2ee25b9585e7d09b77000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/ERC20TokenRegistryProxy.sol",
+            "CONTRACT_NAME": "ERC20TokenRegistryProxy"
+          }
+        ]
+      }
     }
   },
   "ERC20TokenRegistry": {
@@ -197,6 +245,22 @@
           }
         ]
       }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2e2d7CD0979620daDaE5C2Ee25b9585e7d09B770",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:16:58",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/ERC20TokenRegistryV1.sol",
+            "CONTRACT_NAME": "ERC20TokenRegistryV1"
+          }
+        ]
+      }
     }
   },
   "BandoERC20FulfillableProxy": {
@@ -231,6 +295,22 @@
           }
         ]
       }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xFe797C20Eb46b41B9d06cd08Ee091f59d7FDeDe4",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:18:02",
+            "CONSTRUCTOR_ARGS": "0x00000000000000000000000090a51b58a58d39d7ea5b0985309c142b6aa737e700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoERC20FulfillableProxy.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableProxy"
+          }
+        ]
+      }
     }
   },
   "BandoERC20Fulfillable": {
@@ -257,6 +337,22 @@
             "ADDRESS": "0xe221007B74419D30eDc3A62d3cdc0E3e1a4E79ce",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2024-12-20 12:12:35",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1"
+          }
+        ]
+      }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x90A51b58A58d39D7Ea5b0985309C142b6aa737e7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:18:02",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -299,6 +395,22 @@
           }
         ]
       }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x62742282B1eE2D56d198289B09f526B1eC02d7a7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:19:45",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000002005a52791ceff5caf2f98a4392cf778e0ec854a00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoFulfillableProxy.sol",
+            "CONTRACT_NAME": "BandoFulfillableProxy"
+          }
+        ]
+      }
     }
   },
   "BandoFulfillable": {
@@ -325,6 +437,22 @@
             "ADDRESS": "0xDCD81523B789086db95F90bA92757DE3f0e84a9D",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2024-12-20 12:13:31",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1"
+          }
+        ]
+      }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2005a52791CEfF5caF2F98A4392cF778E0Ec854a",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:19:45",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -367,6 +495,22 @@
           }
         ]
       }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x0299126E1a4c60707f95136C51716353faD19347",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:21:23",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000009fa30187e8f314c54519ba76ee16f654985d650400000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoFulfillmentManagerProxy.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerProxy"
+          }
+        ]
+      }
     }
   },
   "BandoFulfillmentManager": {
@@ -393,6 +537,22 @@
             "ADDRESS": "0x4d611299977aE7C3Cb2fa9093Ec875d1D90fb301",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2024-12-20 12:15:45",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1"
+          }
+        ]
+      }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x9fA30187E8f314C54519ba76ee16F654985D6504",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:21:23",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -435,6 +595,22 @@
           }
         ]
       }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2D9A53f52dD0Cdc922140bE6893381330a9e39FC",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:22:43",
+            "CONSTRUCTOR_ARGS": "0x000000000000000000000000adba54d826dc694a2d669a0a97edd49b27a622a000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoRouterProxy.sol",
+            "CONTRACT_NAME": "BandoRouterProxy"
+          }
+        ]
+      }
     }
   },
   "BandoRouter": {
@@ -461,6 +637,22 @@
             "ADDRESS": "0x0c97904477117985406fFE6f65D2E34D63d53111",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2024-12-20 12:16:19",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1.sol",
+            "CONTRACT_NAME": "BandoRouterV1"
+          }
+        ]
+      }
+    },
+    "base": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xaDba54d826Dc694A2d669a0a97eDD49B27a622a0",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:22:43",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -503,6 +695,22 @@
           }
         ]
       }
+    },
+    "base": {
+      "production": {
+        "1.1": [
+          {
+            "ADDRESS": "0x3c2440988AC5fd623a7E693b6B8B102Fc4F8C029",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:23:19",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1_1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1_1"
+          }
+        ]
+      }
     }
   },
   "BandoERC20FulfillableV1_2": {
@@ -529,6 +737,22 @@
             "ADDRESS": "0xEA22c42722910748794F25Be3941AC491535D1b2",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2025-03-14 19:00:53",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1_2"
+          }
+        ]
+      }
+    },
+    "base": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xEA22c42722910748794F25Be3941AC491535D1b2",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:24:51",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -571,6 +795,22 @@
           }
         ]
       }
+    },
+    "base": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xD54272f989f937126942723B11659b82b4d654a4",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:28:41",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1_2"
+          }
+        ]
+      }
     }
   },
   "BandoFulfillmentManagerV1_2": {
@@ -605,6 +845,22 @@
           }
         ]
       }
+    },
+    "base": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xDe0dC2823F7584bE1975d1280A012C126E94E9a4",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:29:35",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1_2"
+          }
+        ]
+      }
     }
   },
   "BandoRouterV1_1": {
@@ -631,6 +887,22 @@
             "ADDRESS": "0x5Bea76d2a62c0605dCAd8A911D06ef624400ef01",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2025-03-14 19:05:33",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1_1.sol",
+            "CONTRACT_NAME": "BandoRouterV1_1"
+          }
+        ]
+      }
+    },
+    "base": {
+      "production": {
+        "1.1.0": [
+          {
+            "ADDRESS": "0x5Bea76d2a62c0605dCAd8A911D06ef624400ef01",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-09 18:30:08",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
