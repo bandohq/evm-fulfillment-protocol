@@ -47,4 +47,18 @@ interface IBandoFulfillableV1_2 {
         uint256 serviceId,
         address token
     ) external;
+
+    /// @notice resetPoolsAndFees
+    /// @dev Resets the releaseable pools and accumulated fees for a given service and token.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function resetPoolsAndFees(uint256 serviceId, address token) external;
+
+    /// @notice withdrawFulfillerPoolAndFees
+    /// @dev Withdraws the fulfiller's pool and fees.
+    /// @param token The token address.
+    /// @param amount The amount to withdraw.
+    /// @param beneficiary The beneficiary address.
+    /// @param feesBeneficiary The fees beneficiary address.
+    function withdrawFulfillerPoolAndFees(address token, uint256 amount, uint256 fees, address beneficiary, address feesBeneficiary) external;
 }

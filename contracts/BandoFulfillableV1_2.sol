@@ -33,6 +33,12 @@ contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1_1 {
     /// @notice InvalidCaller error message
     error InvalidCaller(address caller);
 
+    /// @notice PoolsAndFeesReset event
+    event PoolsAndFeesReset(uint256 serviceId, address token);
+
+    /// @notice FulfillerPoolAndFeesWithdrawn event
+    event FulfillerPoolAndFeesWithdrawn(address token, uint256 amount, uint256 fees, address beneficiary, address feesBeneficiary);
+
     ///@dev Only the manager can call this
     modifier onlyManager() {
         if(msg.sender != _manager) {
@@ -112,5 +118,57 @@ contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1_1 {
         uint256 amount = _stableAccumulatedFees[serviceId][token];
         _stableAccumulatedFees[serviceId][token] = 0;
         IERC20(token).safeTransfer(service.beneficiary, amount);
+    }
+
+    /// @dev Resets the releaseable pools and accumulated fees for a given service and token.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function resetPoolsAndFees(uint256 serviceId, address token) external onlyManager {
+        _resetPoolsAndFees(serviceId, token);
+    }
+
+    /// @dev Internal function to reset the releaseable pools and accumulated fees for a given service and token.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function _resetPoolsAndFees(uint256 serviceId, address token) internal {
+        _stableReleasePools[serviceId][token] = 0;
+        _stableAccumulatedFees[serviceId][token] = 0;
+        emit PoolsAndFeesReset(serviceId, token);
+    }   
+
+    /// @dev Withdraws the fulfiller's pool and fees.
+    /// @param token The token address.
+    /// @param amount The amount to withdraw.
+    /// @param beneficiary The beneficiary address.
+    /// @param feesBeneficiary The fees beneficiary address.
+    function withdrawFulfillerPoolAndFees(
+        address token,
+        uint256 amount,
+        uint256 fees,
+        address beneficiary,
+        address feesBeneficiary
+    )
+        external
+        onlyManager
+        nonReentrant
+    {
+        _withdrawFulfillerPoolAndFees(token, amount, fees, beneficiary, feesBeneficiary);
+        emit FulfillerPoolAndFeesWithdrawn(token, amount, fees, beneficiary, feesBeneficiary);
+    }
+
+    /// @dev Internal function to withdraw the fulfiller's pool and fees.
+    /// @param token The token address.
+    /// @param amount The amount to withdraw.
+    /// @param beneficiary The beneficiary address.
+    /// @param feesBeneficiary The fees beneficiary address.
+    function _withdrawFulfillerPoolAndFees(
+        address token,
+        uint256 amount, uint256 fees, address beneficiary, address feesBeneficiary
+    ) internal {
+        if(token == address(0)) {
+            revert InvalidAddress(token);
+        }
+        IERC20(token).safeTransfer(beneficiary, amount);
+        IERC20(token).safeTransfer(feesBeneficiary, fees);
     }
 }

@@ -6,6 +6,8 @@ import { IBandoERC20FulfillableV1_2 } from "./IBandoERC20FulfillableV1_2.sol";
 import { SwapLib, SwapData } from "./libraries/SwapLib.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ERC20FulFillmentRecord } from "./FulfillmentTypes.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title BandoERC20FulfillableV1_2
 /// @author g6s
@@ -15,9 +17,18 @@ import { ERC20FulFillmentRecord } from "./FulfillmentTypes.sol";
 /// The contract also allows the manager to whitelist Dex aggregator addresses.
 /// @custom:bfp-version 1.2.0
 contract BandoERC20FulfillableV1_2 is IBandoERC20FulfillableV1_2, BandoERC20FulfillableV1_1 {
+    
+    using Address for address;
+    using SafeERC20 for IERC20;
 
     /// @notice InvalidCaller error message
     error InvalidCaller(address caller);
+
+    /// @notice PoolsAndFeesReset event
+    event PoolsAndFeesReset(uint256 serviceId, address token);
+
+    /// @notice FulfillerPoolAndFeesWithdrawn event
+    event FulfillerPoolAndFeesWithdrawn(address token, uint256 amount, uint256 fees, address beneficiary, address feesBeneficiary);
     
     ///@dev Only the manager can call this
     modifier onlyManager() {
@@ -64,5 +75,61 @@ contract BandoERC20FulfillableV1_2 is IBandoERC20FulfillableV1_2, BandoERC20Fulf
     /// @return The releaseable pools.
     function getReleaseablePools(uint256 serviceId, address token) external view returns (uint256) {
         return _releaseablePools[serviceId][token];
+    }
+
+    /// @dev Resets the pools and fees for a given service.
+    /// @dev Only the manager can call this.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function resetPoolsAndFees(uint256 serviceId, address token) external onlyManager {
+        _resetPoolsAndFees(serviceId, token);
+        emit PoolsAndFeesReset(serviceId, token);
+    }
+
+    /// @dev withdraws an amount to a beneficiary
+    /// @dev Only the manager can call this.
+    /// @param token The token address
+    /// @param amount The amount to withdraw
+    /// @param beneficiary The beneficiary address
+    function withdrawFulfillerPoolAndFees(
+        address token,
+        uint256 amount,
+        uint256 fees,
+        address beneficiary,
+        address feesBeneficiary
+    )
+        external
+        onlyManager
+        nonReentrant
+    {
+        _withdrawFulfillerPoolAndFees(token, amount, fees, beneficiary, feesBeneficiary);
+        emit FulfillerPoolAndFeesWithdrawn(token, amount, fees, beneficiary, feesBeneficiary);
+    }
+
+    /// @dev Internal function to reset the releaseable pools and accumulated fees for a given service and token.
+    /// @param serviceId The service identifier.
+    /// @param token The token address.
+    function _resetPoolsAndFees(uint256 serviceId, address token) internal {
+        _releaseablePools[serviceId][token] = 0;
+        _accumulatedFees[serviceId][token] = 0;
+    }
+
+    /// @dev Internal function to withdraw the fulfiller's ERC20 pool and fees.
+    /// @param token The token address.
+    /// @param amount The amount to withdraw.
+    /// @param beneficiary The beneficiary address.
+    /// @param feesBeneficiary The fees beneficiary address.
+    function _withdrawFulfillerPoolAndFees(
+        address token,
+        uint256 amount,
+        uint256 fees,
+        address beneficiary,
+        address feesBeneficiary
+    ) internal {
+        if(token == address(0)) {
+            revert InvalidAddress(token);
+        }
+        IERC20(token).safeTransfer(beneficiary, amount);
+        IERC20(token).safeTransfer(feesBeneficiary, fees);
     }
 }
