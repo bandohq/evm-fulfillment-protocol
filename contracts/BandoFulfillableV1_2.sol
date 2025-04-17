@@ -152,6 +152,9 @@ contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1_1 {
         onlyManager
         nonReentrant
     {
+        if (beneficiary == address(0) || feesBeneficiary == address(0)) {
+            revert InvalidAddress(address(0));
+        }
         _withdrawFulfillerPoolAndFees(token, amount, fees, beneficiary, feesBeneficiary);
         emit FulfillerPoolAndFeesWithdrawn(token, amount, fees, beneficiary, feesBeneficiary);
     }

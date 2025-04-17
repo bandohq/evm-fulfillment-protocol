@@ -104,6 +104,9 @@ contract BandoERC20FulfillableV1_2 is IBandoERC20FulfillableV1_2, BandoERC20Fulf
         onlyManager
         nonReentrant
     {
+        if (beneficiary == address(0) || feesBeneficiary == address(0)) {
+            revert InvalidAddress(address(0));
+        }
         _withdrawFulfillerPoolAndFees(token, amount, fees, beneficiary, feesBeneficiary);
         emit FulfillerPoolAndFeesWithdrawn(token, amount, fees, beneficiary, feesBeneficiary);
     }
