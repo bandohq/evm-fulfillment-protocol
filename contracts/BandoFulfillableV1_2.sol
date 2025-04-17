@@ -39,6 +39,9 @@ contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1_1 {
     /// @notice FulfillerPoolAndFeesWithdrawn event
     event FulfillerPoolAndFeesWithdrawn(address token, uint256 amount, uint256 fees, address beneficiary, address feesBeneficiary);
 
+    /// @notice InsufficientBalance error message
+    error InsufficientBalance(uint256 required, uint256 balance);
+
     ///@dev Only the manager can call this
     modifier onlyManager() {
         if(msg.sender != _manager) {
@@ -152,9 +155,6 @@ contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1_1 {
         onlyManager
         nonReentrant
     {
-        if (beneficiary == address(0) || feesBeneficiary == address(0)) {
-            revert InvalidAddress(address(0));
-        }
         _withdrawFulfillerPoolAndFees(token, amount, fees, beneficiary, feesBeneficiary);
         emit FulfillerPoolAndFeesWithdrawn(token, amount, fees, beneficiary, feesBeneficiary);
     }
@@ -171,7 +171,19 @@ contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1_1 {
         if(token == address(0)) {
             revert InvalidAddress(token);
         }
-        IERC20(token).safeTransfer(beneficiary, amount);
-        IERC20(token).safeTransfer(feesBeneficiary, fees);
+        if (beneficiary == address(0) || feesBeneficiary == address(0)) {
+            revert InvalidAddress(address(0));
+        }
+        // Check for non-zero transfer amounts
+        if (amount > 0) {
+            uint256 totalAmount = amount + fees;
+            if (totalAmount > IERC20(token).balanceOf(address(this))) {
+                revert InsufficientBalance(totalAmount, IERC20(token).balanceOf(address(this)));
+            }
+            IERC20(token).safeTransfer(beneficiary, amount);
+        }
+        if (fees > 0) {
+            IERC20(token).safeTransfer(feesBeneficiary, fees);
+        }
     }
 }
