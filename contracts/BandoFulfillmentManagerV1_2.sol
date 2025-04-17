@@ -191,7 +191,11 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1_1 {
         if (amount > _fulfillerAccumulatedReleaseablePool[msg.sender][token]) {
             revert InsufficientBalance(amount, _fulfillerAccumulatedReleaseablePool[msg.sender][token]);
         }
+        if (fees > _fulfillerAccumulatedFees[msg.sender][token]) {
+            revert InsufficientBalance(fees, _fulfillerAccumulatedFees[msg.sender][token]);
+        }
         _fulfillerAccumulatedReleaseablePool[msg.sender][token] -= amount;
+        _fulfillerAccumulatedFees[msg.sender][token] -= fees;
         IBandoERC20FulfillableV1_2(_erc20_escrow).withdrawFulfillerPoolAndFees(token, amount, fees, beneficiary, feesBeneficiary);
     }
 
@@ -219,7 +223,11 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1_1 {
         if (amount > _fulfillerAccumulatedReleaseablePoolNative[msg.sender][token]) {
             revert InsufficientBalance(amount, _fulfillerAccumulatedReleaseablePoolNative[msg.sender][token]);
         }
+        if (fees > _fulfillerAccumulatedFeesNative[msg.sender][token]) {
+            revert InsufficientBalance(fees, _fulfillerAccumulatedFeesNative[msg.sender][token]);
+        }
         _fulfillerAccumulatedReleaseablePoolNative[msg.sender][token] -= amount;
+        _fulfillerAccumulatedFeesNative[msg.sender][token] -= fees;
         IBandoFulfillableV1_2(_escrow).withdrawFulfillerPoolAndFees(token, amount, fees, beneficiary, feesBeneficiary);
     }
 
