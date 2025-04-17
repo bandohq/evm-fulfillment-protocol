@@ -50,4 +50,10 @@ interface IBandoERC20FulfillableV1_1 {
     /// @param serviceID The service identifier
     /// @param token The address of the ERC20 token
     function withdrawAccumulatedFees(uint256 serviceID, address token) external;
+
+    /// @notice Retrieves the accumulated fees for a service and token
+    /// @param serviceID The service identifier
+    /// @param token The address of the ERC20 token
+    /// @return The accumulated fees
+    function getERC20FeesFor(address token, uint256 serviceID) external view returns (uint256);
 }
