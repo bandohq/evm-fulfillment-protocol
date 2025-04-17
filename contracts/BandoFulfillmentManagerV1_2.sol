@@ -67,7 +67,8 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1_1 {
     function fulfillERC20AndSwap(
         uint256 serviceID,
         FulFillmentResult memory result,
-        SwapData memory swapData
+        SwapData memory swapData,
+        bool swap
     ) public virtual {
         (Service memory service, ) = IFulfillableRegistry(_serviceRegistry).getService(serviceID);
         if (msg.sender != service.fulfiller && msg.sender != owner()) {
@@ -80,7 +81,9 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1_1 {
             revert InvalidAddress(swapData.callTo);
         }
         IBandoERC20Fulfillable(_erc20_escrow).registerFulfillment(serviceID, result);
-        IBandoERC20FulfillableV1_2(_erc20_escrow).swapPoolsToStable(serviceID, result.id, swapData);
+        if (swap) {
+            IBandoERC20FulfillableV1_2(_erc20_escrow).swapPoolsToStable(serviceID, result.id, swapData);
+        }
         _accumulateFulfillerReleaseablePoolAndFees(serviceID, swapData.toToken);
         emit ERC20FulfillmentRegistered(serviceID, result);
     }
