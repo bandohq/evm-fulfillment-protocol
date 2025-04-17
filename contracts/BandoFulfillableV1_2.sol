@@ -33,8 +33,8 @@ contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1_1 {
     /// @notice InvalidCaller error message
     error InvalidCaller(address caller);
 
-    /// @notice PoolsAndFeesReset event
-    event PoolsAndFeesReset(uint256 serviceId, address token);
+    /// @notice PoolsAndFeesSubtracted event
+    event PoolsAndFeesSubtracted(uint256 serviceId, address token, uint256 amount, uint256 fees);
 
     /// @notice FulfillerPoolAndFeesWithdrawn event
     event FulfillerPoolAndFeesWithdrawn(address token, uint256 amount, uint256 fees, address beneficiary, address feesBeneficiary);
@@ -123,17 +123,17 @@ contract BandoFulfillableV1_2 is IBandoFulfillableV1_2, BandoFulfillableV1_1 {
     /// @dev Resets the releaseable pools and accumulated fees for a given service and token.
     /// @param serviceId The service identifier.
     /// @param token The token address.
-    function resetPoolsAndFees(uint256 serviceId, address token) external onlyManager {
-        _resetPoolsAndFees(serviceId, token);
+    function subtractPoolsAndFees(uint256 serviceId, address token, uint256 amount, uint256 fees) external onlyManager {
+        _subtractPoolsAndFees(serviceId, token, amount, fees);
     }
 
     /// @dev Internal function to reset the releaseable pools and accumulated fees for a given service and token.
     /// @param serviceId The service identifier.
     /// @param token The token address.
-    function _resetPoolsAndFees(uint256 serviceId, address token) internal {
-        _stableReleasePools[serviceId][token] = 0;
-        _stableAccumulatedFees[serviceId][token] = 0;
-        emit PoolsAndFeesReset(serviceId, token);
+    function _subtractPoolsAndFees(uint256 serviceId, address token, uint256 amount, uint256 fees) internal {
+        _stableReleasePools[serviceId][token] -= amount;
+        _stableAccumulatedFees[serviceId][token] -= fees;
+        emit PoolsAndFeesSubtracted(serviceId, token, amount, fees);
     }   
 
     /// @dev Withdraws the fulfiller's pool and fees.

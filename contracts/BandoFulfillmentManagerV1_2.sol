@@ -147,8 +147,8 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1_1 {
         uint256 fees = IBandoERC20FulfillableV1_1(_erc20_escrow).getERC20FeesFor(token, serviceId);
         _fulfillerAccumulatedReleaseablePool[service.fulfiller][token] += releaseablePool;
         _fulfillerAccumulatedFees[service.fulfiller][token] += fees;
-        // Reset the pools and fees for the fulfiller after accumulating them
-        IBandoERC20FulfillableV1_2(_erc20_escrow).resetPoolsAndFees(serviceId, token);
+        // Subtract the pools and fees for the fulfiller after accumulating them
+        IBandoERC20FulfillableV1_2(_erc20_escrow).subtractPoolsAndFees(serviceId, token, releaseablePool, fees);
     }
     
     /// @dev Accumulates the releaseable pool and fees for a fulfiller and token on the native contract
@@ -160,8 +160,8 @@ contract BandoFulfillmentManagerV1_2 is BandoFulfillmentManagerV1_1 {
         uint256 fees = BandoFulfillableV1_2(_escrow)._stableAccumulatedFees(serviceId, token);
         _fulfillerAccumulatedReleaseablePoolNative[service.fulfiller][token] += releaseablePool;
         _fulfillerAccumulatedFeesNative[service.fulfiller][token] += fees;
-        // Reset the pools and fees for the fulfiller after accumulating them
-        IBandoFulfillableV1_2(_escrow).resetPoolsAndFees(serviceId, token);
+        // Subtract the pools and fees for the fulfiller after accumulating them
+        IBandoFulfillableV1_2(_escrow).subtractPoolsAndFees(serviceId, token, releaseablePool, fees);
     }
 
     /// @dev Withdraws the fulfiller's ERC20 pool and fees

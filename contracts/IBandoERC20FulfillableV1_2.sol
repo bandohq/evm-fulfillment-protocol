@@ -39,11 +39,13 @@ interface IBandoERC20FulfillableV1_2 {
     /// @return The releaseable pools.
     function getReleaseablePools(uint256 serviceId, address token) external view returns (uint256);
 
-    /// @notice resetPoolsAndFees
-    /// @dev Resets the releaseable pools and accumulated fees for a given service and token.
+    /// @notice subtractPoolsAndFees
+    /// @dev Subtracts the releaseable pools and accumulated fees for a given service and token.
     /// @param serviceId The service identifier.
     /// @param token The token address.
-    function resetPoolsAndFees(uint256 serviceId, address token) external;
+    /// @param amount The amount to subtract.
+    /// @param fees The fees to subtract.
+    function subtractPoolsAndFees(uint256 serviceId, address token, uint256 amount, uint256 fees) external;
 
     /// @notice withdrawFulfillerPoolAndFees
     /// @dev Withdraws the fulfiller's ERC20 pool and fees.

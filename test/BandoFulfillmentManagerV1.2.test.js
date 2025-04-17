@@ -450,8 +450,8 @@ describe('BandoFulfillmentManagerV1_2', () => {
             const asFulfiller = manager.connect(fulfiller);
             await expect(asFulfiller.fulfillERC20AndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData))
             .to.emit(erc20_escrow, 'PoolsSwappedToStable')
-            .and.emit(erc20_escrow, 'PoolsAndFeesReset')
-            .withArgs(1, await stableToken.getAddress());
+            .and.emit(erc20_escrow, 'PoolsAndFeesSubtracted')
+            .withArgs(1, await stableToken.getAddress(), "20000", "200");
             console.log("myPool", await asFulfiller.myPool(await stableToken.getAddress()));
             console.log("myFees", await asFulfiller.myFees(await stableToken.getAddress()));
             await expect(await stableToken.balanceOf(await erc20_escrow.getAddress())).to.equal(ethers.parseUnits('20200', 'wei'));
@@ -517,7 +517,9 @@ describe('BandoFulfillmentManagerV1_2', () => {
             const asFulfiller = manager.connect(fulfiller);
             await expect(
                 await asFulfiller.fulfillAndSwap(1, SUCCESS_FULFILLMENT_RESULT, swapData)
-            ).to.emit(escrow, 'PoolsSwappedToStable');
+            ).to.emit(escrow, 'PoolsSwappedToStable')
+            .and.emit(escrow, 'PoolsAndFeesSubtracted')
+            .withArgs(1, await stableToken.getAddress(), "2000", "22");
         });
 
         it('should only allow a fulfiller to fulfill and swap', async () => {

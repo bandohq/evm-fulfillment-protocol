@@ -17,15 +17,15 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 /// The contract also allows the manager to whitelist Dex aggregator addresses.
 /// @custom:bfp-version 1.2.0
 contract BandoERC20FulfillableV1_2 is IBandoERC20FulfillableV1_2, BandoERC20FulfillableV1_1 {
-    
+
     using Address for address;
     using SafeERC20 for IERC20;
 
     /// @notice InvalidCaller error message
     error InvalidCaller(address caller);
 
-    /// @notice PoolsAndFeesReset event
-    event PoolsAndFeesReset(uint256 serviceId, address token);
+    /// @notice PoolsAndFeesSubtracted event
+    event PoolsAndFeesSubtracted(uint256 serviceId, address token, uint256 amount, uint256 fees);
 
     /// @notice FulfillerPoolAndFeesWithdrawn event
     event FulfillerPoolAndFeesWithdrawn(address token, uint256 amount, uint256 fees, address beneficiary, address feesBeneficiary);
@@ -77,13 +77,15 @@ contract BandoERC20FulfillableV1_2 is IBandoERC20FulfillableV1_2, BandoERC20Fulf
         return _releaseablePools[serviceId][token];
     }
 
-    /// @dev Resets the pools and fees for a given service.
+    /// @dev Subtracts the pools and fees for a given service.
     /// @dev Only the manager can call this.
     /// @param serviceId The service identifier.
     /// @param token The token address.
-    function resetPoolsAndFees(uint256 serviceId, address token) external onlyManager {
-        _resetPoolsAndFees(serviceId, token);
-        emit PoolsAndFeesReset(serviceId, token);
+    /// @param amount The amount to subtract.
+    /// @param fees The fees to subtract.
+    function subtractPoolsAndFees(uint256 serviceId, address token, uint256 amount, uint256 fees) external onlyManager {
+        _subtractPoolsAndFees(serviceId, token, amount, fees);
+        emit PoolsAndFeesSubtracted(serviceId, token, amount, fees);
     }
 
     /// @dev withdraws an amount to a beneficiary
@@ -109,9 +111,9 @@ contract BandoERC20FulfillableV1_2 is IBandoERC20FulfillableV1_2, BandoERC20Fulf
     /// @dev Internal function to reset the releaseable pools and accumulated fees for a given service and token.
     /// @param serviceId The service identifier.
     /// @param token The token address.
-    function _resetPoolsAndFees(uint256 serviceId, address token) internal {
-        _releaseablePools[serviceId][token] = 0;
-        _accumulatedFees[serviceId][token] = 0;
+    function _subtractPoolsAndFees(uint256 serviceId, address token, uint256 amount, uint256 fees) internal {
+        _releaseablePools[serviceId][token] -= amount;
+        _accumulatedFees[serviceId][token] -= fees;
     }
 
     /// @dev Internal function to withdraw the fulfiller's ERC20 pool and fees.
