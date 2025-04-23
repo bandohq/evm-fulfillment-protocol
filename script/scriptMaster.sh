@@ -74,7 +74,7 @@ scriptMaster() {
       "2) Deploy one specific contract to all (not-excluded) networks (=new contract)" \
       "3) Execute a script" \
       "4) Verify all unverified contracts" \
-      "5) Propose upgrade TX to Gnosis SAFE"
+      "5) Deploy and configure protocol contracts to one network"
   )
 
   #---------------------------------------------------------------------------------------------------------------------
@@ -184,6 +184,77 @@ scriptMaster() {
   #  error "invalid use case selected ('$SELECTION') - exiting script"
   #  cleanup
   #  exit 1
+  elif [[ "$SELECTION" == "5)"* ]]; then
+    echo "[info] selected: deploy protocol contract to network"
+    local NETWORK=$(cat ./networks | gum filter --placeholder "Network")
+
+    echo "[info] selected network: $NETWORK"
+    echo "[info] loading deployer wallet balance..."
+
+    # get deployer wallet balance
+    BALANCE=$(getDeployerBalance "$NETWORK" "$ENVIRONMENT")
+
+    echo "[info] deployer wallet balance in this network: $BALANCE"
+    echo ""
+    checkRequiredVariablesInDotEnv $NETWORK
+
+    # -- Deploy registries w proxy ---
+    # get current contract version
+    local VERSION=$(getCurrentContractVersion "FulfillableRegistry" "1")
+    deploySingleContract "FulfillableRegistry" "$NETWORK" "$ENVIRONMENT" "$VERSION" false true
+
+    # get current erc20 token registry contract version
+    local VERSION=$(getCurrentContractVersion "ERC20TokenRegistry" "1")
+    deploySingleContract "ERC20TokenRegistry" "$NETWORK" "$ENVIRONMENT" "$VERSION" false true
+
+    # -- Deploy escrow contracts ---
+    # get current escrow contract version
+    local VERSION=$(getCurrentContractVersion "BandoFulfillable" "1")
+    deploySingleContract "BandoFulfillable" "$NETWORK" "$ENVIRONMENT" "$VERSION" false true
+
+    # get current erc20 escrow contract version
+    local VERSION=$(getCurrentContractVersion "BandoERC20Fulfillable" "1")
+    deploySingleContract "BandoERC20Fulfillable" "$NETWORK" "$ENVIRONMENT" "$VERSION" false true
+
+    # -- Deploy Router ---
+    # get current router contract version
+    local VERSION=$(getCurrentContractVersion "BandoRouter" "1")
+    deploySingleContract "BandoRouter" "$NETWORK" "$ENVIRONMENT" "$VERSION" false true
+
+    # -- Deploy Manager ---
+    # get current manager contract version
+    local VERSION=$(getCurrentContractVersion "BandoFulfillmentManager" "1")
+    deploySingleContract "BandoFulfillmentManager" "$NETWORK" "$ENVIRONMENT" "$VERSION" false true
+
+    # -- Deploy V1.1 Registry ---
+    # get current registry contract version
+    local VERSION=$(getCurrentContractVersion "FulfillableRegistryV1_1" "1.1")
+    deploySingleContract "FulfillableRegistryV1_1" "$NETWORK" "$ENVIRONMENT" "$VERSION" false false
+
+    # -- Deploy V1.2 Escrows ---
+    # get current escrow contract version
+    local VERSION=$(getCurrentContractVersion "BandoFulfillableV1_2" "1.2")
+    deploySingleContract "BandoFulfillableV1_2" "$NETWORK" "$ENVIRONMENT" "$VERSION" false false
+
+    # get current erc20 escrow contract version
+    local VERSION=$(getCurrentContractVersion "BandoERC20FulfillableV1_2" "1.2")
+    deploySingleContract "BandoERC20FulfillableV1_2" "$NETWORK" "$ENVIRONMENT" "$VERSION" false false
+
+    # -- Deploy V1.1 Router ---
+    # get current router contract version
+    local VERSION=$(getCurrentContractVersion "BandoRouterV1_1" "1.1")
+    deploySingleContract "BandoRouterV1_1" "$NETWORK" "$ENVIRONMENT" "$VERSION" false false
+
+    # -- Deploy V1.2 Manager ---
+    # get current manager contract version
+    local VERSION=$(getCurrentContractVersion "BandoFulfillmentManagerV1_2" "1.2")
+    deploySingleContract "BandoFulfillmentManagerV1_2" "$NETWORK" "$ENVIRONMENT" "$VERSION" false false
+
+    # configure contracts
+    npx hardhat --network "$NETWORK" run scripts/configureBFP.js
+
+    # check if last command was executed successfully, otherwise exit script with error message
+    checkFailure $? "configure contracts"
   fi
 
   cleanup

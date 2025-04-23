@@ -1,8 +1,10 @@
 mainnet
 arbitrum
+abstract
 aurora
 avalanche
 base
+berachain
 blast
 boba
 bsc
@@ -35,3 +37,4 @@ lineatest
 mumbai
 sepolia
 localanvil
+unichain

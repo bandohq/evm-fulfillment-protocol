@@ -65,7 +65,7 @@ async function main() {
   /**
    * Transfer Ownership to Protocol Owner
    */
-  await registry.transferOwnership(protocolOwner); //multisig
+  await registry.transferOwnership(hre.network.config.managerOwner); //multisig
   console.log("Registry Ownership Transferred");
   await erc20Escrow.transferOwnership(protocolOwner); //multisig
   console.log("ERC20Escrow Ownership Transferred");
@@ -119,7 +119,10 @@ const configureRegistry = async (contracts) => {
   const registryContract = Registry.attach(contracts["FulfillableRegistryProxy"]);
   // 1. Set Manager Proxy
   const txn = await registryContract.setManager(contracts["BandoFulfillmentManagerProxy"]);
+  // 2. Add Bando MPC Fulfiller Address
+  const mtxn = await registryContract.addFulfiller(hre.network.config.fulfillerAddress, 1);
   console.log(`Registry - Set Manager: ${txn.hash}`);
+  console.log(`Registry - Added Fulfiller: ${mtxn.hash}`);
   return registryContract;
 }
 
@@ -190,6 +193,9 @@ const configureManager = async (contracts) => {
   // 3. Set ERC20 Escrow
   const ertxn = await managerContract.setERC20Escrow(contracts["BandoERC20FulfillableProxy"]);
   console.log(`Manager - Set ERC20 Escrow: ${ertxn.hash}`);
+  // 4. Add LIFI aggregator by default
+  const atxn = await managerContract.addAggregator(hre.network.config.aggregatorAddress);
+  console.log(`Manager - Added Aggregator: ${atxn.hash}`);
   return managerContract;
 }
 
