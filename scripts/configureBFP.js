@@ -96,7 +96,13 @@ const upgradeContract = async (contracts, contractName, proxyName, implementatio
     const contract = Contract.attach(proxyAddress);
     console.log(`Upgrading ${contractName} at ${proxyAddress} to ${implementationAddress}`);
     
-    const txn = await contract.upgradeToAndCall(implementationAddress, "0x", { gasLimit: 1000000 });
+    // Use a general approach that works across all chains
+    // Set a very high gas limit to ensure it's sufficient for any chain
+    const gasLimit = 100000000000; // 30M gas should be enough for most chains
+    
+    console.log(`Sending transaction with gas limit: ${gasLimit}`);
+    const txn = await contract.upgradeToAndCall(implementationAddress, "0x");
+    
     await txn.wait();
     console.log(`${contractName} Upgraded: ${txn.hash}`);
     return contract;
@@ -153,13 +159,13 @@ const configureEscrow = async (contracts) => {
   const EscrowContract = Escrow.attach(contracts["BandoFulfillableProxy"]);
   // 1. Set Fulfillable Registry
   const txn = await EscrowContract.setFulfillableRegistry(contracts["FulfillableRegistryProxy"]);
-  console.log(`ERC20Escrow - Set Fulfillable Registry: ${txn.hash}`);
+  console.log(`Escrow - Set Fulfillable Registry: ${txn.hash}`);
   // 2. Set Manager
   const mtxn = await EscrowContract.setManager(contracts["BandoFulfillmentManagerProxy"]);
-  console.log(`ERC20Escrow - Set Manager: ${mtxn.hash}`);
+  console.log(`Escrow - Set Manager: ${mtxn.hash}`);
   // 3. Set Router
   const rtxn = await EscrowContract.setRouter(contracts["BandoRouterProxy"]);
-  console.log(`ERC20Escrow - Set Router: ${rtxn.hash}`);
+  console.log(`Escrow - Set Router: ${rtxn.hash}`);
   return EscrowContract;
 }
 
@@ -194,7 +200,9 @@ const configureManager = async (contracts) => {
   const ertxn = await managerContract.setERC20Escrow(contracts["BandoERC20FulfillableProxy"]);
   console.log(`Manager - Set ERC20 Escrow: ${ertxn.hash}`);
   // 4. Add LIFI aggregator by default
-  const atxn = await managerContract.addAggregator(hre.network.config.aggregatorAddress);
+  const ManagerV2 = await hre.ethers.getContractFactory("BandoFulfillmentManagerV1_2");
+  const managerV2 = ManagerV2.attach(contracts["BandoFulfillmentManagerProxy"]);
+  const atxn = await managerV2.addAggregator(hre.network.config.aggregatorAddress);
   console.log(`Manager - Added Aggregator: ${atxn.hash}`);
   return managerContract;
 }
