@@ -191,6 +191,14 @@ function getChainId() {
     echo "167000"
     return 0
     ;;
+  "unichain")
+    echo "130"
+    return 0
+    ;;
+  "berachain")
+    echo "80094"
+    return 0
+    ;;
   *)
     return 1
     ;;

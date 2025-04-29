@@ -9,8 +9,13 @@ import {BandoRouterV1} from 'bando/BandoRouterV1.sol';
 import {BandoRouterProxy} from 'bando/proxy/BandoRouterProxy.sol';
 
 contract DeployBandoRouter is ScriptBase {
+    // Deployment record file path
+    string private deploymentRecordPath;
 
-    constructor() ScriptBase("BandoRouter") {}
+    constructor() ScriptBase("BandoRouter") {
+        // Set the deployment record path based on the network
+        deploymentRecordPath = string.concat(root, "/deployments/", network, ".json");
+    }
 
     function run() public returns (
         address deployed,
@@ -21,21 +26,64 @@ contract DeployBandoRouter is ScriptBase {
         address deployer = msg.sender;
         console.log("Deployer:", deployer);
         isProxy = true;
-        vm.startBroadcast();
+        
+        // Set transaction parameters for Scroll
+        uint256 gasPrice = 1000000000; // 1 gwei
+        vm.fee(gasPrice);
+        
+        // Try to load existing deployment addresses from file
+        string memory json = "";
+        try vm.readFile(deploymentRecordPath) returns (string memory content) {
+            json = content;
+            console.log("Found existing deployment record at", deploymentRecordPath);
+        } catch {
+            console.log("No existing deployment record found, will create new one");
+        }
 
-        // 1. Deploy implementation using CREATE2
+        // Check if we have existing deployment addresses
+        bool hasExistingDeployment = bytes(json).length > 0;
+        
+        // Prepare bytecode for potential deployment
         bytes memory implementationBytecode = type(BandoRouterV1).creationCode;
-        implementation = Create2.deploy(0, salt, implementationBytecode);
-        console.log("Implementation deployed at:", implementation);
-
-        // 2. Prepare initialization data
         bytes memory initData = abi.encodeCall(
           BandoRouterV1.initialize,
           (deployer)
         );
-        console.log("Init data length:", initData.length);
+        
+        vm.startBroadcast();
 
-        // 3. Deploy proxy using CREATE2
+        // 1. Deploy or retrieve implementation
+        if (hasExistingDeployment) {
+            // Try to parse implementation address from JSON
+            if (!vm.keyExists(json, ".BandoRouter")) {
+                console.log("No implementation address found in record, deploying new one");
+                implementation = Create2.deploy(0, salt, implementationBytecode);
+                console.log("Implementation deployed at:", implementation);
+            } else {
+                bytes memory implAddrBytes = vm.parseJson(json, ".BandoRouter");
+                // Check if implementation address is valid
+                // raise if json is 0x
+                implementation = abi.decode(implAddrBytes, (address));
+                console.log("Found existing implementation at:", implementation);
+                // Verify implementation has code
+                uint256 implCodeSize;
+                assembly {
+                    implCodeSize := extcodesize(implementation)
+                }
+                console.log("Implementation code size:", implCodeSize);
+                if (implCodeSize == 0) {
+                    console.log("WARNING: Implementation address has no code, deploying new one");
+                    implementation = Create2.deploy(0, salt, implementationBytecode);
+                    console.log("Implementation deployed at:", implementation);
+                }
+            }
+        } else {
+            // No existing deployment, create new one
+            implementation = Create2.deploy(0, salt, implementationBytecode);
+            console.log("Implementation deployed at:", implementation);
+        }
+
+        // 2. Deploy or retrieve proxy
         proxyConstructorArgs = abi.encode(
             implementation,
             initData
@@ -44,11 +92,41 @@ contract DeployBandoRouter is ScriptBase {
             type(BandoRouterProxy).creationCode,
             proxyConstructorArgs
         );
-        
         bytes32 proxySalt = keccak256(abi.encodePacked(salt, "proxy"));
-        deployed = Create2.deploy(0, proxySalt, proxyBytecode);
-        console.log("Proxy deployed at:", deployed);
-        // 4. Verify initialization
+        
+        if (hasExistingDeployment) {
+            // Try to parse proxy address from JSON
+            if (!vm.keyExists(json, ".BandoRouterProxy")) {
+                console.log("No proxy address found in record, deploying new one");
+                deployed = Create2.deploy(0, proxySalt, proxyBytecode);
+                console.log("Proxy deployed at:", deployed);
+            } else {
+                bytes memory proxyAddrBytes = vm.parseJson(json, ".BandoRouterProxy");
+                // Check if proxy address is valid
+                // raise if json is 0x
+                //console.log("Found existing proxy address:", proxyAddrBytes);
+                deployed = abi.decode(proxyAddrBytes, (address));
+                console.log("Found existing proxy at:", deployed);
+                
+                // Verify proxy has code
+                uint256 proxyCodeSize;
+                assembly {
+                    proxyCodeSize := extcodesize(deployed)
+                }
+                console.log("Proxy code size:", proxyCodeSize);
+                if (proxyCodeSize == 0) {
+                    console.log("WARNING: Proxy address has no code, deploying new one");
+                    deployed = Create2.deploy(0, proxySalt, proxyBytecode);
+                    console.log("Proxy deployed at:", deployed);
+                }
+            }
+        } else {
+            // No existing deployment, create new one
+            deployed = Create2.deploy(0, proxySalt, proxyBytecode);
+            console.log("Proxy deployed at:", deployed);
+        }
+
+        // 3. Verify initialization (safe to call even if already initialized)
         BandoRouterV1 proxyContract = BandoRouterV1(deployed);
         address owner = proxyContract.owner();
         console.log("Owner after initialization:", owner);

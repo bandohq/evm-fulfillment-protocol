@@ -64,7 +64,7 @@ function verifyContract() {
           # Verify using foundry-zksync from docker image
           docker run --rm -it -v .:/foundry -u $(id -u):$(id -g) -e FOUNDRY_PROFILE=zksync foundry-zksync forge verify-contract --zksync --watch --chain 324 "$ADDRESS" "$FULL_PATH" --skip-is-verified-check -e "${!API_KEY}"
         else
-          forge verify-contract --watch --chain "$CHAIN_ID" "$ADDRESS" "$FULL_PATH" --skip-is-verified-check -e "${!API_KEY}"
+          forge verify-contract --watch --chain "$CHAIN_ID" --verifier custom "$ADDRESS" "$FULL_PATH" --skip-is-verified-check --etherscan-api-key  "${!API_KEY}"
         fi
 
         # TODO: add code that automatically identifies blockscout verification

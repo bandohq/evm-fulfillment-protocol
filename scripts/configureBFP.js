@@ -65,7 +65,7 @@ async function main() {
   /**
    * Transfer Ownership to Protocol Owner
    */
-  await registry.transferOwnership(protocolOwner); //multisig
+  await registry.transferOwnership(hre.network.config.managerOwner); //multisig
   console.log("Registry Ownership Transferred");
   await erc20Escrow.transferOwnership(protocolOwner); //multisig
   console.log("ERC20Escrow Ownership Transferred");
@@ -96,7 +96,13 @@ const upgradeContract = async (contracts, contractName, proxyName, implementatio
     const contract = Contract.attach(proxyAddress);
     console.log(`Upgrading ${contractName} at ${proxyAddress} to ${implementationAddress}`);
     
-    const txn = await contract.upgradeToAndCall(implementationAddress, "0x", { gasLimit: 1000000 });
+    // Use a general approach that works across all chains
+    // Set a very high gas limit to ensure it's sufficient for any chain
+    const gasLimit = 100000000000; // 30M gas should be enough for most chains
+    
+    console.log(`Sending transaction with gas limit: ${gasLimit}`);
+    const txn = await contract.upgradeToAndCall(implementationAddress, "0x");
+    
     await txn.wait();
     console.log(`${contractName} Upgraded: ${txn.hash}`);
     return contract;
@@ -119,7 +125,10 @@ const configureRegistry = async (contracts) => {
   const registryContract = Registry.attach(contracts["FulfillableRegistryProxy"]);
   // 1. Set Manager Proxy
   const txn = await registryContract.setManager(contracts["BandoFulfillmentManagerProxy"]);
+  // 2. Add Bando MPC Fulfiller Address
+  const mtxn = await registryContract.addFulfiller(hre.network.config.fulfillerAddress, 1);
   console.log(`Registry - Set Manager: ${txn.hash}`);
+  console.log(`Registry - Added Fulfiller: ${mtxn.hash}`);
   return registryContract;
 }
 
@@ -150,13 +159,13 @@ const configureEscrow = async (contracts) => {
   const EscrowContract = Escrow.attach(contracts["BandoFulfillableProxy"]);
   // 1. Set Fulfillable Registry
   const txn = await EscrowContract.setFulfillableRegistry(contracts["FulfillableRegistryProxy"]);
-  console.log(`ERC20Escrow - Set Fulfillable Registry: ${txn.hash}`);
+  console.log(`Escrow - Set Fulfillable Registry: ${txn.hash}`);
   // 2. Set Manager
   const mtxn = await EscrowContract.setManager(contracts["BandoFulfillmentManagerProxy"]);
-  console.log(`ERC20Escrow - Set Manager: ${mtxn.hash}`);
+  console.log(`Escrow - Set Manager: ${mtxn.hash}`);
   // 3. Set Router
   const rtxn = await EscrowContract.setRouter(contracts["BandoRouterProxy"]);
-  console.log(`ERC20Escrow - Set Router: ${rtxn.hash}`);
+  console.log(`Escrow - Set Router: ${rtxn.hash}`);
   return EscrowContract;
 }
 
@@ -190,6 +199,11 @@ const configureManager = async (contracts) => {
   // 3. Set ERC20 Escrow
   const ertxn = await managerContract.setERC20Escrow(contracts["BandoERC20FulfillableProxy"]);
   console.log(`Manager - Set ERC20 Escrow: ${ertxn.hash}`);
+  // 4. Add LIFI aggregator by default
+  const ManagerV2 = await hre.ethers.getContractFactory("BandoFulfillmentManagerV1_2");
+  const managerV2 = ManagerV2.attach(contracts["BandoFulfillmentManagerProxy"]);
+  const atxn = await managerV2.addAggregator(hre.network.config.aggregatorAddress);
+  console.log(`Manager - Added Aggregator: ${atxn.hash}`);
   return managerContract;
 }
 
