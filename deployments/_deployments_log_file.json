@@ -157,6 +157,70 @@
           }
         ]
       }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x201E5FCbd9ef2652BBd328031674F63beaDDaA5B",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:38:15",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000004940fcae36a85d74070689de78f1218f4152864700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/FulfillableRegistryProxy.sol",
+            "CONTRACT_NAME": "FulfillableRegistryProxy"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x201E5FCbd9ef2652BBd328031674F63beaDDaA5B",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:57:37",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000004940fcae36a85d74070689de78f1218f4152864700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/proxy/FulfillableRegistryProxy.sol",
+            "CONTRACT_NAME": "FulfillableRegistryProxy"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x201E5FCbd9ef2652BBd328031674F63beaDDaA5B",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:13:54",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000004940fcae36a85d74070689de78f1218f4152864700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/FulfillableRegistryProxy.sol",
+            "CONTRACT_NAME": "FulfillableRegistryProxy"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x201E5FCbd9ef2652BBd328031674F63beaDDaA5B",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:34:28",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000004940fcae36a85d74070689de78f1218f4152864700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/FulfillableRegistryProxy.sol",
+            "CONTRACT_NAME": "FulfillableRegistryProxy"
+          }
+        ]
+      }
     }
   },
   "FulfillableRegistry": {
@@ -309,6 +373,70 @@
             "ADDRESS": "0x4940FcAe36a85D74070689dE78F1218f41528647",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2025-04-28 12:28:46",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1"
+          }
+        ]
+      }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x4940FcAe36a85D74070689dE78F1218f41528647",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:38:15",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x4940FcAe36a85D74070689dE78F1218f41528647",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:57:37",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x4940FcAe36a85D74070689dE78F1218f41528647",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:13:54",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x4940FcAe36a85D74070689dE78F1218f41528647",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:34:28",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -477,6 +605,54 @@
           }
         ]
       }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x4ded9945D27372035dAA5aA48aC6A84ED942fcBa",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:38:29",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000002e2d7cd0979620dadae5c2ee25b9585e7d09b77000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/ERC20TokenRegistryProxy.sol",
+            "CONTRACT_NAME": "ERC20TokenRegistryProxy"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x4ded9945D27372035dAA5aA48aC6A84ED942fcBa",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:58:01",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000002e2d7cd0979620dadae5c2ee25b9585e7d09b77000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/proxy/ERC20TokenRegistryProxy.sol",
+            "CONTRACT_NAME": "ERC20TokenRegistryProxy"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x4ded9945D27372035dAA5aA48aC6A84ED942fcBa",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:34:43",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000002e2d7cd0979620dadae5c2ee25b9585e7d09b77000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/ERC20TokenRegistryProxy.sol",
+            "CONTRACT_NAME": "ERC20TokenRegistryProxy"
+          }
+        ]
+      }
     }
   },
   "ERC20TokenRegistry": {
@@ -637,6 +813,54 @@
           }
         ]
       }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2e2d7CD0979620daDaE5C2Ee25b9585e7d09B770",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:38:29",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/ERC20TokenRegistryV1.sol",
+            "CONTRACT_NAME": "ERC20TokenRegistryV1"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2e2d7CD0979620daDaE5C2Ee25b9585e7d09B770",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:58:01",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/ERC20TokenRegistryV1.sol",
+            "CONTRACT_NAME": "ERC20TokenRegistryV1"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2e2d7CD0979620daDaE5C2Ee25b9585e7d09B770",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:34:43",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/ERC20TokenRegistryV1.sol",
+            "CONTRACT_NAME": "ERC20TokenRegistryV1"
+          }
+        ]
+      }
     }
   },
   "BandoERC20FulfillableProxy": {
@@ -773,6 +997,70 @@
             "ADDRESS": "0xFe797C20Eb46b41B9d06cd08Ee091f59d7FDeDe4",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2025-04-28 12:29:32",
+            "CONSTRUCTOR_ARGS": "0x00000000000000000000000090a51b58a58d39d7ea5b0985309c142b6aa737e700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoERC20FulfillableProxy.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableProxy"
+          }
+        ]
+      }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xFe797C20Eb46b41B9d06cd08Ee091f59d7FDeDe4",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:38:59",
+            "CONSTRUCTOR_ARGS": "0x00000000000000000000000090a51b58a58d39d7ea5b0985309c142b6aa737e700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoERC20FulfillableProxy.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableProxy"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xFe797C20Eb46b41B9d06cd08Ee091f59d7FDeDe4",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:58:41",
+            "CONSTRUCTOR_ARGS": "0x00000000000000000000000090a51b58a58d39d7ea5b0985309c142b6aa737e700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoERC20FulfillableProxy.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableProxy"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xFe797C20Eb46b41B9d06cd08Ee091f59d7FDeDe4",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:24:56",
+            "CONSTRUCTOR_ARGS": "0x00000000000000000000000090a51b58a58d39d7ea5b0985309c142b6aa737e700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoERC20FulfillableProxy.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableProxy"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xFe797C20Eb46b41B9d06cd08Ee091f59d7FDeDe4",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:31:39",
             "CONSTRUCTOR_ARGS": "0x00000000000000000000000090a51b58a58d39d7ea5b0985309c142b6aa737e700000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -925,6 +1213,70 @@
           }
         ]
       }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x90A51b58A58d39D7Ea5b0985309C142b6aa737e7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:38:59",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x90A51b58A58d39D7Ea5b0985309C142b6aa737e7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:58:41",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x90A51b58A58d39D7Ea5b0985309C142b6aa737e7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:24:56",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x90A51b58A58d39D7Ea5b0985309C142b6aa737e7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:31:39",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1"
+          }
+        ]
+      }
     }
   },
   "BandoFulfillableProxy": {
@@ -1061,6 +1413,70 @@
             "ADDRESS": "0x62742282B1eE2D56d198289B09f526B1eC02d7a7",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2025-04-28 12:29:17",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000002005a52791ceff5caf2f98a4392cf778e0ec854a00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoFulfillableProxy.sol",
+            "CONTRACT_NAME": "BandoFulfillableProxy"
+          }
+        ]
+      }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x62742282B1eE2D56d198289B09f526B1eC02d7a7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:38:45",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000002005a52791ceff5caf2f98a4392cf778e0ec854a00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoFulfillableProxy.sol",
+            "CONTRACT_NAME": "BandoFulfillableProxy"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x62742282B1eE2D56d198289B09f526B1eC02d7a7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:58:17",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000002005a52791ceff5caf2f98a4392cf778e0ec854a00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoFulfillableProxy.sol",
+            "CONTRACT_NAME": "BandoFulfillableProxy"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x62742282B1eE2D56d198289B09f526B1eC02d7a7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:24:37",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000002005a52791ceff5caf2f98a4392cf778e0ec854a00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoFulfillableProxy.sol",
+            "CONTRACT_NAME": "BandoFulfillableProxy"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x62742282B1eE2D56d198289B09f526B1eC02d7a7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:31:24",
             "CONSTRUCTOR_ARGS": "0x0000000000000000000000002005a52791ceff5caf2f98a4392cf778e0ec854a00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -1213,6 +1629,70 @@
           }
         ]
       }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2005a52791CEfF5caF2F98A4392cF778E0Ec854a",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:38:45",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2005a52791CEfF5caF2F98A4392cF778E0Ec854a",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:58:17",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2005a52791CEfF5caF2F98A4392cF778E0Ec854a",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:24:37",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2005a52791CEfF5caF2F98A4392cF778E0Ec854a",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:31:24",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1"
+          }
+        ]
+      }
     }
   },
   "BandoFulfillmentManagerProxy": {
@@ -1349,6 +1829,70 @@
             "ADDRESS": "0x0299126E1a4c60707f95136C51716353faD19347",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2025-04-28 12:30:04",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000009fa30187e8f314c54519ba76ee16f654985d650400000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoFulfillmentManagerProxy.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerProxy"
+          }
+        ]
+      }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x0299126E1a4c60707f95136C51716353faD19347",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:39:24",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000009fa30187e8f314c54519ba76ee16f654985d650400000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoFulfillmentManagerProxy.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerProxy"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x0299126E1a4c60707f95136C51716353faD19347",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:59:22",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000009fa30187e8f314c54519ba76ee16f654985d650400000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoFulfillmentManagerProxy.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerProxy"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x0299126E1a4c60707f95136C51716353faD19347",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:25:52",
+            "CONSTRUCTOR_ARGS": "0x0000000000000000000000009fa30187e8f314c54519ba76ee16f654985d650400000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoFulfillmentManagerProxy.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerProxy"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x0299126E1a4c60707f95136C51716353faD19347",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:32:04",
             "CONSTRUCTOR_ARGS": "0x0000000000000000000000009fa30187e8f314c54519ba76ee16f654985d650400000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -1501,6 +2045,70 @@
           }
         ]
       }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x9fA30187E8f314C54519ba76ee16F654985D6504",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:39:24",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x9fA30187E8f314C54519ba76ee16F654985D6504",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:59:22",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x9fA30187E8f314C54519ba76ee16F654985D6504",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:25:52",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x9fA30187E8f314C54519ba76ee16F654985D6504",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:32:04",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1"
+          }
+        ]
+      }
     }
   },
   "BandoRouterProxy": {
@@ -1637,6 +2245,70 @@
             "ADDRESS": "0x2D9A53f52dD0Cdc922140bE6893381330a9e39FC",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2025-04-28 12:29:46",
+            "CONSTRUCTOR_ARGS": "0x000000000000000000000000adba54d826dc694a2d669a0a97edd49b27a622a000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoRouterProxy.sol",
+            "CONTRACT_NAME": "BandoRouterProxy"
+          }
+        ]
+      }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2D9A53f52dD0Cdc922140bE6893381330a9e39FC",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:39:11",
+            "CONSTRUCTOR_ARGS": "0x000000000000000000000000adba54d826dc694a2d669a0a97edd49b27a622a000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoRouterProxy.sol",
+            "CONTRACT_NAME": "BandoRouterProxy"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2D9A53f52dD0Cdc922140bE6893381330a9e39FC",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:59:06",
+            "CONSTRUCTOR_ARGS": "0x000000000000000000000000adba54d826dc694a2d669a0a97edd49b27a622a000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoRouterProxy.sol",
+            "CONTRACT_NAME": "BandoRouterProxy"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2D9A53f52dD0Cdc922140bE6893381330a9e39FC",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:25:15",
+            "CONSTRUCTOR_ARGS": "0x000000000000000000000000adba54d826dc694a2d669a0a97edd49b27a622a000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/proxy/BandoRouterProxy.sol",
+            "CONTRACT_NAME": "BandoRouterProxy"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0x2D9A53f52dD0Cdc922140bE6893381330a9e39FC",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:31:53",
             "CONSTRUCTOR_ARGS": "0x000000000000000000000000adba54d826dc694a2d669a0a97edd49b27a622a000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024c4d66de8000000000000000000000000d3962d8494c12211b788cbc0d0e2f5c476a1c51f00000000000000000000000000000000000000000000000000000000",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -1789,6 +2461,70 @@
           }
         ]
       }
+    },
+    "optimism": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xaDba54d826Dc694A2d669a0a97eDD49B27a622a0",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:39:11",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1.sol",
+            "CONTRACT_NAME": "BandoRouterV1"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xaDba54d826Dc694A2d669a0a97eDD49B27a622a0",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:59:06",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1.sol",
+            "CONTRACT_NAME": "BandoRouterV1"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xaDba54d826Dc694A2d669a0a97eDD49B27a622a0",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:25:15",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1.sol",
+            "CONTRACT_NAME": "BandoRouterV1"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.0.0": [
+          {
+            "ADDRESS": "0xaDba54d826Dc694A2d669a0a97eDD49B27a622a0",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:31:53",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1.sol",
+            "CONTRACT_NAME": "BandoRouterV1"
+          }
+        ]
+      }
     }
   },
   "FulfillableRegistryV1_1": {
@@ -1925,6 +2661,70 @@
             "ADDRESS": "0x3c2440988AC5fd623a7E693b6B8B102Fc4F8C029",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2025-04-28 12:30:17",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1_1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1_1"
+          }
+        ]
+      }
+    },
+    "optimism": {
+      "production": {
+        "1.1": [
+          {
+            "ADDRESS": "0x3c2440988AC5fd623a7E693b6B8B102Fc4F8C029",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:39:34",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1_1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1_1"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.1": [
+          {
+            "ADDRESS": "0x3c2440988AC5fd623a7E693b6B8B102Fc4F8C029",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:59:36",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1_1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1_1"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.1": [
+          {
+            "ADDRESS": "0x3c2440988AC5fd623a7E693b6B8B102Fc4F8C029",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:26:22",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/periphery/registry/FulfillableRegistryV1_1.sol",
+            "CONTRACT_NAME": "FulfillableRegistryV1_1"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.1": [
+          {
+            "ADDRESS": "0x3c2440988AC5fd623a7E693b6B8B102Fc4F8C029",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:32:15",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -2077,6 +2877,70 @@
           }
         ]
       }
+    },
+    "optimism": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xC780e06AEE7E4Ba3b5994AdF5afa93553AbC5C6F",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:39:58",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1_2"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xC780e06AEE7E4Ba3b5994AdF5afa93553AbC5C6F",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:00:01",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1_2"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xC780e06AEE7E4Ba3b5994AdF5afa93553AbC5C6F",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:26:46",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1_2"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xC780e06AEE7E4Ba3b5994AdF5afa93553AbC5C6F",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:32:32",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoERC20FulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoERC20FulfillableV1_2"
+          }
+        ]
+      }
     }
   },
   "BandoFulfillableV1_2": {
@@ -2213,6 +3077,70 @@
             "ADDRESS": "0xa84b9a8980bCCA2e9020DA72E247D3ECB80654EC",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2025-04-28 13:36:14",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1_2"
+          }
+        ]
+      }
+    },
+    "optimism": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xa84b9a8980bCCA2e9020DA72E247D3ECB80654EC",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:39:47",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1_2"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xa84b9a8980bCCA2e9020DA72E247D3ECB80654EC",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:59:46",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1_2"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xa84b9a8980bCCA2e9020DA72E247D3ECB80654EC",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:26:32",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillableV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillableV1_2"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0xa84b9a8980bCCA2e9020DA72E247D3ECB80654EC",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:32:24",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",
@@ -2365,6 +3293,70 @@
           }
         ]
       }
+    },
+    "optimism": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0x9aBEB91971ce26A8504f105388c3e91F84c7EA9b",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:40:18",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1_2"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0x9aBEB91971ce26A8504f105388c3e91F84c7EA9b",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:00:22",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1_2"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0x9aBEB91971ce26A8504f105388c3e91F84c7EA9b",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:27:12",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1_2"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.2.0": [
+          {
+            "ADDRESS": "0x9aBEB91971ce26A8504f105388c3e91F84c7EA9b",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:32:53",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoFulfillmentManagerV1_2.sol",
+            "CONTRACT_NAME": "BandoFulfillmentManagerV1_2"
+          }
+        ]
+      }
     }
   },
   "BandoRouterV1_1": {
@@ -2501,6 +3493,70 @@
             "ADDRESS": "0x88E3d5A9c66943574c47e1FA2bA785F14fd57Fc7",
             "OPTIMIZER_RUNS": "1000000",
             "TIMESTAMP": "2025-04-28 13:39:55",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1_1.sol",
+            "CONTRACT_NAME": "BandoRouterV1_1"
+          }
+        ]
+      }
+    },
+    "optimism": {
+      "production": {
+        "1.1.0": [
+          {
+            "ADDRESS": "0x88E3d5A9c66943574c47e1FA2bA785F14fd57Fc7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 21:40:08",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1_1.sol",
+            "CONTRACT_NAME": "BandoRouterV1_1"
+          }
+        ]
+      }
+    },
+    "gnosis": {
+      "production": {
+        "1.1.0": [
+          {
+            "ADDRESS": "0x88E3d5A9c66943574c47e1FA2bA785F14fd57Fc7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:00:11",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "false",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1_1.sol",
+            "CONTRACT_NAME": "BandoRouterV1_1"
+          }
+        ]
+      }
+    },
+    "avalanche": {
+      "production": {
+        "1.1.0": [
+          {
+            "ADDRESS": "0x88E3d5A9c66943574c47e1FA2bA785F14fd57Fc7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:26:59",
+            "CONSTRUCTOR_ARGS": "0x",
+            "SALT": "27182818284590452353602874713556",
+            "VERIFIED": "true",
+            "CONTRACT_FILE_PATH": "contracts/BandoRouterV1_1.sol",
+            "CONTRACT_NAME": "BandoRouterV1_1"
+          }
+        ]
+      }
+    },
+    "blast": {
+      "production": {
+        "1.1.0": [
+          {
+            "ADDRESS": "0x88E3d5A9c66943574c47e1FA2bA785F14fd57Fc7",
+            "OPTIMIZER_RUNS": "1000000",
+            "TIMESTAMP": "2025-04-28 22:32:43",
             "CONSTRUCTOR_ARGS": "0x",
             "SALT": "27182818284590452353602874713556",
             "VERIFIED": "true",

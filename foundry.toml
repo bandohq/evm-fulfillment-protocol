@@ -44,6 +44,12 @@ metis = "${ETH_NODE_URI_METIS}"
 mode = "${ETH_NODE_URI_MODE}"
 zksync = "${ETH_NODE_URI_ZKSYNC}"
 scroll = "${ETH_NODE_URI_SCROLL}"
+mantle = "${ETH_NODE_URI_MANTLE}"
+unichain = "${ETH_NODE_URI_UNICHAIN}"
+berachain = "${ETH_NODE_URI_BERACHAIN}"
+blast = "${ETH_NODE_URI_BLAST}"
+kaia = "${ETH_NODE_URI_KAIA}"
+worldchain = "${ETH_NODE_URI_WORLDCHAIN}"
 
 # testnets
 sepolia = "${ETH_NODE_URI_SEPOLIA}"
@@ -57,7 +63,7 @@ base = "${ETH_NODE_URI_BASE}"
 mainnet = { key = "${MAINNET_ETHERSCAN_API_KEY}" }
 arbitrum = { key = "${ARBITRUM_ETHERSCAN_API_KEY}", url = "https://api.arbiscan.io/api" }
 aurora = { key = "${AURORA_ETHERSCAN_API_KEY}", url = "https://api.aurorascan.dev/api" }
-avalanche = { key = "${AVALANCHE_ETHERSCAN_API_KEY}", url = "https://api.snowtrace.io/api" }
+avalanche = { key = "${AVALANCHE_ETHERSCAN_API_KEY}", url = "https://api.snowscan.xyz/api" }
 boba = { key = "${BOBA_ETHERSCAN_API_KEY}", url = "https://api.bobascan.com/api" }
 bsc = { key = "${BSC_ETHERSCAN_API_KEY}", url = "https://api.bscscan.com/api" }
 celo = { key = "${CELO_ETHERSCAN_API_KEY}", url = "https://api.celoscan.io/api" }
@@ -76,6 +82,11 @@ linea = { key = "${LINEA_ETHERSCAN_API_KEY}", url = "https://api.lineascan.build
 metis = { key = "${METIS_ETHERSCAN_API_KEY}", url = "https://api.routescan.io/v2/network/mainnet/evm/1088/etherscan" }
 mode = { key = "${MODE_ETHERSCAN_API_KEY}", url = "https://api.routescan.io/v2/network/mainnet/evm/34443/etherscan" }
 scroll = { key = "${SCROLL_ETHERSCAN_API_KEY}", url = "https://api.scrollscan.com/api" }
+mantle = { key = "${MANTLE_ETHERSCAN_API_KEY}", url = "https://api.mantlescan.xyz/api" }
+unichain = { key = "${UNICHAIN_ETHERSCAN_API_KEY}", url = "https://api.uniscan.xyz/api", chain = 130 }
+berachain = { key = "${BERACHAIN_ETHERSCAN_API_KEY}", url = "https://api.berascan.com/api", chain = 80094 }
+blast = { key = "${BLAST_ETHERSCAN_API_KEY}", url = "https://api.blastscan.io/api" }
+worldchain = { key = "${WORLDCHAIN_ETHERSCAN_API_KEY}", url = "https://api.worldscan.org/api" }
 
 #testnets
 goerli = { key = "${MAINNET_ETHERSCAN_API_KEY}" }
