@@ -30,3 +30,10 @@ Router - Set Token Registry: 0x93068cd934528845bc728725df403b11c269ae26039637997
 Manager - Set Service Registry: 0xe206fc721d804963f4fccb1b25bd41437b58cf7e441f8a63a4edb064d7e23285
 Manager - Set Escrow: 0xc3fb7dd8b82ce2dc650a63dbf9dab6918ce83e7c1f179f4523129dc5d34bd3ff
 Manager - Set ERC20 Escrow: 0x84d14dff6e4391e870d4670650ebb6df811c218c0e986eff57055339fcc8edb1
+Manager - Added Aggregator: 0x50d1e5aac225e87fe0259a5fc8fad086320cc2379c6ee82074feddd7a2c6d823
+Registry Ownership Transferred
+ERC20Escrow Ownership Transferred
+Escrow Ownership Transferred
+Router Ownership Transferred
+Manager Ownership Transferred
+Configuration Complete
