@@ -71,10 +71,10 @@ scriptMaster() {
   local SELECTION=$(
     gum choose \
       "1) Deploy one specific contract to one network" \
-      "2) Deploy one specific contract to all (not-excluded) networks (=new contract)" \
+      "2) Deploy one specific contract to selected networks" \
       "3) Execute a script" \
       "4) Verify all unverified contracts" \
-      "5) Deploy and configure protocol contracts to one network"
+      "5) Deploy and configure protocol contracts to one network" \
   )
 
   #---------------------------------------------------------------------------------------------------------------------
@@ -121,23 +121,33 @@ scriptMaster() {
     checkFailure $? "deploy contract $CONTRACT to network $NETWORK"
 
   #---------------------------------------------------------------------------------------------------------------------
-  # use case 2: Deploy one specific contract to all networks (=new contract)
+  # use case 2: Deploy one specific contract to selected networks
   elif [[ "$SELECTION" == "2)"* ]]; then
     echo ""
-    echo "[info] selected use case: Deploy one specific contract to all networks"
+    echo "[info] selected use case: Deploy one specific contract to selected networks"
+    echo "Is this a proxy deployment?"
+    PROXY_SELECTION=$(
+      gum choose \
+        "yes" \
+        "no"
+    )
+    echo ""
+    echo "[info] selected use case: Deploy one specific contract to selected networks"
+    echo ""
+    local NETWORKS=$(cat ./networks | gum filter --placeholder "Networks" --no-limit)
+    echo ""
+    echo "[info] selected networks: $NETWORKS"
+    echo ""
 
     # get user-selected deploy script and contract from list
     local SCRIPT=$(ls -1 "$DEPLOY_SCRIPT_DIRECTORY" | sed -e 's/.s.sol$//' | grep 'Deploy' | gum filter --placeholder "Deploy Script")
     local CONTRACT=$(echo $SCRIPT | sed -e 's/Deploy//')
 
     # get current contract version
-    local VERSION=$(getCurrentContractVersion "$CONTRACT")
-
-    # get array with all network names
-    local NETWORKS=($(getIncludedNetworksArray))
+    local VERSION=$(getCurrentContractVersion "$CONTRACT" "1")
 
     # loop through all networks
-    for NETWORK in "${NETWORKS[@]}"; do
+    for NETWORK in $NETWORKS; do
       echo ""
       echo ""
       echo "[info] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> now deploying contract $CONTRACT to network $NETWORK...."
@@ -146,15 +156,13 @@ scriptMaster() {
       BALANCE=$(getDeployerBalance "$NETWORK" "$ENVIRONMENT")
       echo "[info] deployer wallet balance in this network: $BALANCE"
       echo ""
+      checkRequiredVariablesInDotEnv "$NETWORK"
 
       # just deploy the contract
-      deploySingleContract "$CONTRACT" "$NETWORK" "$ENVIRONMENT" "$VERSION" false
+      deploySingleContract "$CONTRACT" "$NETWORK" "$ENVIRONMENT" "$VERSION" false "$IS_PROXY"
 
       echo "[info] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< network $NETWORK done"
     done
-
-    playNotificationSound
-
   #---------------------------------------------------------------------------------------------------------------------
   # use case 3: Execute a script
   elif [[ "$SELECTION" == "3)"* ]]; then
@@ -255,6 +263,7 @@ scriptMaster() {
 
     # check if last command was executed successfully, otherwise exit script with error message
     checkFailure $? "configure contracts"
+    
   fi
 
   cleanup
