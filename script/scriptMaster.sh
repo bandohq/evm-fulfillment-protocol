@@ -157,7 +157,12 @@ scriptMaster() {
       echo "[info] deployer wallet balance in this network: $BALANCE"
       echo ""
       checkRequiredVariablesInDotEnv "$NETWORK"
-
+      if [[ "$PROXY_SELECTION" == "yes" ]]; then
+        echo "[info] PROXY_SELECTION: $PROXY_SELECTION"
+        IS_PROXY="true"
+      else
+        IS_PROXY="false"
+      fi
       # just deploy the contract
       deploySingleContract "$CONTRACT" "$NETWORK" "$ENVIRONMENT" "$VERSION" false "$IS_PROXY"
 
